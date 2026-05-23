@@ -17,7 +17,20 @@ class Player(pygame.sprite.Sprite):
         self.direction = pygame.math.Vector2()
         self.speed = 4
 
+        # Animation states
+        self.studying = False
+        self.study_timer = 0
+        self.original_image = self.image.copy()
+
+    def start_study(self, duration_frames):
+        self.studying = True
+        self.study_timer = duration_frames
+        self.direction.xy = (0, 0)
+
     def input(self):
+        if self.studying:
+            return
+
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_UP] or keys[pygame.K_w]:
@@ -42,5 +55,26 @@ class Player(pygame.sprite.Sprite):
         self.rect.y += self.direction.y * speed
 
     def update(self):
+        if self.studying:
+            self.study_timer -= 1
+            if self.study_timer <= 0:
+                self.studying = False
+                self.image = self.original_image.copy()
+            else:
+                # Study animation effect: slight vibration and color pulse
+                self.image = self.original_image.copy()
+                if (self.study_timer // 5) % 2 == 0:
+                    self.image.fill((200, 200, 255), special_flags=pygame.BLEND_RGB_ADD)
+                
+                # Vibration
+                import random
+                offset_x = random.randint(-1, 1)
+                offset_y = random.randint(-1, 1)
+                self.rect.x += offset_x
+                self.rect.y += offset_y
+                # Note: we don't need to revert the rect position because move() 
+                # or future updates will handle it, or we can just not change rect.
+                # Actually, better to just offset the drawing or temporary move.
+        
         self.input()
         self.move(self.speed)

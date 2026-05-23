@@ -4,8 +4,12 @@
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
 
+import asyncio
 from src.game import Game
 
-if __name__ == '__main__':
+async def main():
     game = Game()
-    game.run()
+    await game.run()
+
+if __name__ == '__main__':
+    asyncio.run(main())

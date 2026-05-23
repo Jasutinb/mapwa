@@ -28,7 +28,26 @@ py -3 watch.py
 ```
 This requires `watchdog`, which is included in the project dependencies.
 
-## 2. Testing Information
+## 2. Build and Deployment
+
+### Web Deployment (pygbag)
+The project is configured for web deployment using `pygbag`. 
+
+#### Build for Web:
+To package the game for the web (HTML5/WebAssembly):
+```bash
+uv run python -m pygbag --build main.py
+```
+The output will be in the `build/web` directory.
+
+#### Local Web Preview:
+To run a local web server to preview the game:
+```bash
+uv run python -m pygbag main.py
+```
+Then open your browser at `http://localhost:8000`.
+
+## 3. Testing Information
 
 ### Headless Testing
 Since this is a Pygame project, running tests in a CI or headless environment requires setting dummy video and audio drivers to avoid "No available video device" errors.
@@ -103,7 +122,7 @@ Note that `src/game.py` manually adjusts `sys.path` to allow imports from its ow
 - **NPCs**: Interaction with Mom (provides allowance and wanders around the house).
 - **Bus System**: Ride the bus between Outside and School (₱20 fee to school, free home).
 - **Location Display**: Temporary display of location names upon entering a new room.
-- **Inventory System**: Basic inventory UI.
+- **Inventory System**: Functional inventory system that allows picking up and displaying items.
 - **Money System**: Tracking and displaying player money with a custom icon.
-- **Study Feature**: Gain 10 XP by interacting with the desk in the School room.
+- **Study Feature**: Gain 10 XP by interacting with the desk in the School room. Includes a 1-second studying animation.
 - **School Door**: Exit the school room via a door to return to the Outside area.

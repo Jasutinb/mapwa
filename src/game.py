@@ -1,10 +1,11 @@
 import pygame
 import sys
+import asyncio
 
 from src.player import Player
 from src.npc import NPC
 from src.inventory import Inventory
-from src.level import Tile, Decoration, Door, Bus
+from src.level import Tile, Decoration, Door, Bus, Item
 
 # Constants
 SCREEN_WIDTH = 800
@@ -24,6 +25,7 @@ class Game:
         self.visible_sprites = pygame.sprite.Group()
         self.floor_sprites = pygame.sprite.Group()
         self.door_sprites = pygame.sprite.Group()
+        self.item_sprites = pygame.sprite.Group()
 
         # Location name display setup
         self.location_names = {
@@ -71,13 +73,13 @@ class Game:
         self.money_icon = self.create_money_icon()
 
     def create_money_icon(self):
-        icon = pygame.Surface((20, 20), pygame.SRCALPHA)
-        pygame.draw.circle(icon, (255, 215, 0), (10, 10), 10) # Gold circle
-        pygame.draw.circle(icon, (184, 134, 11), (10, 10), 10, 2) # Darker border
+        icon = pygame.Surface((24, 24), pygame.SRCALPHA)
+        pygame.draw.circle(icon, (255, 215, 0), (12, 12), 11) # Gold circle
+        pygame.draw.circle(icon, (184, 134, 11), (12, 12), 11, 2) # Darker border
         # Draw a small 'P' for Peso
-        font = pygame.font.SysFont(None, 18, bold=True)
+        font = pygame.font.SysFont(None, 20, bold=True)
         p_surf = font.render("P", True, (139, 69, 19))
-        p_rect = p_surf.get_rect(center=(10, 10))
+        p_rect = p_surf.get_rect(center=(12, 12))
         icon.blit(p_surf, p_rect)
         return icon
 
@@ -88,6 +90,8 @@ class Game:
         for sprite in self.floor_sprites:
             sprite.kill()
         for sprite in self.door_sprites:
+            sprite.kill()
+        for sprite in self.item_sprites:
             sprite.kill()
 
         # Set location display
@@ -160,6 +164,9 @@ class Game:
         Decoration((100, 100), [self.visible_sprites], 'assets/images/bed.png')
         Decoration((200, 300), [self.visible_sprites], 'assets/images/rug.png')
 
+        # Add items
+        Item((300, 150), [self.visible_sprites, self.item_sprites], "Notebook")
+
         # Add door back to Main
         Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], 'main', (64, SCREEN_HEIGHT // 2))
 
@@ -212,12 +219,13 @@ class Game:
         # Add door to exit school
         Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], 'outside', (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100))
 
-    def run(self):
+    async def run(self):
         while self.running:
             self.handle_events()
             self.update()
             self.draw()
             self.clock.tick(FPS)
+            await asyncio.sleep(0)
         pygame.quit()
         sys.exit()
 
@@ -259,7 +267,7 @@ class Game:
                                     self.player.rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
                                     self.visible_sprites.add(self.player)
                                 else:
-                                    self.current_dialogue = ["I don't have enough money for the bus... (Need ₱20)"]
+                                    self.current_dialogue = ["I don't have enough money for the bus... (Need 20)"]
                                     self.dialogue_index = 0
                             else: # From school
                                 self.current_room = 'outside'
@@ -268,8 +276,18 @@ class Game:
                                 self.visible_sprites.add(self.player)
                         elif self.current_room == 'school' and hasattr(self, 'school_desk') and self.check_proximity(self.player, self.school_desk, 64):
                             self.experience += 10
+                            self.player.start_study(60) # 1 second at 60 FPS
                             self.current_dialogue = ["You studied hard and gained 10 XP!"]
                             self.dialogue_index = 0
+                        else:
+                            # Try to pick up items
+                            hits = pygame.sprite.spritecollide(self.player, self.item_sprites, False)
+                            for item in hits:
+                                if self.inventory.add_item(item):
+                                    item.kill()
+                                    self.current_dialogue = [f"You picked up a {item.name}!"]
+                                    self.dialogue_index = 0
+                                    break
 
     def check_proximity(self, sprite1, sprite2, distance):
         p1 = pygame.math.Vector2(sprite1.rect.center)
@@ -310,7 +328,7 @@ class Game:
             self.screen.blit(hint_surf, hint_rect)
         
         if (self.current_room == 'outside' or self.current_room == 'school') and not self.current_dialogue and hasattr(self, 'bus') and self.check_proximity(self.player, self.bus, 100):
-            text = "Press E to ride to school (₱20)" if self.current_room == 'outside' else "Press E to ride home"
+            text = "Press E to ride to school (20)" if self.current_room == 'outside' else "Press E to ride home"
             hint_surf = self.font.render(text, True, 'white')
             hint_rect = hint_surf.get_rect(center=(self.bus.rect.centerx, self.bus.rect.top - 20))
             self.screen.blit(hint_surf, hint_rect)
@@ -318,6 +336,14 @@ class Game:
         if self.current_room == 'school' and not self.current_dialogue and hasattr(self, 'school_desk') and self.check_proximity(self.player, self.school_desk, 64):
             hint_surf = self.font.render("Press E to study", True, 'white')
             hint_rect = hint_surf.get_rect(center=(self.school_desk.rect.centerx, self.school_desk.rect.top - 20))
+            self.screen.blit(hint_surf, hint_rect)
+
+        # Draw item interaction hint
+        item_hits = pygame.sprite.spritecollide(self.player, self.item_sprites, False)
+        if item_hits and not self.current_dialogue:
+            item = item_hits[0]
+            hint_surf = self.font.render(f"Press E to pick up {item.name}", True, 'white')
+            hint_rect = hint_surf.get_rect(center=(item.rect.centerx, item.rect.top - 20))
             self.screen.blit(hint_surf, hint_rect)
 
         # Draw dialogue box
@@ -333,15 +359,15 @@ class Game:
             self.screen.blit(prompt_surf, (box_rect.right - 180, box_rect.bottom - 30))
 
         # Draw money counter
-        money_text = f"₱{self.money}"
+        money_text = str(self.money)
         money_surf = self.font.render(money_text, True, 'white')
-        money_rect = money_surf.get_rect(bottomleft=(50, SCREEN_HEIGHT - 20))
+        money_rect = money_surf.get_rect(bottomleft=(60, SCREEN_HEIGHT - 20))
         
         # Draw money icon
-        icon_rect = self.money_icon.get_rect(midleft=(20, money_rect.centery))
+        icon_rect = self.money_icon.get_rect(midleft=(25, money_rect.centery))
         
         # Draw a small background for money for better visibility
-        bg_rect = pygame.Rect(15, SCREEN_HEIGHT - 45, money_surf.get_width() + 45, 30)
+        bg_rect = pygame.Rect(15, SCREEN_HEIGHT - 45, money_surf.get_width() + 55, 30)
         pygame.draw.rect(self.screen, (30, 30, 30), bg_rect, border_radius=5)
         pygame.draw.rect(self.screen, (200, 200, 200), bg_rect, 1, border_radius=5)
         
