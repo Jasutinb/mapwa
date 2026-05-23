@@ -8,7 +8,6 @@ os.environ['SDL_VIDEODRIVER'] = 'dummy'
 os.environ['SDL_AUDIODRIVER'] = 'dummy'
 
 from src.game import Game
-from src.npc import NPC
 
 @pytest.fixture
 def game():
