@@ -15,7 +15,7 @@ FPS = 60
 
 class Game:
     def __init__(self):
-        pygame.init()
+        # pygame.init() moved to main.py for better WASM compatibility
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Student RPG")
         self.clock = pygame.time.Clock()
@@ -57,7 +57,10 @@ class Game:
         # Interaction setup
         self.current_dialogue = None
         self.dialogue_index = 0
-        self.font = pygame.font.SysFont(None, 24)
+        try:
+            self.font = pygame.font.SysFont('Arial', 24)
+        except:
+            self.font = pygame.font.Font(None, 24)
 
         # Inventory setup
         self.inventory = Inventory()
@@ -77,7 +80,10 @@ class Game:
         pygame.draw.circle(icon, (255, 215, 0), (12, 12), 11) # Gold circle
         pygame.draw.circle(icon, (184, 134, 11), (12, 12), 11, 2) # Darker border
         # Draw a small 'P' for Peso
-        font = pygame.font.SysFont(None, 20, bold=True)
+        try:
+            font = pygame.font.SysFont('Arial', 20, bold=True)
+        except:
+            font = pygame.font.Font(None, 20)
         p_surf = font.render("P", True, (139, 69, 19))
         p_rect = p_surf.get_rect(center=(12, 12))
         icon.blit(p_surf, p_rect)
@@ -224,6 +230,7 @@ class Game:
             self.handle_events()
             self.update()
             self.draw()
+            # Ensure high compatibility with browser loop
             self.clock.tick(FPS)
             await asyncio.sleep(0)
         pygame.quit()
@@ -255,10 +262,10 @@ class Game:
                             self.has_talked_to_mom = True
                     else:
                         # Try to start interaction
-                        if self.current_room == 'main' and self.check_proximity(self.player, self.mom, 64):
+                        if self.current_room == 'main' and hasattr(self, 'mom') and self.mom in self.visible_sprites and self.check_proximity(self.player, self.mom, 64):
                             self.current_dialogue = self.mom.interact()
                             self.dialogue_index = 0
-                        elif (self.current_room == 'outside' or self.current_room == 'school') and self.check_proximity(self.player, self.bus, 100):
+                        elif (self.current_room == 'outside' or self.current_room == 'school') and hasattr(self, 'bus') and self.check_proximity(self.player, self.bus, 100):
                             if self.current_room == 'outside':
                                 if self.money >= 20:
                                     self.money -= 20
@@ -389,7 +396,10 @@ class Game:
             # Fade out effect
             alpha = min(255, self.location_display_timer * 5)
             # Create a larger font for location
-            loc_font = pygame.font.SysFont(None, 48)
+            try:
+                loc_font = pygame.font.SysFont('Arial', 48, bold=True)
+            except:
+                loc_font = pygame.font.Font(None, 48)
             loc_surf = loc_font.render(self.location_display_text, True, 'white')
             loc_surf.set_alpha(alpha)
             loc_rect = loc_surf.get_rect(center=(SCREEN_WIDTH // 2, 100))

@@ -36,9 +36,9 @@ The project is configured for web deployment using `pygbag`.
 #### Build for Web:
 To package the game for the web (HTML5/WebAssembly):
 ```bash
-uv run python -m pygbag --build main.py
+uv run python -m pygbag --build --archive --disable-sound-format-error main.py
 ```
-The output will be in the `build/web` directory.
+The output will be in the `build/web` directory. The `--archive` flag creates a compressed version suitable for upload to platforms like **Itch.io**. The `--disable-sound-format-error` flag is used to bypass errors related to unsupported audio formats (like .wav files) in some environments.
 
 #### Local Web Preview:
 To run a local web server to preview the game:

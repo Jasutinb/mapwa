@@ -67,9 +67,8 @@ class Player(pygame.sprite.Sprite):
                     self.image.fill((200, 200, 255), special_flags=pygame.BLEND_RGB_ADD)
                 
                 # Vibration
-                import random
-                offset_x = random.randint(-1, 1)
-                offset_y = random.randint(-1, 1)
+                offset_x = (self.study_timer % 3) - 1
+                offset_y = ((self.study_timer + 1) % 3) - 1
                 self.rect.x += offset_x
                 self.rect.y += offset_y
                 # Note: we don't need to revert the rect position because move() 
