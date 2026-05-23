@@ -80,9 +80,21 @@ def test_player_movement():
 - `src/player.py`: Player sprite logic.
 
 ### Code Style
+- **Clean Code**: Practice clean code by writing readable, maintainable, and well-structured code.
+- **DRY Principle**: Practice the "Do Not Repeat Yourself" principle by avoiding code duplication through functions, classes, and modules.
 - **Naming**: Uses `snake_case` for functions and variables, `PascalCase` for classes.
 - **Constants**: Defined at the top of files (e.g., `SCREEN_WIDTH`, `TILE_SIZE`) in `UPPER_SNAKE_CASE`.
 - **Sprite Groups**: The game uses `pygame.sprite.Group` for management and rendering.
 
 ### Import Management
 Note that `src/game.py` manually adjusts `sys.path` to allow imports from its own directory. When adding new modules in `src/`, maintain consistency with this pattern or ensure absolute imports from the project root are used via `main.py`.
+
+## 4. Feature List
+- **Basic Movement**: Player can move in four directions.
+- **Rooms**: Multiple rooms (Living Room, Bedroom, Outside, School).
+- **NPCs**: Interaction with Mom (provides allowance).
+- **Bus System**: Ride the bus between Outside and School (₱20 fee to school, free home).
+- **Location Display**: Temporary display of location names upon entering a new room.
+- **Inventory System**: Basic inventory UI.
+- **Money System**: Tracking and displaying player money.
+- **Study Feature**: Gain 10 XP by interacting with the desk in the School room.
