@@ -31,3 +31,23 @@ def test_player_movement():
     player.direction.y = 1
     player.move(player.speed)
     assert player.rect.y == player.speed
+
+def test_player_wasd_input(monkeypatch):
+    player = Player((0, 0), [])
+    
+    # Mock pygame.key.get_pressed to simulate 'W' and 'D' keys being pressed
+    def mock_get_pressed():
+        keys = {} # Use a dictionary to avoid IndexError
+        keys[pygame.K_w] = True
+        keys[pygame.K_d] = True
+        # Return a object that mimics ScancodeWrapper behaviors
+        class MockKeys:
+            def __getitem__(self, key):
+                return keys.get(key, False)
+        return MockKeys()
+
+    monkeypatch.setattr(pygame.key, "get_pressed", mock_get_pressed)
+    
+    player.input()
+    assert player.direction.y == -1
+    assert player.direction.x == 1

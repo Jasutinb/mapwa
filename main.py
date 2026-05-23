@@ -1,11 +1,16 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
+import asyncio
+import pygame
 from src.game import Game
 
-if __name__ == '__main__':
+async def main():
+    # Initialize pygame
+    pygame.init()
+    
+    # Create game instance
     game = Game()
-    game.run()
+    
+    # Start game loop
+    await game.run()
+
+# This is the program entry point:
+asyncio.run(main())

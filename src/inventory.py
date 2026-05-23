@@ -22,6 +22,13 @@ class Inventory:
         
         self.slots = [None] * self.slot_count # Empty slots
 
+    def add_item(self, item):
+        for i in range(self.slot_count):
+            if self.slots[i] is None:
+                self.slots[i] = item
+                return True
+        return False
+
     def draw(self, surface):
         # Draw background bar
         pygame.draw.rect(surface, (40, 40, 40), self.rect, border_radius=10)
@@ -37,3 +44,13 @@ class Inventory:
             pygame.draw.rect(surface, (60, 60, 60), slot_rect, border_radius=5)
             # Draw slot border
             pygame.draw.rect(surface, (100, 100, 100), slot_rect, 2, border_radius=5)
+            
+            # Draw item if slot is not empty
+            if self.slots[i]:
+                # Resize image to fit slot if needed
+                item_image = self.slots[i].image
+                if item_image.get_width() > self.slot_size - 10 or item_image.get_height() > self.slot_size - 10:
+                    item_image = pygame.transform.scale(item_image, (self.slot_size - 10, self.slot_size - 10))
+                
+                item_rect = item_image.get_rect(center=slot_rect.center)
+                surface.blit(item_image, item_rect)
