@@ -1,6 +1,5 @@
 import pygame
 import sys
-import os
 
 from src.player import Player
 from src.npc import NPC
