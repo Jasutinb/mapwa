@@ -67,6 +67,20 @@ class Game:
         # Experience setup
         self.experience = 0
 
+        # UI Assets
+        self.money_icon = self.create_money_icon()
+
+    def create_money_icon(self):
+        icon = pygame.Surface((20, 20), pygame.SRCALPHA)
+        pygame.draw.circle(icon, (255, 215, 0), (10, 10), 10) # Gold circle
+        pygame.draw.circle(icon, (184, 134, 11), (10, 10), 10, 2) # Darker border
+        # Draw a small 'P' for Peso
+        font = pygame.font.SysFont(None, 18, bold=True)
+        p_surf = font.render("P", True, (139, 69, 19))
+        p_rect = p_surf.get_rect(center=(10, 10))
+        icon.blit(p_surf, p_rect)
+        return icon
+
     def create_map(self):
         # Clear existing sprites
         for sprite in self.visible_sprites:
@@ -195,6 +209,9 @@ class Game:
         # Add bus to go back
         self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT - 100), [self.visible_sprites])
 
+        # Add door to exit school
+        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], 'outside', (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100))
+
     def run(self):
         while self.running:
             self.handle_events()
@@ -266,6 +283,11 @@ class Game:
         if not self.current_dialogue:
             self.visible_sprites.update()
             self.check_transitions()
+            
+            # Constrain Mom within boundaries if she's in the current room
+            if self.current_room == 'main' and hasattr(self, 'mom') and self.mom in self.visible_sprites:
+                self.mom.rect.left = max(0, min(self.mom.rect.left, SCREEN_WIDTH - self.mom.rect.width))
+                self.mom.rect.top = max(TILE_SIZE * 2, min(self.mom.rect.top, SCREEN_HEIGHT - self.mom.rect.height))
 
     def check_transitions(self):
         hits = pygame.sprite.spritecollide(self.player, self.door_sprites, False)
@@ -311,13 +333,30 @@ class Game:
             self.screen.blit(prompt_surf, (box_rect.right - 180, box_rect.bottom - 30))
 
         # Draw money counter
-        money_surf = self.font.render(f"Money: ₱{self.money}  XP: {self.experience}", True, 'white')
-        money_rect = money_surf.get_rect(bottomleft=(20, SCREEN_HEIGHT - 20))
+        money_text = f"₱{self.money}"
+        money_surf = self.font.render(money_text, True, 'white')
+        money_rect = money_surf.get_rect(bottomleft=(50, SCREEN_HEIGHT - 20))
+        
+        # Draw money icon
+        icon_rect = self.money_icon.get_rect(midleft=(20, money_rect.centery))
+        
         # Draw a small background for money for better visibility
-        bg_rect = money_rect.inflate(20, 10)
+        bg_rect = pygame.Rect(15, SCREEN_HEIGHT - 45, money_surf.get_width() + 45, 30)
         pygame.draw.rect(self.screen, (30, 30, 30), bg_rect, border_radius=5)
         pygame.draw.rect(self.screen, (200, 200, 200), bg_rect, 1, border_radius=5)
+        
+        self.screen.blit(self.money_icon, icon_rect)
         self.screen.blit(money_surf, money_rect)
+
+        # Draw XP counter
+        xp_text = f"XP: {self.experience}"
+        xp_surf = self.font.render(xp_text, True, 'white')
+        xp_rect = xp_surf.get_rect(bottomleft=(bg_rect.right + 10, SCREEN_HEIGHT - 20))
+        
+        xp_bg_rect = xp_rect.inflate(20, 10)
+        pygame.draw.rect(self.screen, (30, 30, 30), xp_bg_rect, border_radius=5)
+        pygame.draw.rect(self.screen, (200, 200, 200), xp_bg_rect, 1, border_radius=5)
+        self.screen.blit(xp_surf, xp_rect)
 
         # Draw location name
         if self.location_display_timer > 0:

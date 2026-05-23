@@ -21,6 +21,13 @@ To start the game, run the `main.py` script:
 py -3 main.py
 ```
 
+### Hot Refresh (Development)
+To run the game with hot refresh (automatic restart on code changes), use:
+```bash
+py -3 watch.py
+```
+This requires `watchdog`, which is included in the project dependencies.
+
 ## 2. Testing Information
 
 ### Headless Testing
@@ -76,6 +83,7 @@ def test_player_movement():
 
 ### Project Structure
 - `main.py`: Entry point.
+- `watch.py`: Watcher script for hot refresh.
 - `src/game.py`: Main game loop and state management.
 - `src/player.py`: Player sprite logic.
 
@@ -90,11 +98,12 @@ def test_player_movement():
 Note that `src/game.py` manually adjusts `sys.path` to allow imports from its own directory. When adding new modules in `src/`, maintain consistency with this pattern or ensure absolute imports from the project root are used via `main.py`.
 
 ## 4. Feature List
-- **Basic Movement**: Player can move in four directions.
+- **Basic Movement**: Player can move in four directions using arrow keys or WASD.
 - **Rooms**: Multiple rooms (Living Room, Bedroom, Outside, School).
-- **NPCs**: Interaction with Mom (provides allowance).
+- **NPCs**: Interaction with Mom (provides allowance and wanders around the house).
 - **Bus System**: Ride the bus between Outside and School (₱20 fee to school, free home).
 - **Location Display**: Temporary display of location names upon entering a new room.
 - **Inventory System**: Basic inventory UI.
-- **Money System**: Tracking and displaying player money.
+- **Money System**: Tracking and displaying player money with a custom icon.
 - **Study Feature**: Gain 10 XP by interacting with the desk in the School room.
+- **School Door**: Exit the school room via a door to return to the Outside area.
