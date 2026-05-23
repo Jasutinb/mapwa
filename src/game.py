@@ -4,7 +4,7 @@ import sys
 from src.player import Player
 from src.npc import NPC
 from src.inventory import Inventory
-from src.level import Tile, Decoration, Door
+from src.level import Tile, Decoration, Door, Bus
 
 # Constants
 SCREEN_WIDTH = 800
@@ -53,6 +53,17 @@ class Game:
         self.money = 0
         self.has_talked_to_mom = False
 
+        # Location name display setup
+        self.location_names = {
+            'main': 'Living Room',
+            'bedroom': 'Bedroom',
+            'outside': 'Outside',
+            'school': 'School'
+        }
+        self.location_display_text = ""
+        self.location_display_timer = 0
+        self.location_display_duration = 120 # 2 seconds at 60 FPS
+
     def create_map(self):
         # Clear existing sprites
         for sprite in self.visible_sprites:
@@ -62,12 +73,18 @@ class Game:
         for sprite in self.door_sprites:
             sprite.kill()
 
+        # Set location display
+        self.location_display_text = self.location_names.get(self.current_room, self.current_room.capitalize())
+        self.location_display_timer = self.location_display_duration
+
         if self.current_room == 'main':
             self.create_main_room()
         elif self.current_room == 'bedroom':
             self.create_bedroom()
         elif self.current_room == 'outside':
             self.create_outside()
+        elif self.current_room == 'school':
+            self.create_school()
 
     def create_main_room(self):
         try:
@@ -141,8 +158,39 @@ class Game:
             for col in range(0, SCREEN_WIDTH, TILE_SIZE):
                 Tile((col, row), [self.floor_sprites], grass_surf)
 
+        # Add bus
+        self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT // 2 - 100), [self.visible_sprites])
+
         # Add door back to Main
         Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], 'main', (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
+
+    def create_school(self):
+        try:
+            floor_surf = pygame.image.load('assets/images/floor.png').convert()
+            wall_surf = pygame.image.load('assets/images/wall.png').convert()
+        except (pygame.error, FileNotFoundError):
+            floor_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+            floor_surf.fill((150, 150, 150))
+            wall_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+            wall_surf.fill((100, 100, 100))
+
+        # Fill screen with floor tiles
+        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
+            for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+                Tile((col, row), [self.floor_sprites], floor_surf)
+        
+        # Add walls at the top
+        for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+            Tile((col, 0), [self.visible_sprites], wall_surf)
+            Tile((col, TILE_SIZE), [self.visible_sprites], wall_surf)
+
+        # Add text to indicate it's the school
+        # Note: we don't have a specific way to draw static text on map yet, 
+        # but we can add a sign or something.
+        Decoration((SCREEN_WIDTH // 2, 100), [self.visible_sprites], 'assets/images/table.png') # Placeholder for school desk
+
+        # Add bus to go back
+        self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT - 100), [self.visible_sprites])
 
     def run(self):
         while self.running:
@@ -179,9 +227,25 @@ class Game:
                             self.has_talked_to_mom = True
                     else:
                         # Try to start interaction
-                        if self.check_proximity(self.player, self.mom, 64):
+                        if self.current_room == 'main' and self.check_proximity(self.player, self.mom, 64):
                             self.current_dialogue = self.mom.interact()
                             self.dialogue_index = 0
+                        elif (self.current_room == 'outside' or self.current_room == 'school') and self.check_proximity(self.player, self.bus, 100):
+                            if self.current_room == 'outside':
+                                if self.money >= 20:
+                                    self.money -= 20
+                                    self.current_room = 'school'
+                                    self.create_map()
+                                    self.player.rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+                                    self.visible_sprites.add(self.player)
+                                else:
+                                    self.current_dialogue = ["I don't have enough money for the bus... (Need ₱20)"]
+                                    self.dialogue_index = 0
+                            else: # From school
+                                self.current_room = 'outside'
+                                self.create_map()
+                                self.player.rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+                                self.visible_sprites.add(self.player)
 
     def check_proximity(self, sprite1, sprite2, distance):
         p1 = pygame.math.Vector2(sprite1.rect.center)
@@ -189,6 +253,9 @@ class Game:
         return p1.distance_to(p2) < distance
 
     def update(self):
+        if self.location_display_timer > 0:
+            self.location_display_timer -= 1
+
         if not self.current_dialogue:
             self.visible_sprites.update()
             self.check_transitions()
@@ -212,6 +279,12 @@ class Game:
             hint_surf = self.font.render("Press E to talk", True, 'white')
             hint_rect = hint_surf.get_rect(center=(self.mom.rect.centerx, self.mom.rect.top - 20))
             self.screen.blit(hint_surf, hint_rect)
+        
+        if (self.current_room == 'outside' or self.current_room == 'school') and not self.current_dialogue and hasattr(self, 'bus') and self.check_proximity(self.player, self.bus, 100):
+            text = "Press E to ride to school (₱20)" if self.current_room == 'outside' else "Press E to ride home"
+            hint_surf = self.font.render(text, True, 'white')
+            hint_rect = hint_surf.get_rect(center=(self.bus.rect.centerx, self.bus.rect.top - 20))
+            self.screen.blit(hint_surf, hint_rect)
 
         # Draw dialogue box
         if self.current_dialogue:
@@ -233,6 +306,24 @@ class Game:
         pygame.draw.rect(self.screen, (30, 30, 30), bg_rect, border_radius=5)
         pygame.draw.rect(self.screen, (200, 200, 200), bg_rect, 1, border_radius=5)
         self.screen.blit(money_surf, money_rect)
+
+        # Draw location name
+        if self.location_display_timer > 0:
+            # Fade out effect
+            alpha = min(255, self.location_display_timer * 5)
+            # Create a larger font for location
+            loc_font = pygame.font.SysFont(None, 48)
+            loc_surf = loc_font.render(self.location_display_text, True, 'white')
+            loc_surf.set_alpha(alpha)
+            loc_rect = loc_surf.get_rect(center=(SCREEN_WIDTH // 2, 100))
+            
+            # Draw shadow for better readability
+            shadow_surf = loc_font.render(self.location_display_text, True, 'black')
+            shadow_surf.set_alpha(alpha)
+            shadow_rect = shadow_surf.get_rect(center=(SCREEN_WIDTH // 2 + 2, 100 + 2))
+            
+            self.screen.blit(shadow_surf, shadow_rect)
+            self.screen.blit(loc_surf, loc_rect)
 
         self.inventory.draw(self.screen)
         pygame.display.flip()

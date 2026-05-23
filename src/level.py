@@ -27,3 +27,16 @@ class Door(pygame.sprite.Sprite):
             self.image = pygame.Surface((32, 64))
             self.image.fill('brown')
         self.rect = self.image.get_rect(topleft=pos)
+
+class Bus(pygame.sprite.Sprite):
+    def __init__(self, pos, groups):
+        super().__init__(groups)
+        try:
+            self.image = pygame.image.load('assets/images/bus.png').convert_alpha()
+        except (pygame.error, FileNotFoundError):
+            self.image = pygame.Surface((128, 64))
+            self.image.fill('yellow')
+            pygame.draw.rect(self.image, 'black', (10, 10, 30, 20)) # Window
+            pygame.draw.rect(self.image, 'black', (50, 10, 30, 20)) # Window
+            pygame.draw.rect(self.image, 'black', (90, 10, 30, 20)) # Window
+        self.rect = self.image.get_rect(topleft=pos)
