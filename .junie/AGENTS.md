@@ -45,7 +45,7 @@ To run a local web server to preview the game:
 ```bash
 uv run python -m pygbag main.py
 ```
-Then open your browser at `http://localhost:8000`.
+Then open your browser at `http://localhost:8000`. If you see a gray screen, try a hard refresh (**Ctrl + F5**) or try a different port: `uv run python -m pygbag --port 8001 main.py`.
 
 ## 3. Testing Information
 
@@ -112,6 +112,19 @@ def test_player_movement():
 - **Naming**: Uses `snake_case` for functions and variables, `PascalCase` for classes.
 - **Constants**: Defined at the top of files (e.g., `SCREEN_WIDTH`, `TILE_SIZE`) in `UPPER_SNAKE_CASE`.
 - **Sprite Groups**: The game uses `pygame.sprite.Group` for management and rendering.
+
+### WebAssembly Compatibility (pygbag)
+When developing features, keep these WASM-specific constraints in mind:
+- **Async Loop**: The main game loop must be `async` and include `await asyncio.sleep(0)` to prevent the browser from hanging.
+- **Font Loading**: Browsers often lack default system fonts. Always use a fallback pattern:
+  ```python
+  try:
+      self.font = pygame.font.SysFont('Arial', 24)
+  except:
+      self.font = pygame.font.Font(None, 24)
+  ```
+- **Deterministic Logic**: Avoid heavy use of `random` or dynamic imports inside the `update` loop, as it can cause performance hitches in WASM.
+- **Asset Paths**: Use forward slashes (`/`) for all file paths to ensure compatibility with the virtual file system.
 
 ### Import Management
 Note that `src/game.py` manually adjusts `sys.path` to allow imports from its own directory. When adding new modules in `src/`, maintain consistency with this pattern or ensure absolute imports from the project root are used via `main.py`.
