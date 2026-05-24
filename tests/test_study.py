@@ -23,6 +23,7 @@ def test_study_at_school(game):
     initial_xp = game.experience
     
     # Move player near the school desk
+    game.visible_sprites.add(game.player)
     game.player.rect.center = game.school_desk.rect.center
     
     # Simulate 'E' key press event
@@ -31,5 +32,10 @@ def test_study_at_school(game):
     game.handle_events()
     
     assert game.experience == initial_xp + 10
+    
+    # Fast forward study
+    for _ in range(61):
+        game.update()
+    
     assert game.current_dialogue is not None
     assert "studied hard" in game.current_dialogue[0]

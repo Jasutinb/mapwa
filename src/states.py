@@ -8,6 +8,9 @@ TILE_SIZE = 64
 
 class PlayState(State):
     def handle_events(self, events):
+        if self.game.player.studying:
+            return
+
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_e:
@@ -36,9 +39,6 @@ class PlayState(State):
                     elif self.game.current_room == 'school' and hasattr(self.game, 'school_desk') and self.game.check_proximity(self.game.player, self.game.school_desk, 64):
                         self.game.experience += 10
                         self.game.player.start_study(60) # 1 second at 60 FPS
-                        self.game.current_dialogue = ["You studied hard and gained 10 XP!"]
-                        self.game.dialogue_index = 0
-                        self.game.state_machine.change_state('dialogue')
                     else:
                         # Try to pick up items
                         hits = pygame.sprite.spritecollide(self.game.player, self.game.item_sprites, False)
@@ -51,8 +51,17 @@ class PlayState(State):
                                 break
 
     def update(self):
+        # Store previous studying state to detect when it finishes
+        was_studying = self.game.player.studying
+        
         self.game.visible_sprites.update()
         self.game.check_transitions()
+        
+        # If studying just finished, show dialogue
+        if was_studying and not self.game.player.studying:
+            self.game.current_dialogue = ["You studied hard and gained 10 XP!"]
+            self.game.dialogue_index = 0
+            self.game.state_machine.change_state('dialogue')
         
         # Constrain Mom within boundaries if she's in the current room
         if self.game.current_room == 'main' and hasattr(self.game, 'mom') and self.game.mom in self.game.visible_sprites:

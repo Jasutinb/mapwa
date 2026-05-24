@@ -25,6 +25,7 @@ class Game:
 
         # Sprite groups
         self.visible_sprites = pygame.sprite.Group()
+        self.obstacle_sprites = pygame.sprite.Group()
         self.floor_sprites = pygame.sprite.Group()
         self.door_sprites = pygame.sprite.Group()
         self.item_sprites = pygame.sprite.Group()
@@ -45,7 +46,7 @@ class Game:
         self.create_map()
 
         # Player setup
-        self.player = Player((SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2), [self.visible_sprites])
+        self.player = Player((SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2), [self.visible_sprites], self.obstacle_sprites)
 
         # NPC setup
         self.mom = NPC((SCREEN_WIDTH // 2, 100), [self.visible_sprites], 'assets/images/mom.png', name="Mom")
@@ -101,6 +102,8 @@ class Game:
         # Clear existing sprites
         for sprite in self.visible_sprites:
             sprite.kill()
+        for sprite in self.obstacle_sprites:
+            sprite.kill()
         for sprite in self.floor_sprites:
             sprite.kill()
         for sprite in self.door_sprites:
@@ -138,11 +141,11 @@ class Game:
         
         # Add walls at the top
         for col in range(0, SCREEN_WIDTH, TILE_SIZE):
-            Tile((col, 0), [self.visible_sprites], wall_surf)
-            Tile((col, TILE_SIZE), [self.visible_sprites], wall_surf)
+            Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            Tile((col, TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
 
         # Add a table
-        Decoration((SCREEN_WIDTH // 4, SCREEN_HEIGHT // 2), [self.visible_sprites], 'assets/images/table.png')
+        Decoration((SCREEN_WIDTH // 4, SCREEN_HEIGHT // 2), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
         
         # Add doors
         # To Bedroom (left)
@@ -171,11 +174,11 @@ class Game:
         
         # Add walls at the top
         for col in range(0, SCREEN_WIDTH, TILE_SIZE):
-            Tile((col, 0), [self.visible_sprites], wall_surf)
-            Tile((col, TILE_SIZE), [self.visible_sprites], wall_surf)
+            Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            Tile((col, TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
 
         # Add bedroom decorations
-        Decoration((100, 100), [self.visible_sprites], 'assets/images/bed.png')
+        Decoration((100, 100), [self.visible_sprites, self.obstacle_sprites], 'assets/images/bed.png')
         Decoration((200, 300), [self.visible_sprites], 'assets/images/rug.png')
 
         # Add items
@@ -219,13 +222,13 @@ class Game:
         
         # Add walls at the top
         for col in range(0, SCREEN_WIDTH, TILE_SIZE):
-            Tile((col, 0), [self.visible_sprites], wall_surf)
-            Tile((col, TILE_SIZE), [self.visible_sprites], wall_surf)
+            Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            Tile((col, TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
 
         # Add text to indicate it's the school
         # Note: we don't have a specific way to draw static text on map yet, 
         # but we can add a sign or something.
-        self.school_desk = Decoration((SCREEN_WIDTH // 2, 100), [self.visible_sprites], 'assets/images/table.png') # Placeholder for school desk
+        self.school_desk = Decoration((SCREEN_WIDTH // 2, 100), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png') # Placeholder for school desk
 
         # Add bus to go back
         self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT - 100), [self.visible_sprites])

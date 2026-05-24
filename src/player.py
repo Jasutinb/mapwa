@@ -1,7 +1,7 @@
 import pygame
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, groups):
+    def __init__(self, pos, groups, obstacle_sprites=None):
         super().__init__(groups)
         # Load player image
         try:
@@ -16,6 +16,7 @@ class Player(pygame.sprite.Sprite):
         # Movement
         self.direction = pygame.math.Vector2()
         self.speed = 4
+        self.obstacle_sprites = obstacle_sprites if obstacle_sprites else pygame.sprite.Group()
 
         # Animation states
         self.studying = False
@@ -51,8 +52,36 @@ class Player(pygame.sprite.Sprite):
         if self.direction.magnitude() != 0:
             self.direction = self.direction.normalize()
 
+        # Horizontal movement and collision
         self.rect.x += self.direction.x * speed
+        self.collision('horizontal')
+
+        # Vertical movement and collision
         self.rect.y += self.direction.y * speed
+        self.collision('vertical')
+
+        # Map boundaries
+        self.rect.left = max(0, self.rect.left)
+        self.rect.right = min(800, self.rect.right) # SCREEN_WIDTH
+        self.rect.top = max(0, self.rect.top)
+        self.rect.bottom = min(600, self.rect.bottom) # SCREEN_HEIGHT
+
+    def collision(self, direction):
+        if direction == 'horizontal':
+            hits = pygame.sprite.spritecollide(self, self.obstacle_sprites, False)
+            for sprite in hits:
+                if self.direction.x > 0: # Moving right
+                    self.rect.right = sprite.rect.left
+                if self.direction.x < 0: # Moving left
+                    self.rect.left = sprite.rect.right
+
+        if direction == 'vertical':
+            hits = pygame.sprite.spritecollide(self, self.obstacle_sprites, False)
+            for sprite in hits:
+                if self.direction.y > 0: # Moving down
+                    self.rect.bottom = sprite.rect.top
+                if self.direction.y < 0: # Moving up
+                    self.rect.top = sprite.rect.bottom
 
     def update(self):
         if self.studying:
@@ -71,9 +100,7 @@ class Player(pygame.sprite.Sprite):
                 offset_y = ((self.study_timer + 1) % 3) - 1
                 self.rect.x += offset_x
                 self.rect.y += offset_y
-                # Note: we don't need to revert the rect position because move() 
-                # or future updates will handle it, or we can just not change rect.
-                # Actually, better to just offset the drawing or temporary move.
         
-        self.input()
-        self.move(self.speed)
+        if not self.studying:
+            self.input()
+            self.move(self.speed)
