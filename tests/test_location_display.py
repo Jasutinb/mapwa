@@ -39,6 +39,7 @@ def test_location_names_mapping(game):
         'main': 'Living Room',
         'bedroom': 'Bedroom',
         'outside': 'Outside',
+        'intramuros': 'Intramuros',
         'school': 'School'
     }
     

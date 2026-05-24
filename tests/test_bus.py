@@ -23,10 +23,17 @@ def test_bus_interaction_to_school(game):
     # Move player near bus
     game.player.rect.center = game.bus.rect.center
     
-    # Simulate 'E' key press event
+    # Ride to Intramuros
     event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
-    pygame.event.post(event)
-    game.handle_events()
+    game.handle_events([event])
+    assert game.current_room == 'intramuros'
+    assert game.money == 80
+
+    # Ensure player is visible for next check
+    game.visible_sprites.add(game.player)
+    # Move to right side of Intramuros bus to go to school
+    game.player.rect.center = (game.bus.rect.right - 10, game.bus.rect.centery)
+    game.handle_events([event])
     
     assert game.current_room == 'school'
     assert game.money == 80
@@ -56,10 +63,16 @@ def test_bus_interaction_to_outside(game):
     # Move player near bus
     game.player.rect.center = game.bus.rect.center
     
-    # Simulate 'E' key press event
+    # Ride back to Intramuros
     event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
-    pygame.event.post(event)
-    game.handle_events()
+    game.handle_events([event])
+    assert game.current_room == 'intramuros'
+
+    # Ensure player is visible
+    game.visible_sprites.add(game.player)
+    # Move to left side of Intramuros bus to go home
+    game.player.rect.center = (game.bus.rect.left + 10, game.bus.rect.centery)
+    game.handle_events([event])
     
     assert game.current_room == 'outside'
     assert game.money == 100 # No cost to go home

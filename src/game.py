@@ -35,6 +35,7 @@ class Game:
             'main': 'Living Room',
             'bedroom': 'Bedroom',
             'outside': 'Outside',
+            'intramuros': 'Intramuros',
             'school': 'School'
         }
         self.location_display_text = ""
@@ -121,6 +122,8 @@ class Game:
             self.create_bedroom()
         elif self.current_room == 'outside':
             self.create_outside()
+        elif self.current_room == 'intramuros':
+            self.create_intramuros()
         elif self.current_room == 'school':
             self.create_school()
 
@@ -205,6 +208,22 @@ class Game:
         # Add door back to Main
         Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], 'main', (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
 
+    def create_intramuros(self):
+        try:
+            grass_surf = pygame.image.load('assets/images/grass.png').convert()
+        except (pygame.error, FileNotFoundError):
+            grass_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+            grass_surf.fill((34, 139, 34))
+
+        # Fill screen with grass tiles
+        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
+            for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+                Tile((col, row), [self.floor_sprites], grass_surf)
+
+        # Add bus
+        # This bus can take you back to Outside or forward to School
+        self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT // 2 - 100), [self.visible_sprites])
+
     def create_school(self):
         try:
             floor_surf = pygame.image.load('assets/images/floor.png').convert()
@@ -234,7 +253,7 @@ class Game:
         self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT - 100), [self.visible_sprites])
 
         # Add door to exit school
-        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], 'outside', (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100))
+        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], 'intramuros', (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100))
 
     async def run(self):
         while self.running:
