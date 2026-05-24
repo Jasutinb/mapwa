@@ -6,6 +6,8 @@ from src.player import Player
 from src.npc import NPC
 from src.inventory import Inventory
 from src.level import Tile, Decoration, Door, Bus, Item
+from src.state import StateMachine
+from src.states import PlayState, DialogueState
 
 # Constants
 SCREEN_WIDTH = 800
@@ -74,6 +76,12 @@ class Game:
 
         # UI Assets
         self.money_icon = self.create_money_icon()
+
+        # State Machine setup
+        self.state_machine = StateMachine()
+        self.state_machine.add_state('play', PlayState(self))
+        self.state_machine.add_state('dialogue', DialogueState(self))
+        self.state_machine.change_state('play')
 
     def create_money_icon(self):
         icon = pygame.Surface((24, 24), pygame.SRCALPHA)
@@ -227,7 +235,12 @@ class Game:
 
     async def run(self):
         while self.running:
-            self.handle_events()
+            events = pygame.event.get()
+            for event in events:
+                if event.type == pygame.QUIT:
+                    self.running = False
+            
+            self.handle_events(events)
             self.update()
             self.draw()
             # Ensure high compatibility with browser loop
@@ -236,65 +249,10 @@ class Game:
         pygame.quit()
         sys.exit()
 
-    def handle_events(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
-            
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_e:
-                    if self.current_dialogue:
-                        # Advance dialogue
-                        self.dialogue_index += 1
-                        if self.dialogue_index >= len(self.current_dialogue):
-                            self.current_dialogue = None
-                            self.dialogue_index = 0
-                            # Update Mom's dialogue after the first talk
-                            if self.has_talked_to_mom:
-                                self.mom.dialogue = [
-                                    "Hi sweetie!",
-                                    "Make sure to study hard!",
-                                    "I'll see you later."
-                                ]
-                        elif not self.has_talked_to_mom and self.dialogue_index == len(self.current_dialogue) - 1:
-                            # If it's the last line of the first talk, give money
-                            self.money += 250
-                            self.has_talked_to_mom = True
-                    else:
-                        # Try to start interaction
-                        if self.current_room == 'main' and hasattr(self, 'mom') and self.mom in self.visible_sprites and self.check_proximity(self.player, self.mom, 64):
-                            self.current_dialogue = self.mom.interact()
-                            self.dialogue_index = 0
-                        elif (self.current_room == 'outside' or self.current_room == 'school') and hasattr(self, 'bus') and self.check_proximity(self.player, self.bus, 100):
-                            if self.current_room == 'outside':
-                                if self.money >= 20:
-                                    self.money -= 20
-                                    self.current_room = 'school'
-                                    self.create_map()
-                                    self.player.rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-                                    self.visible_sprites.add(self.player)
-                                else:
-                                    self.current_dialogue = ["I don't have enough money for the bus... (Need 20)"]
-                                    self.dialogue_index = 0
-                            else: # From school
-                                self.current_room = 'outside'
-                                self.create_map()
-                                self.player.rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-                                self.visible_sprites.add(self.player)
-                        elif self.current_room == 'school' and hasattr(self, 'school_desk') and self.check_proximity(self.player, self.school_desk, 64):
-                            self.experience += 10
-                            self.player.start_study(60) # 1 second at 60 FPS
-                            self.current_dialogue = ["You studied hard and gained 10 XP!"]
-                            self.dialogue_index = 0
-                        else:
-                            # Try to pick up items
-                            hits = pygame.sprite.spritecollide(self.player, self.item_sprites, False)
-                            for item in hits:
-                                if self.inventory.add_item(item):
-                                    item.kill()
-                                    self.current_dialogue = [f"You picked up a {item.name}!"]
-                                    self.dialogue_index = 0
-                                    break
+    def handle_events(self, events=None):
+        if events is None:
+            events = pygame.event.get()
+        self.state_machine.handle_events(events)
 
     def check_proximity(self, sprite1, sprite2, distance):
         p1 = pygame.math.Vector2(sprite1.rect.center)
@@ -305,14 +263,7 @@ class Game:
         if self.location_display_timer > 0:
             self.location_display_timer -= 1
 
-        if not self.current_dialogue:
-            self.visible_sprites.update()
-            self.check_transitions()
-            
-            # Constrain Mom within boundaries if she's in the current room
-            if self.current_room == 'main' and hasattr(self, 'mom') and self.mom in self.visible_sprites:
-                self.mom.rect.left = max(0, min(self.mom.rect.left, SCREEN_WIDTH - self.mom.rect.width))
-                self.mom.rect.top = max(TILE_SIZE * 2, min(self.mom.rect.top, SCREEN_HEIGHT - self.mom.rect.height))
+        self.state_machine.update()
 
     def check_transitions(self):
         hits = pygame.sprite.spritecollide(self.player, self.door_sprites, False)
@@ -328,42 +279,7 @@ class Game:
         self.floor_sprites.draw(self.screen)
         self.visible_sprites.draw(self.screen)
         
-        # Draw proximity hint
-        if self.current_room == 'main' and not self.current_dialogue and self.check_proximity(self.player, self.mom, 64):
-            hint_surf = self.font.render("Press E to talk", True, 'white')
-            hint_rect = hint_surf.get_rect(center=(self.mom.rect.centerx, self.mom.rect.top - 20))
-            self.screen.blit(hint_surf, hint_rect)
-        
-        if (self.current_room == 'outside' or self.current_room == 'school') and not self.current_dialogue and hasattr(self, 'bus') and self.check_proximity(self.player, self.bus, 100):
-            text = "Press E to ride to school (20)" if self.current_room == 'outside' else "Press E to ride home"
-            hint_surf = self.font.render(text, True, 'white')
-            hint_rect = hint_surf.get_rect(center=(self.bus.rect.centerx, self.bus.rect.top - 20))
-            self.screen.blit(hint_surf, hint_rect)
-
-        if self.current_room == 'school' and not self.current_dialogue and hasattr(self, 'school_desk') and self.check_proximity(self.player, self.school_desk, 64):
-            hint_surf = self.font.render("Press E to study", True, 'white')
-            hint_rect = hint_surf.get_rect(center=(self.school_desk.rect.centerx, self.school_desk.rect.top - 20))
-            self.screen.blit(hint_surf, hint_rect)
-
-        # Draw item interaction hint
-        item_hits = pygame.sprite.spritecollide(self.player, self.item_sprites, False)
-        if item_hits and not self.current_dialogue:
-            item = item_hits[0]
-            hint_surf = self.font.render(f"Press E to pick up {item.name}", True, 'white')
-            hint_rect = hint_surf.get_rect(center=(item.rect.centerx, item.rect.top - 20))
-            self.screen.blit(hint_surf, hint_rect)
-
-        # Draw dialogue box
-        if self.current_dialogue:
-            box_rect = pygame.Rect(50, SCREEN_HEIGHT - 150, SCREEN_WIDTH - 100, 100)
-            pygame.draw.rect(self.screen, (30, 30, 30), box_rect, border_radius=10)
-            pygame.draw.rect(self.screen, (200, 200, 200), box_rect, 2, border_radius=10)
-            
-            text_surf = self.font.render(self.current_dialogue[self.dialogue_index], True, 'white')
-            self.screen.blit(text_surf, (box_rect.x + 20, box_rect.y + 20))
-            
-            prompt_surf = self.font.render("Press E to continue...", True, (150, 150, 150))
-            self.screen.blit(prompt_surf, (box_rect.right - 180, box_rect.bottom - 30))
+        self.state_machine.draw(self.screen)
 
         # Draw money counter
         money_text = str(self.money)
