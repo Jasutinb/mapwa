@@ -45,7 +45,7 @@ To run a local web server to preview the game:
 ```bash
 uv run python -m pygbag main.py
 ```
-Then open your browser at `http://localhost:8000`. If you see a gray screen, try a hard refresh (**Ctrl + F5**) or try a different port: `uv run python -m pygbag --port 8001 main.py`.
+Then open your browser at `http://localhost:8000`.
 
 ## 3. Testing Information
 
@@ -62,7 +62,7 @@ import pygame
 ### Running Tests
 Tests are implemented using `pytest`. You can run all tests in the `tests/` directory:
 ```bash
-py -3 -m pytest
+pytest -n auto
 ```
 
 ### Adding New Tests
