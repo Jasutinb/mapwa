@@ -21,10 +21,40 @@ def test_player_initialization():
     assert player.direction.magnitude() == 0
 
 def test_player_movement():
-    player = Player((0, 0), [])
+    player = Player((0, 0), [], pygame.sprite.Group())
     player.direction.x = 1
     player.move(player.speed)
     assert player.rect.x == player.speed
+
+def test_player_wall_collision():
+    obstacles = pygame.sprite.Group()
+    wall = pygame.sprite.Sprite(obstacles)
+    wall.rect = pygame.Rect(64, 0, 64, 64)
+    
+    player = Player((0, 0), [], obstacles)
+    player.rect.topleft = (32, 0)
+    
+    # Try to move into the wall
+    player.direction.x = 1
+    player.move(4)
+    
+    # Should be blocked by the wall's left edge
+    assert player.rect.right <= wall.rect.left
+
+def test_player_screen_boundaries():
+    player = Player((0, 0), [], pygame.sprite.Group())
+    
+    # Try to move past left edge
+    player.rect.left = 0
+    player.direction.x = -1
+    player.move(4)
+    assert player.rect.left == 0
+    
+    # Try to move past top edge
+    player.rect.top = 0
+    player.direction.y = -1
+    player.move(4)
+    assert player.rect.top == 0
     assert player.rect.y == 0
 
     player.direction.x = 0
