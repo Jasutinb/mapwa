@@ -118,28 +118,6 @@ def test_player_movement():
 - **Collision boundaries**: Use collision only for true physical boundaries such as map edges, walls, rivers, fences, or furniture. Avoid using decorative landmark rectangles as obstacles when they prevent the player from visiting that place.
 - **Travel gating**: Avoid artificial blocks that stop the player from visiting a place. If progression control is needed, use dialogue, NPCs, events, or clear interaction prompts instead of invisible or decorative collision blocks.
 
-### Image Asset Preference
-- **Preferred source**: When adding image assets, first check `C:\Users\My PC\Desktop\Assets\FREE\FREE version\Icon set 1`.
-- **Cache policy**: Treat the cached structure below as stable. Do not re-scan the folder unless a requested asset is missing, unreadable, or the user says the asset pack changed.
-- **Project usage**: Copy selected files into the project, usually under `assets/images/`, before referencing them from game code. Do not reference the Desktop path directly from runtime code, because pygbag/web builds need project-local assets.
-- **Path style**: Runtime asset paths should use forward slashes, for example `assets/images/money.png`.
-- **Scale choice**: Prefer `1x` PNGs for source quality, then downscale in code or preprocessing if needed. Use `0.5x` for small 256 px icons, `2x` for higher-resolution source, and `Dark Icons` variants when the UI/background needs a dark-themed icon.
-
-#### Cached Icon Set 1 Structure
-Root: `C:\Users\My PC\Desktop\Assets\FREE\FREE version\Icon set 1`
-
-- Root files: `icons set 1 copy.svg`, `icons set 1.eps`, `Untitled-11.psd`, `Untitled-4.ai`
-- `0.5x/`: 89 PNG files, generally named `<icon> 256 px.png`
-- `1x/`: 88 PNG files, generally named `<icon> 512 px.png`
-- `2x/`: 89 PNG files, generally named `<icon>.png`
-- `Dark Icons/`: 2 source files
-- `Dark Icons/0.5x/`: 89 PNG files, generally named `<icon> x256.png`
-- `Dark Icons/1x/`: 89 PNG files, generally named `<icon> x512.png`
-- `Dark Icons/2x/`: 90 PNG files, generally named `<icon>.png`
-
-Canonical icon names observed in `1x/`:
-`Alarm`, `Apple`, `Back 2`, `Back`, `Battery - full`, `Before`, `bone head`, `camera 1`, `camera 2`, `Click - left`, `Click - middle`, `Click - right`, `Cross`, `Danger sign 1`, `Danger sign 2`, `Delete`, `divide`, `Download`, `Empty battery`, `Equal`, `Exclamation sign 2`, `Exclamation sign`, `F`, `Gamepad 1`, `Gamepad 2`, `Gift`, `House`, `Key`, `Keyboard`, `Like`, `Link`, `Lock`, `Low battery`, `magnifier`, `Mail`, `Map`, `Market`, `medal 1`, `medal 2`, `medal 3`, `Menu 1`, `Menu 2`, `Menu`, `Message`, `Money`, `Monitor`, `Mouse`, `Musick note`, `Mute 2`, `Mute`, `Negative`, `Network`, `Network 2`, `Next - Speed Up`, `Next`, `No wifi`, `Pause`, `Play - Puse`, `Play`, `Plus`, `Power plug`, `Power sign`, `Question`, `Ranking`, `Reply`, `Rotate phone 1`, `Rotate phone 2`, `Save`, `Setting 1`, `Setting 2`, `Share 1`, `Share 2`, `Star`, `Steam`, `Twitch`, `Unlock`, `Upload`, `video cam`, `Volume`, `Waving`, `Wi Fi`, `Wi Fi allert`, `Wrench 1`, `Wrench 2`, `Wrench 3`, `Youtube - video play`, `zoom in`, `zoom out`.
-
 ### WebAssembly Compatibility (pygbag)
 When developing features, keep these WASM-specific constraints in mind:
 - **Async Loop**: The main game loop must be `async` and include `await asyncio.sleep(0)` to prevent the browser from hanging.
