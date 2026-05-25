@@ -13,6 +13,7 @@ from src.player import Player
 from src.npc import NPC
 from src.inventory import Inventory
 from src.level import Tile, Decoration, Door, Bus, Item, MapProp, RoomNode
+from src.mobile_controls import MobileControls
 from src.state import StateMachine
 from src.states import PlayState, DialogueState
 
@@ -37,6 +38,7 @@ class Game:
         self.location_display_timer = 0
         self.location_display_duration = LOCATION_DISPLAY_DURATION
         self.collected_item_ids = set()
+        self.mobile_controls = MobileControls()
 
         # Level setup
         self.setup_rooms()
@@ -680,6 +682,10 @@ class Game:
     def handle_events(self, events=None):
         if events is None:
             events = pygame.event.get()
+        self.mobile_controls.handle_events(events)
+        if self.mobile_controls.consume_action_press():
+            events = list(events)
+            events.append(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e))
         self.state_machine.handle_events(events)
 
     def add_room_item(self, item_id, pos, name, image_path=None):
@@ -705,6 +711,9 @@ class Game:
     def update(self):
         if self.location_display_timer > 0:
             self.location_display_timer -= 1
+
+        if hasattr(self, "player"):
+            self.player.mobile_direction = self.mobile_controls.direction
 
         self.state_machine.update()
 
@@ -772,6 +781,7 @@ class Game:
             self.screen.blit(loc_surf, loc_rect)
 
         self.inventory.draw(self.screen)
+        self.mobile_controls.draw(self.screen)
         pygame.display.flip()
 
 

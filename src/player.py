@@ -21,6 +21,7 @@ class Player(pygame.sprite.Sprite):
         self.obstacle_sprites = (
             obstacle_sprites if obstacle_sprites else pygame.sprite.Group()
         )
+        self.mobile_direction = pygame.math.Vector2()
 
         # Animation states
         self.studying = False
@@ -38,19 +39,19 @@ class Player(pygame.sprite.Sprite):
 
         keys = pygame.key.get_pressed()
 
-        if keys[pygame.K_UP] or keys[pygame.K_w]:
-            self.direction.y = -1
-        elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
-            self.direction.y = 1
-        else:
-            self.direction.y = 0
+        direction = pygame.math.Vector2()
 
+        if keys[pygame.K_UP] or keys[pygame.K_w]:
+            direction.y -= 1
+        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
+            direction.y += 1
         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            self.direction.x = 1
-        elif keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            self.direction.x = -1
-        else:
-            self.direction.x = 0
+            direction.x += 1
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            direction.x -= 1
+
+        direction += self.mobile_direction
+        self.direction.xy = direction.xy
 
     def move(self, speed):
         if self.direction.magnitude() != 0:

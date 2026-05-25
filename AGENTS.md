@@ -117,6 +117,7 @@ def test_player_movement():
 - **Pokemon-like exploration**: Design maps as walkable RPG spaces where the player can freely approach places of interest.
 - **Collision boundaries**: Use collision only for true physical boundaries such as map edges, walls, rivers, fences, or furniture. Avoid using decorative landmark rectangles as obstacles when they prevent the player from visiting that place.
 - **Travel gating**: Avoid artificial blocks that stop the player from visiting a place. If progression control is needed, use dialogue, NPCs, events, or clear interaction prompts instead of invisible or decorative collision blocks.
+- **Control visibility**: When creating or moving controls, ensure they do not interfere with the visibility or usability of existing HUD elements, prompts, buttons, or other controls. Leave clear spacing around the money/XP HUD and validate placement with tests or a visual check when the control is persistent.
 
 ### WebAssembly Compatibility (pygbag)
 When developing features, keep these WASM-specific constraints in mind:
