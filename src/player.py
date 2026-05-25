@@ -1,22 +1,26 @@
 import pygame
+from src.config import SCREEN_HEIGHT, SCREEN_WIDTH
+
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos, groups, obstacle_sprites=None):
         super().__init__(groups)
         # Load player image
         try:
-            self.image = pygame.image.load('assets/images/player.png').convert_alpha()
-        except (pygame.error, FileNotFoundError):
+            self.image = pygame.image.load("assets/images/player.png").convert_alpha()
+        except pygame.error, FileNotFoundError:
             # Fallback to placeholder if image not found
             self.image = pygame.Surface((32, 64))
-            self.image.fill('blue')
-        
+            self.image.fill("blue")
+
         self.rect = self.image.get_rect(topleft=pos)
-        
+
         # Movement
         self.direction = pygame.math.Vector2()
         self.speed = 4
-        self.obstacle_sprites = obstacle_sprites if obstacle_sprites else pygame.sprite.Group()
+        self.obstacle_sprites = (
+            obstacle_sprites if obstacle_sprites else pygame.sprite.Group()
+        )
 
         # Animation states
         self.studying = False
@@ -54,33 +58,33 @@ class Player(pygame.sprite.Sprite):
 
         # Horizontal movement and collision
         self.rect.x += self.direction.x * speed
-        self.collision('horizontal')
+        self.collision("horizontal")
 
         # Vertical movement and collision
         self.rect.y += self.direction.y * speed
-        self.collision('vertical')
+        self.collision("vertical")
 
         # Map boundaries
         self.rect.left = max(0, self.rect.left)
-        self.rect.right = min(800, self.rect.right) # SCREEN_WIDTH
+        self.rect.right = min(SCREEN_WIDTH, self.rect.right)
         self.rect.top = max(0, self.rect.top)
-        self.rect.bottom = min(600, self.rect.bottom) # SCREEN_HEIGHT
+        self.rect.bottom = min(SCREEN_HEIGHT, self.rect.bottom)
 
     def collision(self, direction):
-        if direction == 'horizontal':
+        if direction == "horizontal":
             hits = pygame.sprite.spritecollide(self, self.obstacle_sprites, False)
             for sprite in hits:
-                if self.direction.x > 0: # Moving right
+                if self.direction.x > 0:  # Moving right
                     self.rect.right = sprite.rect.left
-                if self.direction.x < 0: # Moving left
+                if self.direction.x < 0:  # Moving left
                     self.rect.left = sprite.rect.right
 
-        if direction == 'vertical':
+        if direction == "vertical":
             hits = pygame.sprite.spritecollide(self, self.obstacle_sprites, False)
             for sprite in hits:
-                if self.direction.y > 0: # Moving down
+                if self.direction.y > 0:  # Moving down
                     self.rect.bottom = sprite.rect.top
-                if self.direction.y < 0: # Moving up
+                if self.direction.y < 0:  # Moving up
                     self.rect.top = sprite.rect.bottom
 
     def update(self):
@@ -94,13 +98,13 @@ class Player(pygame.sprite.Sprite):
                 self.image = self.original_image.copy()
                 if (self.study_timer // 5) % 2 == 0:
                     self.image.fill((200, 200, 255), special_flags=pygame.BLEND_RGB_ADD)
-                
+
                 # Vibration
                 offset_x = (self.study_timer % 3) - 1
                 offset_y = ((self.study_timer + 1) % 3) - 1
                 self.rect.x += offset_x
                 self.rect.y += offset_y
-        
+
         if not self.studying:
             self.input()
             self.move(self.speed)

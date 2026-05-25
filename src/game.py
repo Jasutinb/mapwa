@@ -2,6 +2,13 @@ import pygame
 import sys
 import asyncio
 
+from src.config import (
+    FPS,
+    LOCATION_DISPLAY_DURATION,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    TILE_SIZE,
+)
 from src.player import Player
 from src.npc import NPC
 from src.inventory import Inventory
@@ -9,11 +16,6 @@ from src.level import Tile, Decoration, Door, Bus, Item, RoomNode
 from src.state import StateMachine
 from src.states import PlayState, DialogueState
 
-# Constants
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
-TILE_SIZE = 32
-FPS = 60
 
 class Game:
     def __init__(self):
@@ -32,31 +34,41 @@ class Game:
 
         self.location_display_text = ""
         self.location_display_timer = 0
-        self.location_display_duration = 120 # 2 seconds at 60 FPS
+        self.location_display_duration = LOCATION_DISPLAY_DURATION
+        self.collected_item_ids = set()
 
         # Level setup
         self.setup_rooms()
-        self.current_room = 'main'
+        self.current_room = "main"
         self.create_map()
 
         # Player setup
-        self.player = Player((SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2), [self.visible_sprites], self.obstacle_sprites)
+        self.player = Player(
+            (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2),
+            [self.visible_sprites],
+            self.obstacle_sprites,
+        )
 
         # NPC setup
-        self.mom = NPC((SCREEN_WIDTH // 2, 100), [self.visible_sprites], 'assets/images/mom.png', name="Mom")
+        self.mom = NPC(
+            (SCREEN_WIDTH // 2, 100),
+            [self.visible_sprites],
+            "assets/images/mom.png",
+            name="Mom",
+        )
         self.mom.dialogue = [
-            "Hi sweetie!", 
-            "Are you ready for your first day at school?", 
+            "Hi sweetie!",
+            "Are you ready for your first day at school?",
             "Don't forget your backpack!",
-            "Here's your allowance for today."
+            "Here's your allowance for today.",
         ]
 
         # Interaction setup
         self.current_dialogue = None
         self.dialogue_index = 0
         try:
-            self.font = pygame.font.SysFont('Arial', 24)
-        except:
+            self.font = pygame.font.SysFont("Arial", 24)
+        except pygame.error:
             self.font = pygame.font.Font(None, 24)
 
         # Inventory setup
@@ -74,46 +86,46 @@ class Game:
 
         # State Machine setup
         self.state_machine = StateMachine()
-        self.state_machine.add_state('play', PlayState(self))
-        self.state_machine.add_state('dialogue', DialogueState(self))
-        self.state_machine.change_state('play')
+        self.state_machine.add_state("play", PlayState(self))
+        self.state_machine.add_state("dialogue", DialogueState(self))
+        self.state_machine.change_state("play")
 
     def setup_rooms(self):
         # Create room nodes
         self.rooms = {
-            'main': RoomNode('main', 'Living Room'),
-            'bedroom': RoomNode('bedroom', 'Bedroom'),
-            'outside': RoomNode('outside', 'Outside'),
-            'intramuros': RoomNode('intramuros', 'Intramuros'),
-            'school': RoomNode('school', 'School')
+            "main": RoomNode("main", "Living Room"),
+            "bedroom": RoomNode("bedroom", "Bedroom"),
+            "outside": RoomNode("outside", "Outside"),
+            "intramuros": RoomNode("intramuros", "Intramuros"),
+            "school": RoomNode("school", "School"),
         }
 
         # Link rooms
         # Main is center-ish
         # Bedroom is to the left of Main
-        self.rooms['main'].left = self.rooms['bedroom']
-        self.rooms['bedroom'].right = self.rooms['main']
+        self.rooms["main"].left = self.rooms["bedroom"]
+        self.rooms["bedroom"].right = self.rooms["main"]
 
         # Outside is to the right of Main
-        self.rooms['main'].right = self.rooms['outside']
-        self.rooms['outside'].left = self.rooms['main']
+        self.rooms["main"].right = self.rooms["outside"]
+        self.rooms["outside"].left = self.rooms["main"]
 
         # Intramuros is linked via Bus from Outside, but geographically let's say it's to the right of Outside
-        self.rooms['outside'].right = self.rooms['intramuros']
-        self.rooms['intramuros'].left = self.rooms['outside']
+        self.rooms["outside"].right = self.rooms["intramuros"]
+        self.rooms["intramuros"].left = self.rooms["outside"]
 
         # School is linked via Bus from Intramuros, let's say it's to the right of Intramuros
-        self.rooms['intramuros'].right = self.rooms['school']
-        self.rooms['school'].left = self.rooms['intramuros']
+        self.rooms["intramuros"].right = self.rooms["school"]
+        self.rooms["school"].left = self.rooms["intramuros"]
 
     def create_money_icon(self):
         icon = pygame.Surface((24, 24), pygame.SRCALPHA)
-        pygame.draw.circle(icon, (255, 215, 0), (12, 12), 11) # Gold circle
-        pygame.draw.circle(icon, (184, 134, 11), (12, 12), 11, 2) # Darker border
+        pygame.draw.circle(icon, (255, 215, 0), (12, 12), 11)  # Gold circle
+        pygame.draw.circle(icon, (184, 134, 11), (12, 12), 11, 2)  # Darker border
         # Draw a small 'P' for Peso
         try:
-            font = pygame.font.SysFont('Arial', 20, bold=True)
-        except:
+            font = pygame.font.SysFont("Arial", 20, bold=True)
+        except pygame.error:
             font = pygame.font.Font(None, 20)
         p_surf = font.render("P", True, (139, 69, 19))
         p_rect = p_surf.get_rect(center=(12, 12))
@@ -137,25 +149,25 @@ class Game:
         current_node = self.rooms.get(self.current_room)
         if current_node:
             self.location_display_text = current_node.display_name
-        
+
         self.location_display_timer = self.location_display_duration
 
-        if self.current_room == 'main':
+        if self.current_room == "main":
             self.create_main_room()
-        elif self.current_room == 'bedroom':
+        elif self.current_room == "bedroom":
             self.create_bedroom()
-        elif self.current_room == 'outside':
+        elif self.current_room == "outside":
             self.create_outside()
-        elif self.current_room == 'intramuros':
+        elif self.current_room == "intramuros":
             self.create_intramuros()
-        elif self.current_room == 'school':
+        elif self.current_room == "school":
             self.create_school()
 
     def create_main_room(self):
         try:
-            floor_surf = pygame.image.load('assets/images/floor.png').convert()
-            wall_surf = pygame.image.load('assets/images/wall.png').convert()
-        except (pygame.error, FileNotFoundError):
+            floor_surf = pygame.image.load("assets/images/floor.png").convert()
+            wall_surf = pygame.image.load("assets/images/wall.png").convert()
+        except pygame.error, FileNotFoundError:
             floor_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
             floor_surf.fill((100, 50, 0))
             wall_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
@@ -165,30 +177,48 @@ class Game:
         for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
             for col in range(0, SCREEN_WIDTH, TILE_SIZE):
                 Tile((col, row), [self.floor_sprites], floor_surf)
-        
+
         # Add walls at the top
         for col in range(0, SCREEN_WIDTH, TILE_SIZE):
             Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
-            Tile((col, TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            Tile(
+                (col, TILE_SIZE),
+                [self.visible_sprites, self.obstacle_sprites],
+                wall_surf,
+            )
 
         # Add a table
-        Decoration((SCREEN_WIDTH // 4, SCREEN_HEIGHT // 2), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
-        
+        Decoration(
+            (SCREEN_WIDTH // 4, SCREEN_HEIGHT // 2),
+            [self.visible_sprites, self.obstacle_sprites],
+            "assets/images/table.png",
+        )
+
         # Add doors
         # To Bedroom (left)
-        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms['main'].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
+        Door(
+            (0, SCREEN_HEIGHT // 2),
+            [self.visible_sprites, self.door_sprites],
+            self.rooms["main"].left.name,
+            (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2),
+        )
         # To Outside (right)
-        Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms['main'].right.name, (64, SCREEN_HEIGHT // 2))
+        Door(
+            (SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2),
+            [self.visible_sprites, self.door_sprites],
+            self.rooms["main"].right.name,
+            (64, SCREEN_HEIGHT // 2),
+        )
 
         # Add Mom back if in main room
-        if hasattr(self, 'mom'):
+        if hasattr(self, "mom"):
             self.visible_sprites.add(self.mom)
 
     def create_bedroom(self):
         try:
-            floor_surf = pygame.image.load('assets/images/floor.png').convert()
-            wall_surf = pygame.image.load('assets/images/wall.png').convert()
-        except (pygame.error, FileNotFoundError):
+            floor_surf = pygame.image.load("assets/images/floor.png").convert()
+            wall_surf = pygame.image.load("assets/images/wall.png").convert()
+        except pygame.error, FileNotFoundError:
             floor_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
             floor_surf.fill((100, 50, 0))
             wall_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
@@ -198,26 +228,39 @@ class Game:
         for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
             for col in range(0, SCREEN_WIDTH, TILE_SIZE):
                 Tile((col, row), [self.floor_sprites], floor_surf)
-        
+
         # Add walls at the top
         for col in range(0, SCREEN_WIDTH, TILE_SIZE):
             Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
-            Tile((col, TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            Tile(
+                (col, TILE_SIZE),
+                [self.visible_sprites, self.obstacle_sprites],
+                wall_surf,
+            )
 
         # Add bedroom decorations
-        Decoration((100, 100), [self.visible_sprites, self.obstacle_sprites], 'assets/images/bed.png')
-        Decoration((200, 300), [self.visible_sprites], 'assets/images/rug.png')
+        Decoration(
+            (100, 100),
+            [self.visible_sprites, self.obstacle_sprites],
+            "assets/images/bed.png",
+        )
+        Decoration((200, 300), [self.visible_sprites], "assets/images/rug.png")
 
         # Add items
-        Item((300, 150), [self.visible_sprites, self.item_sprites], "Notebook")
+        self.add_room_item("bedroom:notebook", (300, 150), "Notebook")
 
         # Add door back to Main
-        Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms['bedroom'].right.name, (64, SCREEN_HEIGHT // 2))
+        Door(
+            (SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2),
+            [self.visible_sprites, self.door_sprites],
+            self.rooms["bedroom"].right.name,
+            (64, SCREEN_HEIGHT // 2),
+        )
 
     def create_outside(self):
         try:
-            grass_surf = pygame.image.load('assets/images/grass.png').convert()
-        except (pygame.error, FileNotFoundError):
+            grass_surf = pygame.image.load("assets/images/grass.png").convert()
+        except pygame.error, FileNotFoundError:
             grass_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
             grass_surf.fill((34, 139, 34))
 
@@ -227,22 +270,29 @@ class Game:
                 Tile((col, row), [self.floor_sprites], grass_surf)
 
         # Add bus
-        self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT // 2 - 100), [self.visible_sprites])
+        self.bus = Bus(
+            (SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT // 2 - 100), [self.visible_sprites]
+        )
 
         # Add door back to Main
-        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms['outside'].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
+        Door(
+            (0, SCREEN_HEIGHT // 2),
+            [self.visible_sprites, self.door_sprites],
+            self.rooms["outside"].left.name,
+            (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2),
+        )
 
     def create_intramuros(self):
         try:
             # Cobblestone/Stone look for Intramuros
-            stone_surf = pygame.image.load('assets/images/floor.png').convert()
-        except (pygame.error, FileNotFoundError):
+            stone_surf = pygame.image.load("assets/images/floor.png").convert()
+        except pygame.error, FileNotFoundError:
             stone_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
-            stone_surf.fill((128, 128, 128)) # Gray for stone
+            stone_surf.fill((128, 128, 128))  # Gray for stone
 
         try:
-            wall_surf = pygame.image.load('assets/images/wall.png').convert()
-        except (pygame.error, FileNotFoundError):
+            wall_surf = pygame.image.load("assets/images/wall.png").convert()
+        except pygame.error, FileNotFoundError:
             wall_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
             wall_surf.fill((100, 100, 100))
 
@@ -256,30 +306,44 @@ class Game:
         for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
             if abs(row - SCREEN_HEIGHT // 2) > TILE_SIZE:
                 Tile((0, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
-        
+
         # Top and Bottom walls
         for col in range(0, SCREEN_WIDTH, TILE_SIZE):
             Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
-            Tile((col, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            Tile(
+                (col, SCREEN_HEIGHT - TILE_SIZE),
+                [self.visible_sprites, self.obstacle_sprites],
+                wall_surf,
+            )
 
         # Right wall with a gap
         for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
             if abs(row - SCREEN_HEIGHT // 2) > TILE_SIZE:
-                Tile((SCREEN_WIDTH - TILE_SIZE, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+                Tile(
+                    (SCREEN_WIDTH - TILE_SIZE, row),
+                    [self.visible_sprites, self.obstacle_sprites],
+                    wall_surf,
+                )
 
         # Add a landmark - Manila Cathedral placeholder
         # We can use a table as placeholder or something else, but let's just use Decoration
-        Decoration((SCREEN_WIDTH // 2, 50), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
+        Decoration(
+            (SCREEN_WIDTH // 2, 50),
+            [self.visible_sprites, self.obstacle_sprites],
+            "assets/images/table.png",
+        )
 
         # Add bus
         # Position it near the center
-        self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT // 2 + 50), [self.visible_sprites])
+        self.bus = Bus(
+            (SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT // 2 + 50), [self.visible_sprites]
+        )
 
     def create_school(self):
         try:
-            floor_surf = pygame.image.load('assets/images/floor.png').convert()
-            wall_surf = pygame.image.load('assets/images/wall.png').convert()
-        except (pygame.error, FileNotFoundError):
+            floor_surf = pygame.image.load("assets/images/floor.png").convert()
+            wall_surf = pygame.image.load("assets/images/wall.png").convert()
+        except pygame.error, FileNotFoundError:
             floor_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
             floor_surf.fill((150, 150, 150))
             wall_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
@@ -289,22 +353,37 @@ class Game:
         for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
             for col in range(0, SCREEN_WIDTH, TILE_SIZE):
                 Tile((col, row), [self.floor_sprites], floor_surf)
-        
+
         # Add walls at the top
         for col in range(0, SCREEN_WIDTH, TILE_SIZE):
             Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
-            Tile((col, TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            Tile(
+                (col, TILE_SIZE),
+                [self.visible_sprites, self.obstacle_sprites],
+                wall_surf,
+            )
 
         # Add text to indicate it's the school
-        # Note: we don't have a specific way to draw static text on map yet, 
+        # Note: we don't have a specific way to draw static text on map yet,
         # but we can add a sign or something.
-        self.school_desk = Decoration((SCREEN_WIDTH // 2, 100), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png') # Placeholder for school desk
+        self.school_desk = Decoration(
+            (SCREEN_WIDTH // 2, 100),
+            [self.visible_sprites, self.obstacle_sprites],
+            "assets/images/table.png",
+        )  # Placeholder for school desk
 
         # Add bus to go back
-        self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT - 100), [self.visible_sprites])
+        self.bus = Bus(
+            (SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT - 100), [self.visible_sprites]
+        )
 
         # Add door to exit school
-        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms['school'].left.name, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100))
+        Door(
+            (0, SCREEN_HEIGHT // 2),
+            [self.visible_sprites, self.door_sprites],
+            self.rooms["school"].left.name,
+            (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100),
+        )
 
     async def run(self):
         while self.running:
@@ -312,7 +391,7 @@ class Game:
             for event in events:
                 if event.type == pygame.QUIT:
                     self.running = False
-            
+
             self.handle_events(events)
             self.update()
             self.draw()
@@ -326,6 +405,21 @@ class Game:
         if events is None:
             events = pygame.event.get()
         self.state_machine.handle_events(events)
+
+    def add_room_item(self, item_id, pos, name, image_path=None):
+        if item_id not in self.collected_item_ids:
+            Item(
+                pos,
+                [self.visible_sprites, self.item_sprites],
+                name,
+                image_path,
+                item_id,
+            )
+
+    def mark_item_collected(self, item):
+        item_id = getattr(item, "item_id", None)
+        if item_id:
+            self.collected_item_ids.add(item_id)
 
     def check_proximity(self, sprite1, sprite2, distance):
         p1 = pygame.math.Vector2(sprite1.rect.center)
@@ -351,30 +445,30 @@ class Game:
         self.screen.fill((50, 50, 50))  # Dark gray background
         self.floor_sprites.draw(self.screen)
         self.visible_sprites.draw(self.screen)
-        
+
         self.state_machine.draw(self.screen)
 
         # Draw money counter
         money_text = str(self.money)
-        money_surf = self.font.render(money_text, True, 'white')
+        money_surf = self.font.render(money_text, True, "white")
         money_rect = money_surf.get_rect(bottomleft=(60, SCREEN_HEIGHT - 20))
-        
+
         # Draw money icon
         icon_rect = self.money_icon.get_rect(midleft=(25, money_rect.centery))
-        
+
         # Draw a small background for money for better visibility
         bg_rect = pygame.Rect(15, SCREEN_HEIGHT - 45, money_surf.get_width() + 55, 30)
         pygame.draw.rect(self.screen, (30, 30, 30), bg_rect, border_radius=5)
         pygame.draw.rect(self.screen, (200, 200, 200), bg_rect, 1, border_radius=5)
-        
+
         self.screen.blit(self.money_icon, icon_rect)
         self.screen.blit(money_surf, money_rect)
 
         # Draw XP counter
         xp_text = f"XP: {self.experience}"
-        xp_surf = self.font.render(xp_text, True, 'white')
+        xp_surf = self.font.render(xp_text, True, "white")
         xp_rect = xp_surf.get_rect(bottomleft=(bg_rect.right + 10, SCREEN_HEIGHT - 20))
-        
+
         xp_bg_rect = xp_rect.inflate(20, 10)
         pygame.draw.rect(self.screen, (30, 30, 30), xp_bg_rect, border_radius=5)
         pygame.draw.rect(self.screen, (200, 200, 200), xp_bg_rect, 1, border_radius=5)
@@ -386,24 +480,26 @@ class Game:
             alpha = min(255, self.location_display_timer * 5)
             # Create a larger font for location
             try:
-                loc_font = pygame.font.SysFont('Arial', 48, bold=True)
-            except:
+                loc_font = pygame.font.SysFont("Arial", 48, bold=True)
+            except pygame.error:
                 loc_font = pygame.font.Font(None, 48)
-            loc_surf = loc_font.render(self.location_display_text, True, 'white')
+            loc_surf = loc_font.render(self.location_display_text, True, "white")
             loc_surf.set_alpha(alpha)
             loc_rect = loc_surf.get_rect(center=(SCREEN_WIDTH // 2, 100))
-            
+
             # Draw shadow for better readability
-            shadow_surf = loc_font.render(self.location_display_text, True, 'black')
+            shadow_surf = loc_font.render(self.location_display_text, True, "black")
             shadow_surf.set_alpha(alpha)
             shadow_rect = shadow_surf.get_rect(center=(SCREEN_WIDTH // 2 + 2, 100 + 2))
-            
+
             self.screen.blit(shadow_surf, shadow_rect)
             self.screen.blit(loc_surf, loc_rect)
 
         self.inventory.draw(self.screen)
         pygame.display.flip()
 
+
 if __name__ == "__main__":
+    pygame.init()
     game = Game()
-    game.run()
+    asyncio.run(game.run())
