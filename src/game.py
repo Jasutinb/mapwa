@@ -12,7 +12,7 @@ from src.config import (
 from src.player import Player
 from src.npc import NPC
 from src.inventory import Inventory
-from src.level import Tile, Decoration, Door, Bus, Item, RoomNode
+from src.level import Tile, Decoration, Door, Bus, Item, MapProp, RoomNode
 from src.state import StateMachine
 from src.states import PlayState, DialogueState
 
@@ -31,6 +31,7 @@ class Game:
         self.floor_sprites = pygame.sprite.Group()
         self.door_sprites = pygame.sprite.Group()
         self.item_sprites = pygame.sprite.Group()
+        self.interactable_sprites = pygame.sprite.Group()
 
         self.location_display_text = ""
         self.location_display_timer = 0
@@ -65,6 +66,7 @@ class Game:
 
         # Interaction setup
         self.current_dialogue = None
+        self.current_dialogue_source = None
         self.dialogue_index = 0
         try:
             self.font = pygame.font.SysFont("Arial", 24)
@@ -143,6 +145,8 @@ class Game:
         for sprite in self.door_sprites:
             sprite.kill()
         for sprite in self.item_sprites:
+            sprite.kill()
+        for sprite in self.interactable_sprites:
             sprite.kill()
 
         # Set location display
@@ -264,14 +268,120 @@ class Game:
             grass_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
             grass_surf.fill((34, 139, 34))
 
-        # Fill screen with grass tiles
+        road_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        road_surf.fill((68, 70, 74))
+        sidewalk_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        sidewalk_surf.fill((176, 176, 164))
+        path_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        path_surf.fill((158, 132, 88))
+
+        # Fill screen with grass tiles, then layer walkable paths over it.
         for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
             for col in range(0, SCREEN_WIDTH, TILE_SIZE):
                 Tile((col, row), [self.floor_sprites], grass_surf)
 
+        for row in range(SCREEN_HEIGHT - TILE_SIZE * 5, SCREEN_HEIGHT - TILE_SIZE * 2, TILE_SIZE):
+            for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+                Tile((col, row), [self.floor_sprites], road_surf)
+
+        for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+            Tile((col, SCREEN_HEIGHT - TILE_SIZE * 6), [self.floor_sprites], sidewalk_surf)
+
+        for row in range(SCREEN_HEIGHT // 2, SCREEN_HEIGHT - TILE_SIZE * 5, TILE_SIZE):
+            for col in range(TILE_SIZE, TILE_SIZE * 5, TILE_SIZE):
+                Tile((col, row), [self.floor_sprites], path_surf)
+
+        self.outside_landmarks = {}
+
+        house = MapProp(
+            (0, SCREEN_HEIGHT // 2 - 96),
+            (TILE_SIZE * 4, TILE_SIZE * 5),
+            [self.visible_sprites],
+            (138, 84, 58),
+            "House Front",
+            kind="house",
+            border_color=(84, 50, 34),
+        )
+        self.outside_landmarks[house.name] = house.rect.copy()
+
+        shop = MapProp(
+            (SCREEN_WIDTH - 224, SCREEN_HEIGHT // 2 - 144),
+            (176, 96),
+            [self.visible_sprites, self.interactable_sprites],
+            (54, 132, 150),
+            "Sari-sari Store",
+            kind="shop",
+            border_color=(28, 70, 82),
+            dialogue=[
+                "The store is open early.",
+                "Snacks and school supplies will be sold here soon.",
+            ],
+        )
+        self.outside_landmarks[shop.name] = shop.rect.copy()
+
+        bus_stop = MapProp(
+            (SCREEN_WIDTH // 2 - 48, SCREEN_HEIGHT - TILE_SIZE * 7),
+            (32, 80),
+            [self.visible_sprites, self.interactable_sprites],
+            (238, 214, 94),
+            "Bus Stop",
+            kind="bus_stop",
+            border_color=(76, 76, 62),
+            dialogue=["Buses here go to Intramuros."],
+        )
+        self.outside_landmarks[bus_stop.name] = bus_stop.rect.copy()
+
+        shelter = MapProp(
+            (SCREEN_WIDTH // 2 - 16, SCREEN_HEIGHT - TILE_SIZE * 7),
+            (112, 56),
+            [self.visible_sprites],
+            (112, 128, 140, 210),
+            "Bus Shelter",
+            kind="shelter",
+            border_color=(54, 68, 76),
+        )
+        self.outside_landmarks[shelter.name] = shelter.rect.copy()
+
+        for tree_pos in [(216, 128), (328, 176), (704, 96)]:
+            tree = MapProp(
+                tree_pos,
+                (40, 56),
+                [self.visible_sprites, self.obstacle_sprites],
+                (42, 126, 62),
+                "Tree",
+                kind="tree",
+                border_color=(24, 76, 38),
+            )
+            self.outside_landmarks[f"Tree {tree_pos[0]}"] = tree.rect.copy()
+
+        for fence_pos in [(168, 288), (200, 288), (232, 288)]:
+            fence = MapProp(
+                fence_pos,
+                (28, 16),
+                [self.visible_sprites, self.obstacle_sprites],
+                (180, 132, 74),
+                "Fence",
+                kind="fence",
+                border_color=(116, 78, 42),
+            )
+            self.outside_landmarks[f"Fence {fence_pos[0]}"] = fence.rect.copy()
+
+        self.outside_neighbor = NPC(
+            (272, SCREEN_HEIGHT // 2 - 24),
+            [self.visible_sprites, self.interactable_sprites],
+            "assets/images/mom.png",
+            name="Neighbor",
+        )
+        self.outside_neighbor.speed = 0
+        self.outside_neighbor.dialogue = [
+            "Morning! The bus stop is just ahead.",
+            "Intramuros is a good place to explore before school.",
+        ]
+
         # Add bus
         self.bus = Bus(
-            (SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT // 2 - 100), [self.visible_sprites]
+            (SCREEN_WIDTH // 2 + 112, SCREEN_HEIGHT - TILE_SIZE * 5),
+            [self.visible_sprites],
         )
 
         # Add door back to Main
@@ -281,6 +391,8 @@ class Game:
             self.rooms["outside"].left.name,
             (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2),
         )
+
+        self.add_room_item("outside:coin", (192, SCREEN_HEIGHT // 2 + 48), "Coin")
 
     def create_intramuros(self):
         try:

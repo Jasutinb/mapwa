@@ -29,6 +29,32 @@ class Decoration(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(topleft=pos)
 
 
+class MapProp(pygame.sprite.Sprite):
+    def __init__(
+        self,
+        pos,
+        size,
+        groups,
+        color,
+        name,
+        kind="prop",
+        border_color=None,
+        dialogue=None,
+    ):
+        super().__init__(groups)
+        self.name = name
+        self.kind = kind
+        self.dialogue = dialogue or []
+        self.image = pygame.Surface(size, pygame.SRCALPHA)
+        self.image.fill(color)
+        if border_color:
+            pygame.draw.rect(self.image, border_color, self.image.get_rect(), 2)
+        self.rect = self.image.get_rect(topleft=pos)
+
+    def interact(self):
+        return self.dialogue
+
+
 class Door(pygame.sprite.Sprite):
     def __init__(self, pos, groups, target_room, spawn_pos):
         super().__init__(groups)

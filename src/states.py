@@ -27,6 +27,7 @@ class PlayState(State):
                         )
                     ):
                         self.game.current_dialogue = self.game.mom.interact()
+                        self.game.current_dialogue_source = "mom"
                         self.game.dialogue_index = 0
                         self.game.state_machine.change_state("dialogue")
                     elif (
@@ -58,6 +59,7 @@ class PlayState(State):
                                 self.game.current_dialogue = [
                                     f"I don't have enough money for the bus... (Need {BUS_FARE})"
                                 ]
+                                self.game.current_dialogue_source = "bus"
                                 self.game.dialogue_index = 0
                                 self.game.state_machine.change_state("dialogue")
                         elif self.game.current_room == "intramuros":
@@ -94,6 +96,25 @@ class PlayState(State):
                             )
                             self.game.visible_sprites.add(self.game.player)
                     elif (
+                        self.game.current_room == "outside"
+                        and hasattr(self.game, "interactable_sprites")
+                    ):
+                        hits = [
+                            sprite
+                            for sprite in self.game.interactable_sprites
+                            if self.game.check_proximity(self.game.player, sprite, 64)
+                        ]
+                        if hits:
+                            interactable = hits[0]
+                            self.game.current_dialogue = interactable.interact()
+                            self.game.current_dialogue_source = getattr(
+                                interactable, "kind", "outside"
+                            )
+                            self.game.dialogue_index = 0
+                            self.game.state_machine.change_state("dialogue")
+                        else:
+                            self.try_pick_up_item()
+                    elif (
                         self.game.current_room == "school"
                         and hasattr(self.game, "school_desk")
                         and self.game.check_proximity(
@@ -103,20 +124,21 @@ class PlayState(State):
                         self.game.experience += 10
                         self.game.player.start_study(STUDY_DURATION_FRAMES)
                     else:
-                        # Try to pick up items
-                        hits = pygame.sprite.spritecollide(
-                            self.game.player, self.game.item_sprites, False
-                        )
-                        for item in hits:
-                            if self.game.inventory.add_item(item):
-                                self.game.mark_item_collected(item)
-                                item.kill()
-                                self.game.current_dialogue = [
-                                    f"You picked up a {item.name}!"
-                                ]
-                                self.game.dialogue_index = 0
-                                self.game.state_machine.change_state("dialogue")
-                                break
+                        self.try_pick_up_item()
+
+    def try_pick_up_item(self):
+        hits = pygame.sprite.spritecollide(
+            self.game.player, self.game.item_sprites, False
+        )
+        for item in hits:
+            if self.game.inventory.add_item(item):
+                self.game.mark_item_collected(item)
+                item.kill()
+                self.game.current_dialogue = [f"You picked up a {item.name}!"]
+                self.game.current_dialogue_source = "item"
+                self.game.dialogue_index = 0
+                self.game.state_machine.change_state("dialogue")
+                break
 
     def update(self):
         # Store previous studying state to detect when it finishes
@@ -128,6 +150,7 @@ class PlayState(State):
         # If studying just finished, show dialogue
         if was_studying and not self.game.player.studying:
             self.game.current_dialogue = ["You studied hard and gained 10 XP!"]
+            self.game.current_dialogue_source = "study"
             self.game.dialogue_index = 0
             self.game.state_machine.change_state("dialogue")
 
@@ -195,6 +218,27 @@ class PlayState(State):
             )
             screen.blit(hint_surf, hint_rect)
 
+        if (
+            self.game.current_room == "outside"
+            and hasattr(self.game, "interactable_sprites")
+        ):
+            interactable_hits = [
+                sprite
+                for sprite in self.game.interactable_sprites
+                if self.game.check_proximity(self.game.player, sprite, 64)
+            ]
+            if interactable_hits:
+                interactable = interactable_hits[0]
+                if getattr(interactable, "kind", None) in {"shop", "bus_stop"}:
+                    text = f"Press E to check {interactable.name}"
+                else:
+                    text = "Press E to talk"
+                hint_surf = self.game.font.render(text, True, "white")
+                hint_rect = hint_surf.get_rect(
+                    center=(interactable.rect.centerx, interactable.rect.top - 20)
+                )
+                screen.blit(hint_surf, hint_rect)
+
         # Draw item interaction hint
         item_hits = pygame.sprite.spritecollide(
             self.game.player, self.game.item_sprites, False
@@ -219,10 +263,15 @@ class DialogueState(State):
                         # Advance dialogue
                         self.game.dialogue_index += 1
                         if self.game.dialogue_index >= len(self.game.current_dialogue):
+                            dialogue_source = self.game.current_dialogue_source
                             self.game.current_dialogue = None
+                            self.game.current_dialogue_source = None
                             self.game.dialogue_index = 0
                             # Update Mom's dialogue after the first talk
-                            if self.game.has_talked_to_mom:
+                            if (
+                                dialogue_source == "mom"
+                                and self.game.has_talked_to_mom
+                            ):
                                 self.game.mom.dialogue = [
                                     "Hi sweetie!",
                                     "Make sure to study hard!",
@@ -230,7 +279,8 @@ class DialogueState(State):
                                 ]
                             self.game.state_machine.change_state("play")
                         elif (
-                            not self.game.has_talked_to_mom
+                            self.game.current_dialogue_source == "mom"
+                            and not self.game.has_talked_to_mom
                             and self.game.dialogue_index
                             == len(self.game.current_dialogue) - 1
                         ):
