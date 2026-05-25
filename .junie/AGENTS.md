@@ -62,7 +62,7 @@ import pygame
 ### Running Tests
 Tests are implemented using `pytest`. You can run all tests in the `tests/` directory:
 ```bash
-py -3 -m pytest
+pytest -n auto
 ```
 
 ### Adding New Tests
