@@ -20,10 +20,14 @@ class PlayState(State):
                         self.game.dialogue_index = 0
                         self.game.state_machine.change_state('dialogue')
                     elif (self.game.current_room == 'outside' or self.game.current_room == 'school' or self.game.current_room == 'intramuros') and hasattr(self.game, 'bus') and self.game.check_proximity(self.game.player, self.game.bus, 100):
+                        current_node = self.game.rooms.get(self.game.current_room)
                         if self.game.current_room == 'outside':
                             if self.game.money >= 20:
                                 self.game.money -= 20
-                                self.game.current_room = 'intramuros'
+                                if current_node and current_node.right:
+                                    self.game.current_room = current_node.right.name
+                                else:
+                                    self.game.current_room = 'intramuros'
                                 self.game.create_map()
                                 self.game.player.rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
                                 self.game.visible_sprites.add(self.game.player)
@@ -32,29 +36,26 @@ class PlayState(State):
                                 self.game.dialogue_index = 0
                                 self.game.state_machine.change_state('dialogue')
                         elif self.game.current_room == 'intramuros':
-                            # To distinguish between going to school or going back to outside,
-                            # we can check player position or just use a simple state.
-                            # But the user said "add a bus there going back to outside map".
-                            # Let's add two buses or just decide based on which side of the bus they are on?
-                            # Or just make it always go back for now if that's what's specifically asked.
-                            # "Add another map between school and outside... Then add a bus there going back to outside map."
-                            # It doesn't explicitly say the bus should also go to school, 
-                            # but how would you get to school then?
-                            # Probably Outside -> Intramuros -> School is the flow.
-                            # Let's make it so if they are on the left side of the bus they go back, right side they go forward?
-                            # Or just keep it simple: Intramuros bus goes back to Outside. 
-                            # And maybe another bus for School?
-                            # Actually, let's just use the player's X position relative to the bus.
+                            # To distinguish between going to school or going back to outside
                             if self.game.player.rect.centerx < self.game.bus.rect.centerx:
-                                self.game.current_room = 'outside'
+                                if current_node and current_node.left:
+                                    self.game.current_room = current_node.left.name
+                                else:
+                                    self.game.current_room = 'outside'
                             else:
-                                self.game.current_room = 'school'
+                                if current_node and current_node.right:
+                                    self.game.current_room = current_node.right.name
+                                else:
+                                    self.game.current_room = 'school'
                             
                             self.game.create_map()
                             self.game.player.rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
                             self.game.visible_sprites.add(self.game.player)
                         else: # From school
-                            self.game.current_room = 'intramuros'
+                            if current_node and current_node.left:
+                                self.game.current_room = current_node.left.name
+                            else:
+                                self.game.current_room = 'intramuros'
                             self.game.create_map()
                             self.game.player.rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
                             self.game.visible_sprites.add(self.game.player)

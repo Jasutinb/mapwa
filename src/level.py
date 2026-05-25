@@ -1,5 +1,14 @@
 import pygame
 
+class RoomNode:
+    def __init__(self, name, display_name):
+        self.name = name
+        self.display_name = display_name
+        self.left = None
+        self.right = None
+        self.up = None
+        self.down = None
+
 class Tile(pygame.sprite.Sprite):
     def __init__(self, pos, groups, surface):
         super().__init__(groups)

@@ -5,7 +5,7 @@ import asyncio
 from src.player import Player
 from src.npc import NPC
 from src.inventory import Inventory
-from src.level import Tile, Decoration, Door, Bus, Item
+from src.level import Tile, Decoration, Door, Bus, Item, RoomNode
 from src.state import StateMachine
 from src.states import PlayState, DialogueState
 
@@ -30,19 +30,12 @@ class Game:
         self.door_sprites = pygame.sprite.Group()
         self.item_sprites = pygame.sprite.Group()
 
-        # Location name display setup
-        self.location_names = {
-            'main': 'Living Room',
-            'bedroom': 'Bedroom',
-            'outside': 'Outside',
-            'intramuros': 'Intramuros',
-            'school': 'School'
-        }
         self.location_display_text = ""
         self.location_display_timer = 0
         self.location_display_duration = 120 # 2 seconds at 60 FPS
 
         # Level setup
+        self.setup_rooms()
         self.current_room = 'main'
         self.create_map()
 
@@ -85,6 +78,34 @@ class Game:
         self.state_machine.add_state('dialogue', DialogueState(self))
         self.state_machine.change_state('play')
 
+    def setup_rooms(self):
+        # Create room nodes
+        self.rooms = {
+            'main': RoomNode('main', 'Living Room'),
+            'bedroom': RoomNode('bedroom', 'Bedroom'),
+            'outside': RoomNode('outside', 'Outside'),
+            'intramuros': RoomNode('intramuros', 'Intramuros'),
+            'school': RoomNode('school', 'School')
+        }
+
+        # Link rooms
+        # Main is center-ish
+        # Bedroom is to the left of Main
+        self.rooms['main'].left = self.rooms['bedroom']
+        self.rooms['bedroom'].right = self.rooms['main']
+
+        # Outside is to the right of Main
+        self.rooms['main'].right = self.rooms['outside']
+        self.rooms['outside'].left = self.rooms['main']
+
+        # Intramuros is linked via Bus from Outside, but geographically let's say it's to the right of Outside
+        self.rooms['outside'].right = self.rooms['intramuros']
+        self.rooms['intramuros'].left = self.rooms['outside']
+
+        # School is linked via Bus from Intramuros, let's say it's to the right of Intramuros
+        self.rooms['intramuros'].right = self.rooms['school']
+        self.rooms['school'].left = self.rooms['intramuros']
+
     def create_money_icon(self):
         icon = pygame.Surface((24, 24), pygame.SRCALPHA)
         pygame.draw.circle(icon, (255, 215, 0), (12, 12), 11) # Gold circle
@@ -113,7 +134,10 @@ class Game:
             sprite.kill()
 
         # Set location display
-        self.location_display_text = self.location_names.get(self.current_room, self.current_room.capitalize())
+        current_node = self.rooms.get(self.current_room)
+        if current_node:
+            self.location_display_text = current_node.display_name
+        
         self.location_display_timer = self.location_display_duration
 
         if self.current_room == 'main':
@@ -152,9 +176,9 @@ class Game:
         
         # Add doors
         # To Bedroom (left)
-        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], 'bedroom', (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
+        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms['main'].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
         # To Outside (right)
-        Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], 'outside', (64, SCREEN_HEIGHT // 2))
+        Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms['main'].right.name, (64, SCREEN_HEIGHT // 2))
 
         # Add Mom back if in main room
         if hasattr(self, 'mom'):
@@ -188,7 +212,7 @@ class Game:
         Item((300, 150), [self.visible_sprites, self.item_sprites], "Notebook")
 
         # Add door back to Main
-        Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], 'main', (64, SCREEN_HEIGHT // 2))
+        Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms['bedroom'].right.name, (64, SCREEN_HEIGHT // 2))
 
     def create_outside(self):
         try:
@@ -206,23 +230,50 @@ class Game:
         self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT // 2 - 100), [self.visible_sprites])
 
         # Add door back to Main
-        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], 'main', (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
+        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms['outside'].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
 
     def create_intramuros(self):
         try:
-            grass_surf = pygame.image.load('assets/images/grass.png').convert()
+            # Cobblestone/Stone look for Intramuros
+            stone_surf = pygame.image.load('assets/images/floor.png').convert()
         except (pygame.error, FileNotFoundError):
-            grass_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
-            grass_surf.fill((34, 139, 34))
+            stone_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+            stone_surf.fill((128, 128, 128)) # Gray for stone
 
-        # Fill screen with grass tiles
+        try:
+            wall_surf = pygame.image.load('assets/images/wall.png').convert()
+        except (pygame.error, FileNotFoundError):
+            wall_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+            wall_surf.fill((100, 100, 100))
+
+        # Fill screen with stone floor tiles
         for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
             for col in range(0, SCREEN_WIDTH, TILE_SIZE):
-                Tile((col, row), [self.floor_sprites], grass_surf)
+                Tile((col, row), [self.floor_sprites], stone_surf)
+
+        # Add heavy stone walls (The Walled City)
+        # Left wall with a gap for the gate
+        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
+            if abs(row - SCREEN_HEIGHT // 2) > TILE_SIZE:
+                Tile((0, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+        
+        # Top and Bottom walls
+        for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+            Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            Tile((col, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+
+        # Right wall with a gap
+        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
+            if abs(row - SCREEN_HEIGHT // 2) > TILE_SIZE:
+                Tile((SCREEN_WIDTH - TILE_SIZE, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+
+        # Add a landmark - Manila Cathedral placeholder
+        # We can use a table as placeholder or something else, but let's just use Decoration
+        Decoration((SCREEN_WIDTH // 2, 50), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
 
         # Add bus
-        # This bus can take you back to Outside or forward to School
-        self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT // 2 - 100), [self.visible_sprites])
+        # Position it near the center
+        self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT // 2 + 50), [self.visible_sprites])
 
     def create_school(self):
         try:
@@ -253,7 +304,7 @@ class Game:
         self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT - 100), [self.visible_sprites])
 
         # Add door to exit school
-        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], 'intramuros', (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100))
+        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms['school'].left.name, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100))
 
     async def run(self):
         while self.running:
