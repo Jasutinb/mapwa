@@ -113,6 +113,11 @@ def test_player_movement():
 - **Constants**: Defined at the top of files (e.g., `SCREEN_WIDTH`, `TILE_SIZE`) in `UPPER_SNAKE_CASE`.
 - **Sprite Groups**: The game uses `pygame.sprite.Group` for management and rendering.
 
+### Gameplay and Map Design
+- **Pokemon-like exploration**: Design maps as walkable RPG spaces where the player can freely approach places of interest.
+- **Collision boundaries**: Use collision only for true physical boundaries such as map edges, walls, rivers, fences, or furniture. Avoid using decorative landmark rectangles as obstacles when they prevent the player from visiting that place.
+- **Travel gating**: Avoid artificial blocks that stop the player from visiting a place. If progression control is needed, use dialogue, NPCs, events, or clear interaction prompts instead of invisible or decorative collision blocks.
+
 ### WebAssembly Compatibility (pygbag)
 When developing features, keep these WASM-specific constraints in mind:
 - **Async Loop**: The main game loop must be `async` and include `await asyncio.sleep(0)` to prevent the browser from hanging.
