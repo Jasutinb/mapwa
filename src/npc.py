@@ -33,11 +33,11 @@ class NPC(pygame.sprite.Sprite):
                 self.direction.y = random.choice([-1, 0, 1])
                 if self.direction.magnitude() != 0:
                     self.direction = self.direction.normalize()
+                self.wander_timer = self.wander_duration
             else:
                 self.direction.x = 0
                 self.direction.y = 0
-            
-            self.wander_timer = self.wander_duration
+                self.wander_timer = 30
         else:
             self.wander_timer -= 1
 

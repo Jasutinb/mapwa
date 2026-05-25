@@ -40,6 +40,8 @@ class MapProp(pygame.sprite.Sprite):
         kind="prop",
         border_color=None,
         dialogue=None,
+        label=None,
+        label_color=(255, 255, 255),
     ):
         super().__init__(groups)
         self.name = name
@@ -49,6 +51,14 @@ class MapProp(pygame.sprite.Sprite):
         self.image.fill(color)
         if border_color:
             pygame.draw.rect(self.image, border_color, self.image.get_rect(), 2)
+        if label:
+            try:
+                font = pygame.font.SysFont("Arial", 14, bold=True)
+            except pygame.error:
+                font = pygame.font.Font(None, 14)
+            text_surf = font.render(label, True, label_color)
+            text_rect = text_surf.get_rect(center=self.image.get_rect().center)
+            self.image.blit(text_surf, text_rect)
         self.rect = self.image.get_rect(topleft=pos)
 
     def interact(self):

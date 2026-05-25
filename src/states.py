@@ -96,7 +96,7 @@ class PlayState(State):
                             )
                             self.game.visible_sprites.add(self.game.player)
                     elif (
-                        self.game.current_room == "outside"
+                        self.game.current_room in {"outside", "intramuros"}
                         and hasattr(self.game, "interactable_sprites")
                     ):
                         hits = [
@@ -108,7 +108,7 @@ class PlayState(State):
                             interactable = hits[0]
                             self.game.current_dialogue = interactable.interact()
                             self.game.current_dialogue_source = getattr(
-                                interactable, "kind", "outside"
+                                interactable, "kind", self.game.current_room
                             )
                             self.game.dialogue_index = 0
                             self.game.state_machine.change_state("dialogue")
@@ -219,7 +219,7 @@ class PlayState(State):
             screen.blit(hint_surf, hint_rect)
 
         if (
-            self.game.current_room == "outside"
+            self.game.current_room in {"outside", "intramuros"}
             and hasattr(self.game, "interactable_sprites")
         ):
             interactable_hits = [
@@ -229,7 +229,13 @@ class PlayState(State):
             ]
             if interactable_hits:
                 interactable = interactable_hits[0]
-                if getattr(interactable, "kind", None) in {"shop", "bus_stop"}:
+                if getattr(interactable, "kind", None) in {
+                    "shop",
+                    "bus_stop",
+                    "vendor",
+                    "guard_booth",
+                    "school_gate",
+                }:
                     text = f"Press E to check {interactable.name}"
                 else:
                     text = "Press E to talk"

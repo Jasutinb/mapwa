@@ -395,31 +395,60 @@ class Game:
         self.add_room_item("outside:coin", (192, SCREEN_HEIGHT // 2 + 48), "Coin")
 
     def create_intramuros(self):
-        try:
-            # Cobblestone/Stone look for Intramuros
-            stone_surf = pygame.image.load("assets/images/floor.png").convert()
-        except pygame.error, FileNotFoundError:
-            stone_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
-            stone_surf.fill((128, 128, 128))  # Gray for stone
+        def patterned_tile(base_color, line_color=None):
+            surface = pygame.Surface((TILE_SIZE, TILE_SIZE))
+            surface.fill(base_color)
+            if line_color:
+                pygame.draw.line(surface, line_color, (0, 0), (TILE_SIZE, 0))
+                pygame.draw.line(surface, line_color, (0, 0), (0, TILE_SIZE))
+            return surface
 
-        try:
-            wall_surf = pygame.image.load("assets/images/wall.png").convert()
-        except pygame.error, FileNotFoundError:
-            wall_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
-            wall_surf.fill((100, 100, 100))
+        stone_surf = patterned_tile((142, 137, 126), (116, 111, 102))
+        plaza_surf = patterned_tile((166, 157, 138), (132, 122, 106))
+        road_surf = patterned_tile((66, 68, 72), (52, 54, 58))
+        sidewalk_surf = patterned_tile((186, 178, 160), (150, 142, 126))
+        crosswalk_surf = patterned_tile((228, 226, 216), (196, 194, 184))
+        wall_surf = patterned_tile((92, 88, 80), (68, 64, 58))
 
-        # Fill screen with stone floor tiles
+        road_top = SCREEN_HEIGHT - TILE_SIZE * 8
+        road_bottom = SCREEN_HEIGHT - TILE_SIZE * 5
+        upper_sidewalk = road_top - TILE_SIZE
+        lower_sidewalk = road_bottom
+        school_path_left = SCREEN_WIDTH - TILE_SIZE * 7
+        school_path_right = SCREEN_WIDTH - TILE_SIZE * 2
+
+        # Fill screen with stone, then layer the commute route over it.
         for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
             for col in range(0, SCREEN_WIDTH, TILE_SIZE):
                 Tile((col, row), [self.floor_sprites], stone_surf)
 
-        # Add heavy stone walls (The Walled City)
-        # Left wall with a gap for the gate
-        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
-            if abs(row - SCREEN_HEIGHT // 2) > TILE_SIZE:
-                Tile((0, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+        for row in range(road_top, road_bottom, TILE_SIZE):
+            for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+                Tile((col, row), [self.floor_sprites], road_surf)
 
-        # Top and Bottom walls
+        for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+            Tile((col, upper_sidewalk), [self.floor_sprites], sidewalk_surf)
+            Tile((col, lower_sidewalk), [self.floor_sprites], sidewalk_surf)
+
+        for row in range(TILE_SIZE * 4, upper_sidewalk + TILE_SIZE, TILE_SIZE):
+            for col in range(school_path_left, school_path_right, TILE_SIZE):
+                Tile((col, row), [self.floor_sprites], plaza_surf)
+
+        for row in range(road_top, road_bottom, TILE_SIZE):
+            Tile((TILE_SIZE * 18, row), [self.floor_sprites], crosswalk_surf)
+
+        # Physical boundaries for the walled city edge.
+        gate_gap_top = road_top - TILE_SIZE
+        gate_gap_bottom = road_bottom + TILE_SIZE
+        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
+            if not gate_gap_top <= row <= gate_gap_bottom:
+                Tile((0, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+                Tile(
+                    (SCREEN_WIDTH - TILE_SIZE, row),
+                    [self.visible_sprites, self.obstacle_sprites],
+                    wall_surf,
+                )
+
         for col in range(0, SCREEN_WIDTH, TILE_SIZE):
             Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
             Tile(
@@ -428,27 +457,162 @@ class Game:
                 wall_surf,
             )
 
-        # Right wall with a gap
-        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
-            if abs(row - SCREEN_HEIGHT // 2) > TILE_SIZE:
-                Tile(
-                    (SCREEN_WIDTH - TILE_SIZE, row),
-                    [self.visible_sprites, self.obstacle_sprites],
-                    wall_surf,
-                )
+        self.intramuros_landmarks = {}
 
-        # Add a landmark - Manila Cathedral placeholder
-        # We can use a table as placeholder or something else, but let's just use Decoration
-        Decoration(
-            (SCREEN_WIDTH // 2, 50),
+        gate = MapProp(
+            (SCREEN_WIDTH - TILE_SIZE * 8, TILE_SIZE * 2),
+            (TILE_SIZE * 7, TILE_SIZE * 3),
             [self.visible_sprites, self.obstacle_sprites],
-            "assets/images/table.png",
+            (126, 42, 48),
+            "Mapua University Entrance",
+            kind="school_gate",
+            border_color=(72, 26, 30),
+            label="MAPUA UNIVERSITY",
+            dialogue=["The Mapua gate is busy with students heading to class."],
+        )
+        self.intramuros_landmarks[gate.name] = gate.rect.copy()
+
+        guard_booth = MapProp(
+            (SCREEN_WIDTH - TILE_SIZE * 9, TILE_SIZE * 6),
+            (TILE_SIZE * 2, TILE_SIZE * 2),
+            [self.visible_sprites, self.interactable_sprites],
+            (94, 112, 124),
+            "Guard Booth",
+            kind="guard_booth",
+            border_color=(48, 60, 68),
+            dialogue=[
+                "The guard nods as students pass through.",
+                "Classes are inside. Use the gate when you're ready.",
+            ],
+        )
+        self.intramuros_landmarks[guard_booth.name] = guard_booth.rect.copy()
+
+        vendor = MapProp(
+            (TILE_SIZE * 7, upper_sidewalk - TILE_SIZE),
+            (TILE_SIZE * 3, TILE_SIZE * 2),
+            [self.visible_sprites, self.interactable_sprites],
+            (222, 166, 54),
+            "Snack Vendor",
+            kind="vendor",
+            border_color=(126, 82, 24),
+            label="SNACKS",
+            dialogue=[
+                "Fresh bread and cold drinks for students.",
+                "A quick snack before class might help later.",
+            ],
+        )
+        self.intramuros_landmarks[vendor.name] = vendor.rect.copy()
+
+        waiting_area = MapProp(
+            (TILE_SIZE * 10, lower_sidewalk),
+            (TILE_SIZE * 4, TILE_SIZE),
+            [self.visible_sprites, self.interactable_sprites],
+            (232, 218, 116),
+            "Transit Waiting Area",
+            kind="bus_stop",
+            border_color=(112, 104, 54),
+            dialogue=[
+                "Students wait here for rides home.",
+                "Stand left of the bus to go back Outside, or right to go to School.",
+            ],
+        )
+        self.intramuros_landmarks[waiting_area.name] = waiting_area.rect.copy()
+
+        old_wall_marker = MapProp(
+            (TILE_SIZE * 2, TILE_SIZE * 4),
+            (TILE_SIZE * 5, TILE_SIZE * 2),
+            [self.visible_sprites],
+            (104, 100, 90),
+            "Old Stone Wall",
+            kind="wall_marker",
+            border_color=(72, 68, 62),
+            label="WALLED CITY",
+        )
+        self.intramuros_landmarks[old_wall_marker.name] = old_wall_marker.rect.copy()
+
+        left_gate = MapProp(
+            (TILE_SIZE, upper_sidewalk),
+            (TILE_SIZE * 3, TILE_SIZE),
+            [self.visible_sprites],
+            (116, 104, 88),
+            "Intramuros Gate",
+            kind="gate",
+            border_color=(76, 68, 56),
+        )
+        self.intramuros_landmarks[left_gate.name] = left_gate.rect.copy()
+
+        for lamp_pos in [
+            (TILE_SIZE * 5, upper_sidewalk - TILE_SIZE),
+            (TILE_SIZE * 14, upper_sidewalk - TILE_SIZE),
+            (TILE_SIZE * 20, lower_sidewalk + TILE_SIZE),
+        ]:
+            lamp = MapProp(
+                lamp_pos,
+                (12, 36),
+                [self.visible_sprites, self.obstacle_sprites],
+                (54, 58, 62),
+                "Lamp Post",
+                kind="lamp",
+                border_color=(30, 32, 34),
+            )
+            self.intramuros_landmarks[f"Lamp Post {lamp_pos[0]}"] = lamp.rect.copy()
+
+        for planter_pos in [
+            (TILE_SIZE * 12, TILE_SIZE * 5),
+            (TILE_SIZE * 15, TILE_SIZE * 7),
+            (TILE_SIZE * 22, TILE_SIZE * 9),
+        ]:
+            planter = MapProp(
+                planter_pos,
+                (TILE_SIZE, TILE_SIZE),
+                [self.visible_sprites, self.obstacle_sprites],
+                (50, 128, 74),
+                "Planter",
+                kind="planter",
+                border_color=(36, 80, 48),
+            )
+            self.intramuros_landmarks[f"Planter {planter_pos[0]}"] = planter.rect.copy()
+
+        self.intramuros_guard = NPC(
+            (SCREEN_WIDTH - TILE_SIZE * 6, TILE_SIZE * 7),
+            [self.visible_sprites, self.interactable_sprites],
+            "assets/images/mom.png",
+            name="Guard",
+        )
+        self.intramuros_guard.speed = 0
+        self.intramuros_guard.dialogue = [
+            "Good morning. Mapua students may enter through the gate.",
+            "Keep your ID ready once we add the school ID system.",
+        ]
+
+        self.intramuros_classmate = NPC(
+            (SCREEN_WIDTH - TILE_SIZE * 4, TILE_SIZE * 8),
+            [self.visible_sprites, self.interactable_sprites],
+            "assets/images/mom.png",
+            name="Classmate",
+        )
+        self.intramuros_classmate.speed = 0
+        self.intramuros_classmate.dialogue = [
+            "I usually take this Intramuros route too.",
+            "Let's head inside before class starts.",
+        ]
+
+        self.bus = Bus(
+            (SCREEN_WIDTH // 2 - 64, road_top + TILE_SIZE),
+            [self.visible_sprites],
         )
 
-        # Add bus
-        # Position it near the center
-        self.bus = Bus(
-            (SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT // 2 + 50), [self.visible_sprites]
+        Door(
+            (SCREEN_WIDTH - TILE_SIZE * 5, TILE_SIZE * 5),
+            [self.visible_sprites, self.door_sprites],
+            self.rooms["intramuros"].right.name,
+            (96, SCREEN_HEIGHT // 2),
+        )
+
+        self.add_room_item(
+            "intramuros:student_flyer",
+            (TILE_SIZE * 16, lower_sidewalk + TILE_SIZE),
+            "Student Flyer",
         )
 
     def create_school(self):
