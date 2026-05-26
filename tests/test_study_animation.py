@@ -65,7 +65,6 @@ def test_no_movement_while_studying(game, monkeypatch):
     
     monkeypatch.setattr(pygame.key, "get_pressed", mock_get_pressed)
     
-    old_pos = game.player.rect.copy()
     game.player.update()
     
     # Position might change slightly due to vibration, but direction should be 0

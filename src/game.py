@@ -6,6 +6,7 @@ from src.player import Player
 from src.npc import NPC
 from src.inventory import Inventory
 from src.level import Tile, Decoration, Door, Bus, Item, RoomNode
+from src.mobile_controls import MobileControls
 from src.state import StateMachine
 from src.states import PlayState, DialogueState
 
@@ -33,6 +34,7 @@ class Game:
         self.location_display_text = ""
         self.location_display_timer = 0
         self.location_display_duration = 120 # 2 seconds at 60 FPS
+        self.mobile_controls = MobileControls((SCREEN_WIDTH, SCREEN_HEIGHT))
 
         # Level setup
         self.setup_rooms()
@@ -56,7 +58,7 @@ class Game:
         self.dialogue_index = 0
         try:
             self.font = pygame.font.SysFont('Arial', 24)
-        except:
+        except pygame.error:
             self.font = pygame.font.Font(None, 24)
 
         # Inventory setup
@@ -113,7 +115,7 @@ class Game:
         # Draw a small 'P' for Peso
         try:
             font = pygame.font.SysFont('Arial', 20, bold=True)
-        except:
+        except pygame.error:
             font = pygame.font.Font(None, 20)
         p_surf = font.render("P", True, (139, 69, 19))
         p_rect = p_surf.get_rect(center=(12, 12))
@@ -325,6 +327,10 @@ class Game:
     def handle_events(self, events=None):
         if events is None:
             events = pygame.event.get()
+        self.mobile_controls.handle_events(events)
+        if self.mobile_controls.consume_action_press():
+            events = list(events)
+            events.append(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e))
         self.state_machine.handle_events(events)
 
     def check_proximity(self, sprite1, sprite2, distance):
@@ -336,6 +342,7 @@ class Game:
         if self.location_display_timer > 0:
             self.location_display_timer -= 1
 
+        self.player.mobile_direction = self.mobile_controls.direction
         self.state_machine.update()
 
     def check_transitions(self):
@@ -387,7 +394,7 @@ class Game:
             # Create a larger font for location
             try:
                 loc_font = pygame.font.SysFont('Arial', 48, bold=True)
-            except:
+            except pygame.error:
                 loc_font = pygame.font.Font(None, 48)
             loc_surf = loc_font.render(self.location_display_text, True, 'white')
             loc_surf.set_alpha(alpha)
@@ -402,6 +409,7 @@ class Game:
             self.screen.blit(loc_surf, loc_rect)
 
         self.inventory.draw(self.screen)
+        self.mobile_controls.draw(self.screen)
         pygame.display.flip()
 
 if __name__ == "__main__":
