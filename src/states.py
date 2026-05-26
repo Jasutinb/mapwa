@@ -1,10 +1,14 @@
 import pygame
 from src.state import State
-
-# Constant duplicated here for now to avoid circular import if we were to move them to a config
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
-TILE_SIZE = 64
+from src.config import (
+    ROOM_INTRAMUROS,
+    ROOM_MAIN,
+    ROOM_OUTSIDE,
+    ROOM_SCHOOL,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    TILE_SIZE,
+)
 
 class PlayState(State):
     def handle_events(self, events):
@@ -15,62 +19,17 @@ class PlayState(State):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_e:
                     # Try to start interaction
-                    if self.game.current_room == 'main' and hasattr(self.game, 'mom') and self.game.mom in self.game.visible_sprites and self.game.check_proximity(self.game.player, self.game.mom, 64):
-                        self.game.current_dialogue = self.game.mom.interact()
-                        self.game.dialogue_index = 0
-                        self.game.state_machine.change_state('dialogue')
-                    elif (self.game.current_room == 'outside' or self.game.current_room == 'school' or self.game.current_room == 'intramuros') and hasattr(self.game, 'bus') and self.game.check_proximity(self.game.player, self.game.bus, 100):
-                        current_node = self.game.rooms.get(self.game.current_room)
-                        if self.game.current_room == 'outside':
-                            if self.game.money >= 20:
-                                self.game.money -= 20
-                                if current_node and current_node.right:
-                                    self.game.current_room = current_node.right.name
-                                else:
-                                    self.game.current_room = 'intramuros'
-                                self.game.create_map()
-                                self.game.player.rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-                                self.game.visible_sprites.add(self.game.player)
-                            else:
-                                self.game.current_dialogue = ["I don't have enough money for the bus... (Need 20)"]
-                                self.game.dialogue_index = 0
-                                self.game.state_machine.change_state('dialogue')
-                        elif self.game.current_room == 'intramuros':
-                            # To distinguish between going to school or going back to outside
-                            if self.game.player.rect.centerx < self.game.bus.rect.centerx:
-                                if current_node and current_node.left:
-                                    self.game.current_room = current_node.left.name
-                                else:
-                                    self.game.current_room = 'outside'
-                            else:
-                                if current_node and current_node.right:
-                                    self.game.current_room = current_node.right.name
-                                else:
-                                    self.game.current_room = 'school'
-                            
-                            self.game.create_map()
-                            self.game.player.rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-                            self.game.visible_sprites.add(self.game.player)
-                        else: # From school
-                            if current_node and current_node.left:
-                                self.game.current_room = current_node.left.name
-                            else:
-                                self.game.current_room = 'intramuros'
-                            self.game.create_map()
-                            self.game.player.rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-                            self.game.visible_sprites.add(self.game.player)
-                    elif self.game.current_room == 'school' and hasattr(self.game, 'school_desk') and self.game.check_proximity(self.game.player, self.game.school_desk, 64):
-                        self.game.experience += 10
-                        self.game.player.start_study(60) # 1 second at 60 FPS
+                    if self.game.current_room == ROOM_MAIN and hasattr(self.game, 'mom') and self.game.mom in self.game.visible_sprites and self.game.check_proximity(self.game.player, self.game.mom, 64):
+                        self.game.talk_to_mom()
+                    elif self.game.current_room in (ROOM_OUTSIDE, ROOM_SCHOOL, ROOM_INTRAMUROS) and hasattr(self.game, 'bus') and self.game.check_proximity(self.game.player, self.game.bus, 100):
+                        self.game.ride_bus()
+                    elif self.game.current_room == ROOM_SCHOOL and hasattr(self.game, 'school_desk') and self.game.check_proximity(self.game.player, self.game.school_desk, 64):
+                        self.game.study_at_school()
                     else:
                         # Try to pick up items
                         hits = pygame.sprite.spritecollide(self.game.player, self.game.item_sprites, False)
                         for item in hits:
-                            if self.game.inventory.add_item(item):
-                                item.kill()
-                                self.game.current_dialogue = [f"You picked up a {item.name}!"]
-                                self.game.dialogue_index = 0
-                                self.game.state_machine.change_state('dialogue')
+                            if self.game.pick_up_item(item):
                                 break
 
     def update(self):
@@ -82,26 +41,24 @@ class PlayState(State):
         
         # If studying just finished, show dialogue
         if was_studying and not self.game.player.studying:
-            self.game.current_dialogue = ["You studied hard and gained 10 XP!"]
-            self.game.dialogue_index = 0
-            self.game.state_machine.change_state('dialogue')
+            self.game.show_dialogue(["You studied hard and gained 10 XP!"])
         
         # Constrain Mom within boundaries if she's in the current room
-        if self.game.current_room == 'main' and hasattr(self.game, 'mom') and self.game.mom in self.game.visible_sprites:
+        if self.game.current_room == ROOM_MAIN and hasattr(self.game, 'mom') and self.game.mom in self.game.visible_sprites:
             self.game.mom.rect.left = max(0, min(self.game.mom.rect.left, SCREEN_WIDTH - self.game.mom.rect.width))
             self.game.mom.rect.top = max(TILE_SIZE * 2, min(self.game.mom.rect.top, SCREEN_HEIGHT - self.game.mom.rect.height))
 
     def draw(self, screen):
         # Draw proximity hint
-        if self.game.current_room == 'main' and self.game.check_proximity(self.game.player, self.game.mom, 64):
+        if self.game.current_room == ROOM_MAIN and self.game.check_proximity(self.game.player, self.game.mom, 64):
             hint_surf = self.game.font.render("Press E to talk", True, 'white')
             hint_rect = hint_surf.get_rect(center=(self.game.mom.rect.centerx, self.game.mom.rect.top - 20))
             screen.blit(hint_surf, hint_rect)
         
-        if (self.game.current_room == 'outside' or self.game.current_room == 'school' or self.game.current_room == 'intramuros') and hasattr(self.game, 'bus') and self.game.check_proximity(self.game.player, self.game.bus, 100):
-            if self.game.current_room == 'outside':
+        if self.game.current_room in (ROOM_OUTSIDE, ROOM_SCHOOL, ROOM_INTRAMUROS) and hasattr(self.game, 'bus') and self.game.check_proximity(self.game.player, self.game.bus, 100):
+            if self.game.current_room == ROOM_OUTSIDE:
                 text = "Press E to ride to Intramuros (20)"
-            elif self.game.current_room == 'intramuros':
+            elif self.game.current_room == ROOM_INTRAMUROS:
                 if self.game.player.rect.centerx < self.game.bus.rect.centerx:
                     text = "Press E to ride back to Outside"
                 else:
@@ -113,7 +70,7 @@ class PlayState(State):
             hint_rect = hint_surf.get_rect(center=(self.game.bus.rect.centerx, self.game.bus.rect.top - 20))
             screen.blit(hint_surf, hint_rect)
 
-        if self.game.current_room == 'school' and hasattr(self.game, 'school_desk') and self.game.check_proximity(self.game.player, self.game.school_desk, 64):
+        if self.game.current_room == ROOM_SCHOOL and hasattr(self.game, 'school_desk') and self.game.check_proximity(self.game.player, self.game.school_desk, 64):
             hint_surf = self.game.font.render("Press E to study", True, 'white')
             hint_rect = hint_surf.get_rect(center=(self.game.school_desk.rect.centerx, self.game.school_desk.rect.top - 20))
             screen.blit(hint_surf, hint_rect)
@@ -131,24 +88,7 @@ class DialogueState(State):
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_e:
-                    if self.game.current_dialogue:
-                        # Advance dialogue
-                        self.game.dialogue_index += 1
-                        if self.game.dialogue_index >= len(self.game.current_dialogue):
-                            self.game.current_dialogue = None
-                            self.game.dialogue_index = 0
-                            # Update Mom's dialogue after the first talk
-                            if self.game.has_talked_to_mom:
-                                self.game.mom.dialogue = [
-                                    "Hi sweetie!",
-                                    "Make sure to study hard!",
-                                    "I'll see you later."
-                                ]
-                            self.game.state_machine.change_state('play')
-                        elif not self.game.has_talked_to_mom and self.game.dialogue_index == len(self.game.current_dialogue) - 1:
-                            # If it's the last line of the first talk, give money
-                            self.game.money += 250
-                            self.game.has_talked_to_mom = True
+                    self.game.advance_dialogue()
 
     def draw(self, screen):
         # Draw dialogue box

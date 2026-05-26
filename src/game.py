@@ -9,12 +9,27 @@ from src.level import Tile, Decoration, Door, Bus, Item, RoomNode
 from src.mobile_controls import MobileControls
 from src.state import StateMachine
 from src.states import PlayState, DialogueState
-
-# Constants
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
-TILE_SIZE = 32
-FPS = 60
+from src.game_state import GameState
+from src.config import (
+    ALLOWANCE_AMOUNT,
+    BUS_FARE,
+    FIRST_MOM_DIALOGUE,
+    FPS,
+    ITEM_NOTEBOOK,
+    REPEAT_MOM_DIALOGUE,
+    ROOM_BEDROOM,
+    ROOM_INTRAMUROS,
+    ROOM_MAIN,
+    ROOM_OUTSIDE,
+    ROOM_SCHOOL,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    STATE_DIALOGUE,
+    STATE_PLAY,
+    STUDY_DURATION_FRAMES,
+    STUDY_XP,
+    TILE_SIZE,
+)
 
 class Game:
     def __init__(self):
@@ -23,6 +38,7 @@ class Game:
         pygame.display.set_caption("Student RPG")
         self.clock = pygame.time.Clock()
         self.running = True
+        self.state = GameState()
 
         # Sprite groups
         self.visible_sprites = pygame.sprite.Group()
@@ -38,7 +54,7 @@ class Game:
 
         # Level setup
         self.setup_rooms()
-        self.current_room = 'main'
+        self.current_room = ROOM_MAIN
         self.create_map()
 
         # Player setup
@@ -46,16 +62,8 @@ class Game:
 
         # NPC setup
         self.mom = NPC((SCREEN_WIDTH // 2, 100), [self.visible_sprites], 'assets/images/mom.png', name="Mom")
-        self.mom.dialogue = [
-            "Hi sweetie!", 
-            "Are you ready for your first day at school?", 
-            "Don't forget your backpack!",
-            "Here's your allowance for today."
-        ]
+        self.mom.dialogue = list(FIRST_MOM_DIALOGUE)
 
-        # Interaction setup
-        self.current_dialogue = None
-        self.dialogue_index = 0
         try:
             self.font = pygame.font.SysFont('Arial', 24)
         except pygame.error:
@@ -64,49 +72,90 @@ class Game:
         # Inventory setup
         self.inventory = Inventory()
 
-        # Money setup
-        self.money = 0
-        self.has_talked_to_mom = False
-
-        # Experience setup
-        self.experience = 0
-
         # UI Assets
         self.money_icon = self.create_money_icon()
 
         # State Machine setup
         self.state_machine = StateMachine()
-        self.state_machine.add_state('play', PlayState(self))
-        self.state_machine.add_state('dialogue', DialogueState(self))
-        self.state_machine.change_state('play')
+        self.state_machine.add_state(STATE_PLAY, PlayState(self))
+        self.state_machine.add_state(STATE_DIALOGUE, DialogueState(self))
+        self.state_machine.change_state(STATE_PLAY)
+
+    @property
+    def current_room(self):
+        return self.state.current_room
+
+    @current_room.setter
+    def current_room(self, value):
+        self.state.current_room = value
+
+    @property
+    def current_dialogue(self):
+        return self.state.current_dialogue
+
+    @current_dialogue.setter
+    def current_dialogue(self, value):
+        self.state.current_dialogue = value
+
+    @property
+    def dialogue_index(self):
+        return self.state.dialogue_index
+
+    @dialogue_index.setter
+    def dialogue_index(self, value):
+        self.state.dialogue_index = value
+
+    @property
+    def money(self):
+        return self.state.money
+
+    @money.setter
+    def money(self, value):
+        self.state.money = value
+
+    @property
+    def experience(self):
+        return self.state.experience
+
+    @experience.setter
+    def experience(self, value):
+        self.state.experience = value
+
+    @property
+    def has_talked_to_mom(self):
+        return self.state.has_talked_to_mom
+
+    @has_talked_to_mom.setter
+    def has_talked_to_mom(self, value):
+        self.state.has_talked_to_mom = value
 
     def setup_rooms(self):
         # Create room nodes
         self.rooms = {
-            'main': RoomNode('main', 'Living Room'),
-            'bedroom': RoomNode('bedroom', 'Bedroom'),
-            'outside': RoomNode('outside', 'Outside'),
-            'intramuros': RoomNode('intramuros', 'Intramuros'),
-            'school': RoomNode('school', 'School')
+            ROOM_MAIN: RoomNode(ROOM_MAIN, 'Living Room'),
+            ROOM_BEDROOM: RoomNode(ROOM_BEDROOM, 'Bedroom'),
+            ROOM_OUTSIDE: RoomNode(ROOM_OUTSIDE, 'Outside'),
+            ROOM_INTRAMUROS: RoomNode(ROOM_INTRAMUROS, 'Intramuros'),
+            ROOM_SCHOOL: RoomNode(ROOM_SCHOOL, 'School')
         }
 
         # Link rooms
         # Main is center-ish
         # Bedroom is to the left of Main
-        self.rooms['main'].left = self.rooms['bedroom']
-        self.rooms['bedroom'].right = self.rooms['main']
+        self.rooms[ROOM_MAIN].left = self.rooms[ROOM_BEDROOM]
+        self.rooms[ROOM_BEDROOM].right = self.rooms[ROOM_MAIN]
 
         # Outside is to the right of Main
-        self.rooms['main'].right = self.rooms['outside']
-        self.rooms['outside'].left = self.rooms['main']
+        self.rooms[ROOM_MAIN].right = self.rooms[ROOM_OUTSIDE]
+        self.rooms[ROOM_OUTSIDE].left = self.rooms[ROOM_MAIN]
 
         # Intramuros is linked via Bus from Outside, but geographically let's say it's to the right of Outside
-        self.rooms['outside'].right = self.rooms['intramuros']
-        self.rooms['intramuros'].left = self.rooms['outside']
+        self.rooms[ROOM_OUTSIDE].right = self.rooms[ROOM_INTRAMUROS]
+        self.rooms[ROOM_INTRAMUROS].left = self.rooms[ROOM_OUTSIDE]
 
         # School is linked via Bus from Intramuros, let's say it's to the right of Intramuros
-        self.rooms['intramuros'].right = self.rooms['school']
-        self.rooms['school'].left = self.rooms['intramuros']
+        self.rooms[ROOM_INTRAMUROS].right = self.rooms[ROOM_SCHOOL]
+        self.rooms[ROOM_SCHOOL].left = self.rooms[ROOM_INTRAMUROS]
 
     def create_money_icon(self):
         icon = pygame.Surface((24, 24), pygame.SRCALPHA)
@@ -121,6 +170,73 @@ class Game:
         p_rect = p_surf.get_rect(center=(12, 12))
         icon.blit(p_surf, p_rect)
         return icon
+
+    def show_dialogue(self, lines):
+        self.state.start_dialogue(lines)
+        self.state_machine.change_state(STATE_DIALOGUE)
+
+    def finish_dialogue(self):
+        self.state.clear_dialogue()
+        if self.has_talked_to_mom:
+            self.mom.dialogue = list(REPEAT_MOM_DIALOGUE)
+        self.state_machine.change_state(STATE_PLAY)
+
+    def advance_dialogue(self):
+        if not self.current_dialogue:
+            return
+
+        finished = self.state.advance_dialogue()
+        if finished:
+            self.finish_dialogue()
+            return
+
+        if not self.has_talked_to_mom and self.dialogue_index == len(self.current_dialogue) - 1:
+            self.money += ALLOWANCE_AMOUNT
+            self.has_talked_to_mom = True
+
+    def talk_to_mom(self):
+        self.show_dialogue(self.mom.interact())
+
+    def travel_to_room(self, room_name, spawn_pos=None, use_topleft=False):
+        self.current_room = room_name
+        self.create_map()
+        if spawn_pos and use_topleft:
+            self.player.rect.topleft = spawn_pos
+        else:
+            self.player.rect.center = spawn_pos or (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+        self.visible_sprites.add(self.player)
+
+    def ride_bus(self):
+        current_node = self.rooms.get(self.current_room)
+        if self.current_room == ROOM_OUTSIDE:
+            if self.money < BUS_FARE:
+                self.show_dialogue([f"I don't have enough money for the bus... (Need {BUS_FARE})"])
+                return False
+            self.money -= BUS_FARE
+            destination = current_node.right.name if current_node and current_node.right else ROOM_INTRAMUROS
+        elif self.current_room == ROOM_INTRAMUROS:
+            if self.player.rect.centerx < self.bus.rect.centerx:
+                destination = current_node.left.name if current_node and current_node.left else ROOM_OUTSIDE
+            else:
+                destination = current_node.right.name if current_node and current_node.right else ROOM_SCHOOL
+        else:
+            destination = current_node.left.name if current_node and current_node.left else ROOM_INTRAMUROS
+
+        self.travel_to_room(destination)
+        return True
+
+    def study_at_school(self):
+        self.experience += STUDY_XP
+        self.player.start_study(STUDY_DURATION_FRAMES)
+
+    def pick_up_item(self, item):
+        if not self.inventory.add_item(item):
+            return False
+
+        self.state.mark_item_picked(item.item_id)
+        item.kill()
+        self.show_dialogue([f"You picked up a {item.name}!"])
+        return True
 
     def create_map(self):
         # Clear existing sprites
@@ -142,15 +258,15 @@ class Game:
         
         self.location_display_timer = self.location_display_duration
 
-        if self.current_room == 'main':
+        if self.current_room == ROOM_MAIN:
             self.create_main_room()
-        elif self.current_room == 'bedroom':
+        elif self.current_room == ROOM_BEDROOM:
             self.create_bedroom()
-        elif self.current_room == 'outside':
+        elif self.current_room == ROOM_OUTSIDE:
             self.create_outside()
-        elif self.current_room == 'intramuros':
+        elif self.current_room == ROOM_INTRAMUROS:
             self.create_intramuros()
-        elif self.current_room == 'school':
+        elif self.current_room == ROOM_SCHOOL:
             self.create_school()
 
     def create_main_room(self):
@@ -178,9 +294,9 @@ class Game:
         
         # Add doors
         # To Bedroom (left)
-        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms['main'].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
+        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_MAIN].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
         # To Outside (right)
-        Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms['main'].right.name, (64, SCREEN_HEIGHT // 2))
+        Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_MAIN].right.name, (64, SCREEN_HEIGHT // 2))
 
         # Add Mom back if in main room
         if hasattr(self, 'mom'):
@@ -211,10 +327,11 @@ class Game:
         Decoration((200, 300), [self.visible_sprites], 'assets/images/rug.png')
 
         # Add items
-        Item((300, 150), [self.visible_sprites, self.item_sprites], "Notebook")
+        if ITEM_NOTEBOOK not in self.state.picked_item_ids:
+            Item((300, 150), [self.visible_sprites, self.item_sprites], "Notebook", item_id=ITEM_NOTEBOOK)
 
         # Add door back to Main
-        Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms['bedroom'].right.name, (64, SCREEN_HEIGHT // 2))
+        Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_BEDROOM].right.name, (64, SCREEN_HEIGHT // 2))
 
     def create_outside(self):
         try:
@@ -232,7 +349,7 @@ class Game:
         self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT // 2 - 100), [self.visible_sprites])
 
         # Add door back to Main
-        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms['outside'].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
+        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_OUTSIDE].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
 
     def create_intramuros(self):
         try:
@@ -306,7 +423,7 @@ class Game:
         self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT - 100), [self.visible_sprites])
 
         # Add door to exit school
-        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms['school'].left.name, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100))
+        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL].left.name, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100))
 
     async def run(self):
         while self.running:
@@ -348,10 +465,7 @@ class Game:
     def check_transitions(self):
         hits = pygame.sprite.spritecollide(self.player, self.door_sprites, False)
         for door in hits:
-            self.current_room = door.target_room
-            self.create_map()
-            self.player.rect.topleft = door.spawn_pos
-            self.visible_sprites.add(self.player)
+            self.travel_to_room(door.target_room, door.spawn_pos, use_topleft=True)
             break
 
     def draw(self):

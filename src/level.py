@@ -51,9 +51,10 @@ class Bus(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(topleft=pos)
 
 class Item(pygame.sprite.Sprite):
-    def __init__(self, pos, groups, name, image_path=None):
+    def __init__(self, pos, groups, name, image_path=None, item_id=None):
         super().__init__(groups)
         self.name = name
+        self.item_id = item_id or name.lower().replace(" ", "_")
         if image_path:
             try:
                 self.image = pygame.image.load(image_path).convert_alpha()
