@@ -45,7 +45,7 @@ To run a local web server to preview the game:
 ```bash
 uv run python -m pygbag main.py
 ```
-Then open your browser at `http://localhost:8000`. If you see a gray screen, try a hard refresh (**Ctrl + F5**) or try a different port: `uv run python -m pygbag --port 8001 main.py`.
+Then open your browser at `http://localhost:8000`.
 
 ## 3. Testing Information
 
