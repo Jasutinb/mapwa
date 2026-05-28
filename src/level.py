@@ -49,6 +49,17 @@ class PassGate(pygame.sprite.Sprite):
         pygame.draw.rect(self.image, (220, 220, 80), (9, 36, 14, 24))
         self.rect = self.image.get_rect(topleft=pos)
 
+class Guard(pygame.sprite.Sprite):
+    def __init__(self, pos, groups):
+        super().__init__(groups)
+        self.image = pygame.Surface((32, 64), pygame.SRCALPHA)
+        pygame.draw.rect(self.image, (32, 55, 96), (6, 18, 20, 40))
+        pygame.draw.circle(self.image, (210, 170, 125), (16, 10), 10)
+        pygame.draw.rect(self.image, (20, 35, 70), (4, 16, 24, 8))
+        pygame.draw.rect(self.image, (15, 25, 45), (8, 56, 6, 8))
+        pygame.draw.rect(self.image, (15, 25, 45), (18, 56, 6, 8))
+        self.rect = self.image.get_rect(topleft=pos)
+
 class Bus(pygame.sprite.Sprite):
     def __init__(self, pos, groups):
         super().__init__(groups)

@@ -5,7 +5,7 @@ import asyncio
 from src.player import Player
 from src.npc import NPC
 from src.inventory import Inventory
-from src.level import Tile, Decoration, Door, Bus, Item, PassGate, RoomNode
+from src.level import Tile, Decoration, Door, Bus, Guard, Item, PassGate, RoomNode
 from src.mobile_controls import MobileControls
 from src.state import StateMachine
 from src.states import PlayState, DialogueState, MenuState
@@ -17,12 +17,13 @@ from src.config import (
     FPS,
     ITEM_ID,
     REPEAT_MOM_DIALOGUE,
+    ROOM_ADMIN_OFFICE,
     ROOM_BEDROOM,
     ROOM_INTRAMUROS,
     ROOM_MAIN,
     ROOM_OUTSIDE,
-    ROOM_SCHOOL_ENTRANCE,
     ROOM_SCHOOL,
+    ROOM_SCHOOL_ENTRANCE,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
     STATE_DIALOGUE,
@@ -49,6 +50,7 @@ class Game:
         self.door_sprites = pygame.sprite.Group()
         self.item_sprites = pygame.sprite.Group()
         self.gate_sprites = pygame.sprite.Group()
+        self.guard_sprites = pygame.sprite.Group()
 
         self.location_display_text = ""
         self.location_display_timer = 0
@@ -142,6 +144,7 @@ class Game:
             ROOM_OUTSIDE: RoomNode(ROOM_OUTSIDE, 'Outside'),
             ROOM_INTRAMUROS: RoomNode(ROOM_INTRAMUROS, 'Intramuros'),
             ROOM_SCHOOL_ENTRANCE: RoomNode(ROOM_SCHOOL_ENTRANCE, 'School Entrance'),
+            ROOM_ADMIN_OFFICE: RoomNode(ROOM_ADMIN_OFFICE, 'Admin Office'),
             ROOM_SCHOOL: RoomNode(ROOM_SCHOOL, 'School')
         }
 
@@ -163,6 +166,8 @@ class Game:
         self.rooms[ROOM_INTRAMUROS].right = self.rooms[ROOM_SCHOOL_ENTRANCE]
         self.rooms[ROOM_SCHOOL_ENTRANCE].left = self.rooms[ROOM_INTRAMUROS]
         self.rooms[ROOM_SCHOOL_ENTRANCE].right = self.rooms[ROOM_SCHOOL]
+        self.rooms[ROOM_SCHOOL_ENTRANCE].up = self.rooms[ROOM_ADMIN_OFFICE]
+        self.rooms[ROOM_ADMIN_OFFICE].down = self.rooms[ROOM_SCHOOL_ENTRANCE]
         self.rooms[ROOM_SCHOOL].left = self.rooms[ROOM_SCHOOL_ENTRANCE]
 
     def create_money_icon(self):
@@ -233,10 +238,7 @@ class Game:
             self.money -= BUS_FARE
             destination = current_node.right.name if current_node and current_node.right else ROOM_INTRAMUROS
         elif self.current_room == ROOM_INTRAMUROS:
-            if self.player.rect.centerx < self.bus.rect.centerx:
-                destination = current_node.left.name if current_node and current_node.left else ROOM_OUTSIDE
-            else:
-                destination = current_node.right.name if current_node and current_node.right else ROOM_SCHOOL
+            destination = current_node.left.name if current_node and current_node.left else ROOM_OUTSIDE
         else:
             destination = current_node.left.name if current_node and current_node.left else ROOM_INTRAMUROS
 
@@ -282,6 +284,8 @@ class Game:
             sprite.kill()
         for sprite in self.gate_sprites:
             sprite.kill()
+        for sprite in self.guard_sprites:
+            sprite.kill()
 
         # Set location display
         current_node = self.rooms.get(self.current_room)
@@ -300,6 +304,8 @@ class Game:
             self.create_intramuros()
         elif self.current_room == ROOM_SCHOOL_ENTRANCE:
             self.create_school_entrance()
+        elif self.current_room == ROOM_ADMIN_OFFICE:
+            self.create_admin_office()
         elif self.current_room == ROOM_SCHOOL:
             self.create_school()
 
@@ -404,21 +410,10 @@ class Game:
             for col in range(0, SCREEN_WIDTH, TILE_SIZE):
                 Tile((col, row), [self.floor_sprites], stone_surf)
 
-        # Add heavy stone walls (The Walled City)
-        # Left wall with a gap for the gate
-        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
-            if abs(row - SCREEN_HEIGHT // 2) > TILE_SIZE:
-                Tile((0, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
-        
         # Top and Bottom walls
         for col in range(0, SCREEN_WIDTH, TILE_SIZE):
             Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
             Tile((col, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
-
-        # Right wall with a gap
-        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
-            if abs(row - SCREEN_HEIGHT // 2) > TILE_SIZE:
-                Tile((SCREEN_WIDTH - TILE_SIZE, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
 
         # Add a landmark - Manila Cathedral placeholder
         # We can use a table as placeholder or something else, but let's just use Decoration
@@ -428,36 +423,68 @@ class Game:
         # Position it near the center
         self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT // 2 + 50), [self.visible_sprites])
 
+        Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_INTRAMUROS].right.name, (64, SCREEN_HEIGHT // 2))
+
     def create_school_entrance(self):
-        try:
-            grass_surf = pygame.image.load('assets/images/grass.png').convert()
-            wall_surf = pygame.image.load('assets/images/wall.png').convert()
-        except (pygame.error, FileNotFoundError):
-            grass_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
-            grass_surf.fill((34, 139, 34))
-            wall_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
-            wall_surf.fill((120, 120, 120))
+        tile_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        tile_surf.fill((188, 194, 198))
+        pygame.draw.line(tile_surf, (226, 230, 232), (0, 0), (TILE_SIZE, 0), 2)
+        pygame.draw.line(tile_surf, (130, 138, 144), (0, TILE_SIZE - 1), (TILE_SIZE, TILE_SIZE - 1), 1)
+        pygame.draw.line(tile_surf, (226, 230, 232), (0, 0), (0, TILE_SIZE), 2)
+        pygame.draw.line(tile_surf, (130, 138, 144), (TILE_SIZE - 1, 0), (TILE_SIZE - 1, TILE_SIZE), 1)
+
+        wall_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        wall_surf.fill((82, 92, 102))
 
         for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
             for col in range(0, SCREEN_WIDTH, TILE_SIZE):
-                Tile((col, row), [self.floor_sprites], grass_surf)
+                Tile((col, row), [self.floor_sprites], tile_surf)
 
         for col in range(0, SCREEN_WIDTH, TILE_SIZE):
-            Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            if not (SCREEN_WIDTH // 2 - TILE_SIZE <= col <= SCREEN_WIDTH // 2 + TILE_SIZE):
+                Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
             Tile((col, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
 
-        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
-            if abs(row - SCREEN_HEIGHT // 2) > TILE_SIZE:
-                Tile((SCREEN_WIDTH - TILE_SIZE, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
-
         Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL_ENTRANCE].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
+        Door((SCREEN_WIDTH // 2 - TILE_SIZE // 2, 0), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL_ENTRANCE].up.name, (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 96))
+
+        section_width = SCREEN_WIDTH // 4
+        gate_x = section_width + section_width // 2 - TILE_SIZE // 2
+        gate_y = SCREEN_HEIGHT // 2 - TILE_SIZE
         PassGate(
-            (SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2 - TILE_SIZE),
+            (gate_x, gate_y),
             [self.visible_sprites, self.obstacle_sprites, self.gate_sprites],
             self.rooms[ROOM_SCHOOL_ENTRANCE].right.name,
             (64, SCREEN_HEIGHT // 2),
             ITEM_ID,
         )
+        Guard((gate_x - 48, gate_y + 32), [self.visible_sprites, self.obstacle_sprites, self.guard_sprites])
+        Guard((gate_x + 48, gate_y + 32), [self.visible_sprites, self.obstacle_sprites, self.guard_sprites])
+
+    def create_admin_office(self):
+        floor_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        floor_surf.fill((205, 208, 210))
+        pygame.draw.line(floor_surf, (235, 238, 240), (0, 0), (TILE_SIZE, 0), 2)
+        pygame.draw.line(floor_surf, (150, 155, 160), (0, TILE_SIZE - 1), (TILE_SIZE, TILE_SIZE - 1), 1)
+
+        wall_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        wall_surf.fill((95, 105, 115))
+
+        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
+            for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+                Tile((col, row), [self.floor_sprites], floor_surf)
+
+        for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+            Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            if not (SCREEN_WIDTH // 2 - TILE_SIZE <= col <= SCREEN_WIDTH // 2 + TILE_SIZE):
+                Tile((col, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+
+        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
+            Tile((0, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            Tile((SCREEN_WIDTH - TILE_SIZE, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+
+        Decoration((SCREEN_WIDTH // 2 - 80, 120), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
+        Door((SCREEN_WIDTH // 2 - TILE_SIZE // 2, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_ADMIN_OFFICE].down.name, (SCREEN_WIDTH // 2, 96))
 
     def create_school(self):
         try:

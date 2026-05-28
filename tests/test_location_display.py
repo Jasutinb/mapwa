@@ -41,6 +41,7 @@ def test_location_names_mapping(game):
         'outside': 'Outside',
         'intramuros': 'Intramuros',
         'school_entrance': 'School Entrance',
+        'admin_office': 'Admin Office',
         'school': 'School'
     }
     

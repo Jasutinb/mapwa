@@ -62,10 +62,7 @@ class PlayState(State):
             if self.game.current_room == ROOM_OUTSIDE:
                 text = "Press E to ride to Intramuros (20)"
             elif self.game.current_room == ROOM_INTRAMUROS:
-                if self.game.player.rect.centerx < self.game.bus.rect.centerx:
-                    text = "Press E to ride back to Outside"
-                else:
-                    text = "Press E to ride to School Entrance"
+                text = "Press E to ride back to Outside"
             else:
                 text = "Press E to ride back"
             

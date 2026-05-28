@@ -12,6 +12,7 @@ ROOM_BEDROOM = "bedroom"
 ROOM_OUTSIDE = "outside"
 ROOM_INTRAMUROS = "intramuros"
 ROOM_SCHOOL_ENTRANCE = "school_entrance"
+ROOM_ADMIN_OFFICE = "admin_office"
 ROOM_SCHOOL = "school"
 
 BUS_FARE = 20

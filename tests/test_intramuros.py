@@ -36,16 +36,10 @@ def test_intramuros_transition(game):
 def test_intramuros_to_school_entrance(game):
     game.current_room = 'intramuros'
     game.create_map()
-    
-    # Ensure player is in visible sprites for collision/proximity check
-    game.visible_sprites.add(game.player)
-    
-    # Move to the right side of the bus and ensure proximity
-    game.player.rect.center = (game.bus.rect.right - 10, game.bus.rect.centery)
-    
-    # Press E
-    event_e = pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_e})
-    game.handle_events([event_e])
+
+    entrance_door = next(s for s in game.door_sprites if getattr(s, 'target_room', None) == 'school_entrance')
+    game.player.rect.topleft = entrance_door.rect.topleft
+    game.update()
     
     assert game.current_room == 'school_entrance'
 
