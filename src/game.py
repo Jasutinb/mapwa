@@ -475,20 +475,22 @@ class Game:
         pygame.draw.rect(fence_surf, (172, 178, 184), (3, 8, TILE_SIZE - 6, 3))
         pygame.draw.rect(fence_surf, (172, 178, 184), (3, 22, TILE_SIZE - 6, 3))
 
+        section_width = SCREEN_WIDTH // 4
+        admin_door_x = SCREEN_WIDTH // 2 + section_width
+        gate_x = section_width + section_width // 2 - TILE_SIZE // 2
+        gate_y = SCREEN_HEIGHT // 2 - TILE_SIZE
+
         for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
             for col in range(0, SCREEN_WIDTH, TILE_SIZE):
                 Tile((col, row), [self.floor_sprites], tile_surf)
 
         for col in range(0, SCREEN_WIDTH, TILE_SIZE):
-            if not (SCREEN_WIDTH // 2 - TILE_SIZE <= col <= SCREEN_WIDTH // 2 + TILE_SIZE):
+            if not (admin_door_x - TILE_SIZE <= col <= admin_door_x + TILE_SIZE):
                 Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
             Tile((col, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
 
         Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL_ENTRANCE].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
 
-        section_width = SCREEN_WIDTH // 4
-        gate_x = section_width + section_width // 2 - TILE_SIZE // 2
-        gate_y = SCREEN_HEIGHT // 2 - TILE_SIZE
         for row in range(TILE_SIZE, SCREEN_HEIGHT - TILE_SIZE, TILE_SIZE):
             if not (gate_y - TILE_SIZE <= row <= gate_y + TILE_SIZE * 2):
                 Tile((gate_x, row), [self.visible_sprites, self.obstacle_sprites], fence_surf)
@@ -512,7 +514,7 @@ class Game:
             ["Students only beyond this point."],
         )
 
-        Door((SCREEN_WIDTH // 2 + section_width, 0), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL_ENTRANCE].up.name, (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 96))
+        Door((admin_door_x, 0), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL_ENTRANCE].up.name, (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 96))
         Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL_ENTRANCE].right.name, (64, SCREEN_HEIGHT // 2))
 
     def create_admin_office(self):

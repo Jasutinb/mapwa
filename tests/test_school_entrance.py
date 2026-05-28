@@ -128,6 +128,15 @@ def test_school_entrance_connects_to_north_room(game):
     assert game.current_room == ROOM_ADMIN_OFFICE
 
 
+def test_school_entrance_admin_path_has_clear_doorway(game):
+    game.current_room = ROOM_SCHOOL_ENTRANCE
+    game.create_map()
+
+    office_door = next(s for s in game.door_sprites if getattr(s, 'target_room', None) == ROOM_ADMIN_OFFICE)
+
+    assert not any(sprite.rect.colliderect(office_door.rect) for sprite in game.obstacle_sprites)
+
+
 def test_school_entrance_has_right_school_entrance_behind_gate(game):
     game.current_room = ROOM_SCHOOL_ENTRANCE
     game.create_map()
