@@ -8,7 +8,7 @@ from src.inventory import Inventory
 from src.level import Tile, Decoration, Door, Bus, Item, RoomNode
 from src.mobile_controls import MobileControls
 from src.state import StateMachine
-from src.states import PlayState, DialogueState
+from src.states import PlayState, DialogueState, MenuState
 from src.game_state import GameState
 from src.config import (
     ALLOWANCE_AMOUNT,
@@ -25,6 +25,7 @@ from src.config import (
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
     STATE_DIALOGUE,
+    STATE_MENU,
     STATE_PLAY,
     STUDY_DURATION_FRAMES,
     STUDY_XP,
@@ -77,8 +78,10 @@ class Game:
 
         # State Machine setup
         self.state_machine = StateMachine()
+        self.previous_state_before_menu = STATE_PLAY
         self.state_machine.add_state(STATE_PLAY, PlayState(self))
         self.state_machine.add_state(STATE_DIALOGUE, DialogueState(self))
+        self.state_machine.add_state(STATE_MENU, MenuState(self))
         self.state_machine.change_state(STATE_PLAY)
 
     @property
@@ -174,6 +177,16 @@ class Game:
     def show_dialogue(self, lines):
         self.state.start_dialogue(lines)
         self.state_machine.change_state(STATE_DIALOGUE)
+
+    def open_menu(self):
+        if self.state_machine.current_state_name == STATE_MENU:
+            return
+        self.previous_state_before_menu = self.state_machine.current_state_name or STATE_PLAY
+        self.state_machine.change_state(STATE_MENU)
+
+    def close_menu(self):
+        target_state = self.previous_state_before_menu or STATE_PLAY
+        self.state_machine.change_state(target_state)
 
     def finish_dialogue(self):
         self.state.clear_dialogue()
@@ -448,6 +461,13 @@ class Game:
         if self.mobile_controls.consume_action_press():
             events = list(events)
             events.append(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e))
+        for event in events:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                if self.state_machine.current_state_name == STATE_MENU:
+                    self.close_menu()
+                else:
+                    self.open_menu()
+                break
         self.state_machine.handle_events(events)
 
     def check_proximity(self, sprite1, sprite2, distance):
