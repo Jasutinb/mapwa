@@ -1,3 +1,3 @@
-pytest -n 4
+pytest -n auto
 ruff check --fix
 
