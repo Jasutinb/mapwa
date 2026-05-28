@@ -2,7 +2,7 @@ import pygame
 import random
 
 class NPC(pygame.sprite.Sprite):
-    def __init__(self, pos, groups, sprite_path, name="NPC"):
+    def __init__(self, pos, groups, sprite_path, name="NPC", can_wander=True):
         super().__init__(groups)
         self.name = name
         # Load NPC image
@@ -15,6 +15,7 @@ class NPC(pygame.sprite.Sprite):
         
         self.rect = self.image.get_rect(topleft=pos)
         self.dialogue = [f"Hello, I am {self.name}."]
+        self.can_wander = can_wander
 
         # Movement / Wandering
         self.direction = pygame.math.Vector2()
@@ -46,4 +47,5 @@ class NPC(pygame.sprite.Sprite):
         self.rect.y += self.direction.y * self.speed
 
     def update(self):
-        self.wander()
+        if self.can_wander:
+            self.wander()

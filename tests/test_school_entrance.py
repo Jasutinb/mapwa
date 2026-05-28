@@ -6,8 +6,16 @@ os.environ['SDL_AUDIODRIVER'] = 'dummy'
 import pygame
 import pytest
 
-from src.config import ITEM_ID, ROOM_ADMIN_OFFICE, ROOM_INTRAMUROS, ROOM_SCHOOL, ROOM_SCHOOL_ENTRANCE, SCREEN_WIDTH
+from src.config import (
+    ITEM_ID,
+    ROOM_ADMIN_OFFICE,
+    ROOM_INTRAMUROS,
+    ROOM_SCHOOL,
+    ROOM_SCHOOL_ENTRANCE,
+    SCREEN_WIDTH,
+)
 from src.game import Game
+from src.npc import NPC
 
 
 @pytest.fixture
@@ -55,12 +63,13 @@ def test_school_gate_allows_player_with_id(game):
     game.current_room = ROOM_SCHOOL_ENTRANCE
     game.create_map()
     gate = next(iter(game.gate_sprites))
-    game.player.rect.center = gate.rect.center
+    game.player.rect.center = (gate.rect.left - 20, gate.rect.centery)
 
     event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
     game.handle_events([event])
 
-    assert game.current_room == ROOM_SCHOOL
+    assert game.current_room == ROOM_SCHOOL_ENTRANCE
+    assert game.player.rect.left > gate.rect.right
 
 
 def test_school_entrance_has_second_section_gate_and_guards(game):
@@ -72,6 +81,8 @@ def test_school_entrance_has_second_section_gate_and_guards(game):
 
     assert section_width <= gate.rect.centerx < section_width * 2
     assert len(game.guard_sprites) == 2
+    assert all(isinstance(guard, NPC) for guard in game.guard_sprites)
+    assert all(not guard.can_wander for guard in game.guard_sprites)
 
 
 def test_school_entrance_has_modern_tile_floor(game):
@@ -85,9 +96,34 @@ def test_school_entrance_has_modern_tile_floor(game):
 def test_school_entrance_connects_to_north_room(game):
     game.current_room = ROOM_SCHOOL_ENTRANCE
     game.create_map()
+    gate = next(iter(game.gate_sprites))
 
     office_door = next(s for s in game.door_sprites if getattr(s, 'target_room', None) == ROOM_ADMIN_OFFICE)
+    assert office_door.rect.centerx > gate.rect.centerx
+
     game.player.rect.topleft = office_door.rect.topleft
     game.update()
 
     assert game.current_room == ROOM_ADMIN_OFFICE
+
+
+def test_school_entrance_has_right_school_entrance_behind_gate(game):
+    game.current_room = ROOM_SCHOOL_ENTRANCE
+    game.create_map()
+    gate = next(iter(game.gate_sprites))
+
+    school_door = next(s for s in game.door_sprites if getattr(s, 'target_room', None) == ROOM_SCHOOL)
+
+    assert school_door.rect.centerx > gate.rect.centerx
+
+
+def test_school_entrance_guard_is_interactable(game):
+    game.current_room = ROOM_SCHOOL_ENTRANCE
+    game.create_map()
+    guard = next(iter(game.guard_sprites))
+    game.player.rect.center = guard.rect.center
+
+    event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
+    game.handle_events([event])
+
+    assert game.current_dialogue == guard.dialogue

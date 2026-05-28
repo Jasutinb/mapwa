@@ -26,6 +26,8 @@ class PlayState(State):
                         self.game.ride_bus()
                     elif self.game.current_room == ROOM_SCHOOL_ENTRANCE and self.game.try_enter_school_gate():
                         pass
+                    elif self.game.current_room == ROOM_SCHOOL_ENTRANCE and self.game.talk_to_guard():
+                        pass
                     elif self.game.current_room == ROOM_SCHOOL and hasattr(self.game, 'school_desk') and self.game.check_proximity(self.game.player, self.game.school_desk, 64):
                         self.game.study_at_school()
                     else:
@@ -78,9 +80,15 @@ class PlayState(State):
         if self.game.current_room == ROOM_SCHOOL_ENTRANCE:
             gate = next((sprite for sprite in self.game.gate_sprites if self.game.check_proximity(self.game.player, sprite, 80)), None)
             if gate:
-                hint_surf = self.game.font.render("Press E to enter school", True, 'white')
+                hint_surf = self.game.font.render("Press E to use gate", True, 'white')
                 hint_rect = hint_surf.get_rect(center=(gate.rect.centerx, gate.rect.top - 20))
                 screen.blit(hint_surf, hint_rect)
+            else:
+                guard = next((sprite for sprite in self.game.guard_sprites if self.game.check_proximity(self.game.player, sprite, 64)), None)
+                if guard:
+                    hint_surf = self.game.font.render("Press E to talk", True, 'white')
+                    hint_rect = hint_surf.get_rect(center=(guard.rect.centerx, guard.rect.top - 20))
+                    screen.blit(hint_surf, hint_rect)
 
         # Draw item interaction hint
         item_hits = pygame.sprite.spritecollide(self.game.player, self.game.item_sprites, False)

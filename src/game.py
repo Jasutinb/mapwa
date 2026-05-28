@@ -6,7 +6,7 @@ import os
 from src.player import Player
 from src.npc import NPC
 from src.inventory import Inventory
-from src.level import Tile, Decoration, Door, Bus, Guard, Item, PassGate, RoomNode
+from src.level import Tile, Decoration, Door, Bus, Item, PassGate, RoomNode
 from src.mobile_controls import MobileControls
 from src.state import StateMachine
 from src.states import PlayState, DialogueState, MenuState
@@ -228,6 +228,13 @@ class Game:
     def talk_to_mom(self):
         self.show_dialogue(self.mom.interact())
 
+    def talk_to_guard(self):
+        guard = next((sprite for sprite in self.guard_sprites if self.check_proximity(self.player, sprite, 64)), None)
+        if guard is None:
+            return False
+        self.show_dialogue(guard.interact())
+        return True
+
     def travel_to_room(self, room_name, spawn_pos=None, use_topleft=False):
         self.current_room = room_name
         self.create_map()
@@ -282,7 +289,11 @@ class Game:
             self.show_dialogue(["I need my ID to enter the school."])
             return True
 
-        self.travel_to_room(gate.target_room, gate.spawn_pos, use_topleft=True)
+        if gate.target_room == self.current_room:
+            spawn_pos = gate.right_spawn_pos if self.player.rect.centerx < gate.rect.centerx else gate.left_spawn_pos
+            self.travel_to_room(gate.target_room, spawn_pos, use_topleft=True)
+        else:
+            self.travel_to_room(gate.target_room, gate.spawn_pos, use_topleft=True)
         return True
 
     def create_map(self):
@@ -450,6 +461,12 @@ class Game:
 
         wall_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
         wall_surf.fill((82, 92, 102))
+        fence_surf = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
+        fence_surf.fill((0, 0, 0, 0))
+        for x in (6, 15, 24):
+            pygame.draw.rect(fence_surf, (112, 120, 126), (x, 2, 3, TILE_SIZE - 4))
+        pygame.draw.rect(fence_surf, (172, 178, 184), (3, 8, TILE_SIZE - 6, 3))
+        pygame.draw.rect(fence_surf, (172, 178, 184), (3, 22, TILE_SIZE - 6, 3))
 
         for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
             for col in range(0, SCREEN_WIDTH, TILE_SIZE):
@@ -461,20 +478,31 @@ class Game:
             Tile((col, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
 
         Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL_ENTRANCE].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
-        Door((SCREEN_WIDTH // 2 - TILE_SIZE // 2, 0), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL_ENTRANCE].up.name, (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 96))
 
         section_width = SCREEN_WIDTH // 4
         gate_x = section_width + section_width // 2 - TILE_SIZE // 2
         gate_y = SCREEN_HEIGHT // 2 - TILE_SIZE
-        PassGate(
+        for row in range(TILE_SIZE, SCREEN_HEIGHT - TILE_SIZE, TILE_SIZE):
+            if not (gate_y - TILE_SIZE <= row <= gate_y + TILE_SIZE * 2):
+                Tile((gate_x, row), [self.visible_sprites, self.obstacle_sprites], fence_surf)
+
+        gate = PassGate(
             (gate_x, gate_y),
             [self.visible_sprites, self.obstacle_sprites, self.gate_sprites],
-            self.rooms[ROOM_SCHOOL_ENTRANCE].right.name,
-            (64, SCREEN_HEIGHT // 2),
+            ROOM_SCHOOL_ENTRANCE,
+            (gate_x + 96, SCREEN_HEIGHT // 2),
             ITEM_ID,
         )
-        Guard((gate_x - 48, gate_y + 32), [self.visible_sprites, self.obstacle_sprites, self.guard_sprites])
-        Guard((gate_x + 48, gate_y + 32), [self.visible_sprites, self.obstacle_sprites, self.guard_sprites])
+        gate.left_spawn_pos = (gate_x - 64, SCREEN_HEIGHT // 2)
+        gate.right_spawn_pos = (gate_x + 96, SCREEN_HEIGHT // 2)
+
+        self.guard_1 = NPC((gate_x - 48, gate_y + 112), [self.visible_sprites, self.obstacle_sprites, self.guard_sprites], 'assets/images/player.png', name="Guard", can_wander=False)
+        self.guard_1.dialogue = ["Please present your ID at the gate."]
+        self.guard_2 = NPC((gate_x + 48, gate_y + 112), [self.visible_sprites, self.obstacle_sprites, self.guard_sprites], 'assets/images/player.png', name="Guard", can_wander=False)
+        self.guard_2.dialogue = ["Students only beyond this point."]
+
+        Door((SCREEN_WIDTH // 2 + section_width, 0), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL_ENTRANCE].up.name, (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 96))
+        Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL_ENTRANCE].right.name, (64, SCREEN_HEIGHT // 2))
 
     def create_admin_office(self):
         floor_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))

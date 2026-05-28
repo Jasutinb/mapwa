@@ -43,10 +43,13 @@ class PassGate(pygame.sprite.Sprite):
         self.target_room = target_room
         self.spawn_pos = spawn_pos
         self.required_item_id = required_item_id
-        self.image = pygame.Surface((32, 96))
-        self.image.fill((90, 90, 90))
-        pygame.draw.rect(self.image, (180, 180, 180), (4, 4, 24, 88), 2)
-        pygame.draw.rect(self.image, (220, 220, 80), (9, 36, 14, 24))
+        self.image = pygame.Surface((32, 96), pygame.SRCALPHA)
+        self.image.fill((0, 0, 0, 0))
+        for x in (4, 14, 24):
+            pygame.draw.rect(self.image, (105, 112, 118), (x, 4, 4, 88))
+        for y in (12, 42, 72):
+            pygame.draw.rect(self.image, (165, 172, 178), (2, y, 28, 4))
+        pygame.draw.rect(self.image, (220, 220, 80), (11, 38, 10, 20))
         self.rect = self.image.get_rect(topleft=pos)
 
 class Guard(pygame.sprite.Sprite):
