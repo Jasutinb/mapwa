@@ -112,6 +112,7 @@ def test_player_movement():
 - **Naming**: Uses `snake_case` for functions and variables, `PascalCase` for classes.
 - **Constants**: Defined at the top of files (e.g., `SCREEN_WIDTH`, `TILE_SIZE`) in `UPPER_SNAKE_CASE`.
 - **Sprite Groups**: The game uses `pygame.sprite.Group` for management and rendering.
+- **Character Sprites**: When creating new character sprites, use the existing main character and Mom sprites as visual references first, then add role-specific personalization such as clothing, color accents, accessories, or badges. Avoid unrelated hand-drawn placeholder characters when an NPC should belong to the same visual style.
 
 ### WebAssembly Compatibility (pygbag)
 When developing features, keep these WASM-specific constraints in mind:

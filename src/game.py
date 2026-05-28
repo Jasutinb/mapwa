@@ -296,6 +296,13 @@ class Game:
             self.travel_to_room(gate.target_room, gate.spawn_pos, use_topleft=True)
         return True
 
+    def create_guard_npc(self, pos, dialogue):
+        guard = NPC(pos, [self.visible_sprites, self.obstacle_sprites, self.guard_sprites], 'assets/images/guard.png', name="Guard", can_wander=False)
+        guard.dialogue = dialogue
+        guard.sprite_asset = 'assets/images/guard.png'
+        guard.sprite_base_assets = ('assets/images/player.png', 'assets/images/mom.png')
+        return guard
+
     def create_map(self):
         # Clear existing sprites
         for sprite in self.visible_sprites:
@@ -496,10 +503,14 @@ class Game:
         gate.left_spawn_pos = (gate_x - 64, SCREEN_HEIGHT // 2)
         gate.right_spawn_pos = (gate_x + 96, SCREEN_HEIGHT // 2)
 
-        self.guard_1 = NPC((gate_x - 48, gate_y + 112), [self.visible_sprites, self.obstacle_sprites, self.guard_sprites], 'assets/images/player.png', name="Guard", can_wander=False)
-        self.guard_1.dialogue = ["Please present your ID at the gate."]
-        self.guard_2 = NPC((gate_x + 48, gate_y + 112), [self.visible_sprites, self.obstacle_sprites, self.guard_sprites], 'assets/images/player.png', name="Guard", can_wander=False)
-        self.guard_2.dialogue = ["Students only beyond this point."]
+        self.guard_1 = self.create_guard_npc(
+            (gate_x - 48, gate_y + 112),
+            ["Please present your ID at the gate."],
+        )
+        self.guard_2 = self.create_guard_npc(
+            (gate_x + 48, gate_y + 112),
+            ["Students only beyond this point."],
+        )
 
         Door((SCREEN_WIDTH // 2 + section_width, 0), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL_ENTRANCE].up.name, (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 96))
         Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL_ENTRANCE].right.name, (64, SCREEN_HEIGHT // 2))

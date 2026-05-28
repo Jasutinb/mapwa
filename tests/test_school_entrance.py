@@ -5,6 +5,7 @@ os.environ['SDL_AUDIODRIVER'] = 'dummy'
 
 import pygame
 import pytest
+from pathlib import Path
 
 from src.config import (
     ITEM_ID,
@@ -83,6 +84,26 @@ def test_school_entrance_has_second_section_gate_and_guards(game):
     assert len(game.guard_sprites) == 2
     assert all(isinstance(guard, NPC) for guard in game.guard_sprites)
     assert all(not guard.can_wander for guard in game.guard_sprites)
+    assert all(guard.sprite_asset == 'assets/images/guard.png' for guard in game.guard_sprites)
+    assert all(
+        guard.sprite_base_assets == ('assets/images/player.png', 'assets/images/mom.png')
+        for guard in game.guard_sprites
+    )
+
+
+def test_school_entrance_guards_use_personalized_character_sprites(game):
+    assert Path('assets/images/guard.png').exists()
+
+    game.current_room = ROOM_SCHOOL_ENTRANCE
+    game.create_map()
+    player_image = pygame.image.load('assets/images/player.png').convert_alpha()
+    guard_asset = pygame.image.load('assets/images/guard.png').convert_alpha()
+    player_pixels = pygame.image.tobytes(player_image, 'RGBA')
+
+    for guard in game.guard_sprites:
+        assert guard.image.get_size() == player_image.get_size()
+        assert pygame.image.tobytes(guard.image, 'RGBA') != player_pixels
+        assert pygame.image.tobytes(guard.image, 'RGBA') == pygame.image.tobytes(guard_asset, 'RGBA')
 
 
 def test_school_entrance_has_modern_tile_floor(game):
