@@ -5,6 +5,7 @@ FPS = 60
 
 STATE_PLAY = "play"
 STATE_DIALOGUE = "dialogue"
+STATE_MENU = "menu"
 
 ROOM_MAIN = "main"
 ROOM_BEDROOM = "bedroom"

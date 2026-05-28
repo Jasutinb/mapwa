@@ -102,3 +102,64 @@ class DialogueState(State):
             
             prompt_surf = self.game.font.render("Press E to continue...", True, (150, 150, 150))
             screen.blit(prompt_surf, (box_rect.right - 180, box_rect.bottom - 30))
+
+
+class MenuState(State):
+    def __init__(self, game):
+        super().__init__(game)
+        self.options = ["Resume", "Quit Game"]
+        self.selected_index = 0
+
+    def handle_events(self, events):
+        for event in events:
+            if event.type != pygame.KEYDOWN:
+                continue
+
+            if event.key in (pygame.K_UP, pygame.K_w):
+                self.selected_index = (self.selected_index - 1) % len(self.options)
+            elif event.key in (pygame.K_DOWN, pygame.K_s):
+                self.selected_index = (self.selected_index + 1) % len(self.options)
+            elif event.key in (pygame.K_RETURN, pygame.K_SPACE, pygame.K_e):
+                self.select_current_option()
+
+    def select_current_option(self):
+        selected = self.options[self.selected_index]
+        if selected == "Resume":
+            self.game.close_menu()
+        elif selected == "Quit Game":
+            self.game.running = False
+
+    def draw(self, screen):
+        previous_state = self.game.state_machine.states.get(self.game.previous_state_before_menu)
+        if previous_state and previous_state != self:
+            previous_state.draw(screen)
+
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 140))
+        screen.blit(overlay, (0, 0))
+
+        menu_rect = pygame.Rect(0, 0, 320, 230)
+        menu_rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+        pygame.draw.rect(screen, (30, 30, 30), menu_rect, border_radius=8)
+        pygame.draw.rect(screen, (220, 220, 220), menu_rect, 2, border_radius=8)
+
+        try:
+            title_font = pygame.font.SysFont('Arial', 36, bold=True)
+        except pygame.error:
+            title_font = pygame.font.Font(None, 36)
+
+        title_surf = title_font.render("Paused", True, 'white')
+        title_rect = title_surf.get_rect(center=(menu_rect.centerx, menu_rect.top + 45))
+        screen.blit(title_surf, title_rect)
+
+        for index, option in enumerate(self.options):
+            option_rect = pygame.Rect(menu_rect.left + 40, menu_rect.top + 95 + index * 55, menu_rect.width - 80, 40)
+            is_selected = index == self.selected_index
+            bg_color = (70, 120, 180) if is_selected else (45, 45, 45)
+            border_color = (240, 240, 240) if is_selected else (100, 100, 100)
+            pygame.draw.rect(screen, bg_color, option_rect, border_radius=6)
+            pygame.draw.rect(screen, border_color, option_rect, 2, border_radius=6)
+
+            text_surf = self.game.font.render(option, True, 'white')
+            text_rect = text_surf.get_rect(center=option_rect.center)
+            screen.blit(text_surf, text_rect)
