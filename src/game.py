@@ -1,6 +1,7 @@
 import pygame
 import sys
 import asyncio
+import os
 
 from src.player import Player
 from src.npc import NPC
@@ -33,6 +34,11 @@ from src.config import (
     STUDY_XP,
     TILE_SIZE,
 )
+
+DEV_LOADOUT_ENV = "MAPWA_DEV_LOADOUT"
+DEV_LOADOUT_ITEMS = [
+    (ITEM_ID, "ID"),
+]
 
 class Game:
     def __init__(self):
@@ -76,6 +82,8 @@ class Game:
 
         # Inventory setup
         self.inventory = Inventory()
+        if os.environ.get(DEV_LOADOUT_ENV) == "1":
+            self.apply_dev_loadout()
 
         # UI Assets
         self.money_icon = self.create_money_icon()
@@ -248,6 +256,13 @@ class Game:
     def study_at_school(self):
         self.experience += STUDY_XP
         self.player.start_study(STUDY_DURATION_FRAMES)
+
+    def apply_dev_loadout(self):
+        self.money = 999
+        for item_id, item_name in DEV_LOADOUT_ITEMS:
+            self.state.mark_item_picked(item_id)
+            if not any(getattr(item, 'item_id', None) == item_id for item in self.inventory.slots):
+                self.inventory.add_item(Item((0, 0), [], item_name, item_id=item_id))
 
     def pick_up_item(self, item):
         if not self.inventory.add_item(item):

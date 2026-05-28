@@ -8,6 +8,7 @@ from watchdog.events import FileSystemEventHandler
 IGNORED_DIRS = {
     os.path.normcase(os.path.abspath("tests"))
 }
+DEV_LOADOUT_ENV = "MAPWA_DEV_LOADOUT"
 
 
 def is_ignored_path(path):
@@ -35,7 +36,9 @@ class ReloadHandler(FileSystemEventHandler):
         
         print(f"\n[Watcher] Starting: {' '.join(self.command)}")
         # Use a new process group to ensure we can kill children if needed (on Windows it's different)
-        self.process = subprocess.Popen(self.command)
+        env = os.environ.copy()
+        env[DEV_LOADOUT_ENV] = "1"
+        self.process = subprocess.Popen(self.command, env=env)
 
     def on_modified(self, event):
         if event.is_directory:
