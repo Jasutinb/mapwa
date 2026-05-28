@@ -5,7 +5,7 @@ import asyncio
 from src.player import Player
 from src.npc import NPC
 from src.inventory import Inventory
-from src.level import Tile, Decoration, Door, Bus, Item, RoomNode
+from src.level import Tile, Decoration, Door, Bus, Item, PassGate, RoomNode
 from src.mobile_controls import MobileControls
 from src.state import StateMachine
 from src.states import PlayState, DialogueState, MenuState
@@ -15,12 +15,13 @@ from src.config import (
     BUS_FARE,
     FIRST_MOM_DIALOGUE,
     FPS,
-    ITEM_NOTEBOOK,
+    ITEM_ID,
     REPEAT_MOM_DIALOGUE,
     ROOM_BEDROOM,
     ROOM_INTRAMUROS,
     ROOM_MAIN,
     ROOM_OUTSIDE,
+    ROOM_SCHOOL_ENTRANCE,
     ROOM_SCHOOL,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
@@ -47,6 +48,7 @@ class Game:
         self.floor_sprites = pygame.sprite.Group()
         self.door_sprites = pygame.sprite.Group()
         self.item_sprites = pygame.sprite.Group()
+        self.gate_sprites = pygame.sprite.Group()
 
         self.location_display_text = ""
         self.location_display_timer = 0
@@ -139,6 +141,7 @@ class Game:
             ROOM_BEDROOM: RoomNode(ROOM_BEDROOM, 'Bedroom'),
             ROOM_OUTSIDE: RoomNode(ROOM_OUTSIDE, 'Outside'),
             ROOM_INTRAMUROS: RoomNode(ROOM_INTRAMUROS, 'Intramuros'),
+            ROOM_SCHOOL_ENTRANCE: RoomNode(ROOM_SCHOOL_ENTRANCE, 'School Entrance'),
             ROOM_SCHOOL: RoomNode(ROOM_SCHOOL, 'School')
         }
 
@@ -156,9 +159,11 @@ class Game:
         self.rooms[ROOM_OUTSIDE].right = self.rooms[ROOM_INTRAMUROS]
         self.rooms[ROOM_INTRAMUROS].left = self.rooms[ROOM_OUTSIDE]
 
-        # School is linked via Bus from Intramuros, let's say it's to the right of Intramuros
-        self.rooms[ROOM_INTRAMUROS].right = self.rooms[ROOM_SCHOOL]
-        self.rooms[ROOM_SCHOOL].left = self.rooms[ROOM_INTRAMUROS]
+        # School Entrance sits between Intramuros and School
+        self.rooms[ROOM_INTRAMUROS].right = self.rooms[ROOM_SCHOOL_ENTRANCE]
+        self.rooms[ROOM_SCHOOL_ENTRANCE].left = self.rooms[ROOM_INTRAMUROS]
+        self.rooms[ROOM_SCHOOL_ENTRANCE].right = self.rooms[ROOM_SCHOOL]
+        self.rooms[ROOM_SCHOOL].left = self.rooms[ROOM_SCHOOL_ENTRANCE]
 
     def create_money_icon(self):
         icon = pygame.Surface((24, 24), pygame.SRCALPHA)
@@ -251,6 +256,18 @@ class Game:
         self.show_dialogue([f"You picked up a {item.name}!"])
         return True
 
+    def try_enter_school_gate(self):
+        gate = next((sprite for sprite in self.gate_sprites if self.check_proximity(self.player, sprite, 80)), None)
+        if gate is None:
+            return False
+
+        if gate.required_item_id not in self.state.inventory_item_ids:
+            self.show_dialogue(["I need my ID to enter the school."])
+            return True
+
+        self.travel_to_room(gate.target_room, gate.spawn_pos, use_topleft=True)
+        return True
+
     def create_map(self):
         # Clear existing sprites
         for sprite in self.visible_sprites:
@@ -262,6 +279,8 @@ class Game:
         for sprite in self.door_sprites:
             sprite.kill()
         for sprite in self.item_sprites:
+            sprite.kill()
+        for sprite in self.gate_sprites:
             sprite.kill()
 
         # Set location display
@@ -279,6 +298,8 @@ class Game:
             self.create_outside()
         elif self.current_room == ROOM_INTRAMUROS:
             self.create_intramuros()
+        elif self.current_room == ROOM_SCHOOL_ENTRANCE:
+            self.create_school_entrance()
         elif self.current_room == ROOM_SCHOOL:
             self.create_school()
 
@@ -340,8 +361,8 @@ class Game:
         Decoration((200, 300), [self.visible_sprites], 'assets/images/rug.png')
 
         # Add items
-        if ITEM_NOTEBOOK not in self.state.picked_item_ids:
-            Item((300, 150), [self.visible_sprites, self.item_sprites], "Notebook", item_id=ITEM_NOTEBOOK)
+        if ITEM_ID not in self.state.picked_item_ids:
+            Item((300, 150), [self.visible_sprites, self.item_sprites], "ID", item_id=ITEM_ID)
 
         # Add door back to Main
         Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_BEDROOM].right.name, (64, SCREEN_HEIGHT // 2))
@@ -407,6 +428,37 @@ class Game:
         # Position it near the center
         self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT // 2 + 50), [self.visible_sprites])
 
+    def create_school_entrance(self):
+        try:
+            grass_surf = pygame.image.load('assets/images/grass.png').convert()
+            wall_surf = pygame.image.load('assets/images/wall.png').convert()
+        except (pygame.error, FileNotFoundError):
+            grass_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+            grass_surf.fill((34, 139, 34))
+            wall_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+            wall_surf.fill((120, 120, 120))
+
+        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
+            for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+                Tile((col, row), [self.floor_sprites], grass_surf)
+
+        for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+            Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            Tile((col, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+
+        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
+            if abs(row - SCREEN_HEIGHT // 2) > TILE_SIZE:
+                Tile((SCREEN_WIDTH - TILE_SIZE, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+
+        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL_ENTRANCE].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
+        PassGate(
+            (SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2 - TILE_SIZE),
+            [self.visible_sprites, self.obstacle_sprites, self.gate_sprites],
+            self.rooms[ROOM_SCHOOL_ENTRANCE].right.name,
+            (64, SCREEN_HEIGHT // 2),
+            ITEM_ID,
+        )
+
     def create_school(self):
         try:
             floor_surf = pygame.image.load('assets/images/floor.png').convert()
@@ -436,7 +488,7 @@ class Game:
         self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT - 100), [self.visible_sprites])
 
         # Add door to exit school
-        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL].left.name, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100))
+        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
 
     async def run(self):
         while self.running:

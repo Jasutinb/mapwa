@@ -37,6 +37,18 @@ class Door(pygame.sprite.Sprite):
             self.image.fill('brown')
         self.rect = self.image.get_rect(topleft=pos)
 
+class PassGate(pygame.sprite.Sprite):
+    def __init__(self, pos, groups, target_room, spawn_pos, required_item_id):
+        super().__init__(groups)
+        self.target_room = target_room
+        self.spawn_pos = spawn_pos
+        self.required_item_id = required_item_id
+        self.image = pygame.Surface((32, 96))
+        self.image.fill((90, 90, 90))
+        pygame.draw.rect(self.image, (180, 180, 180), (4, 4, 24, 88), 2)
+        pygame.draw.rect(self.image, (220, 220, 80), (9, 36, 14, 24))
+        self.rect = self.image.get_rect(topleft=pos)
+
 class Bus(pygame.sprite.Sprite):
     def __init__(self, pos, groups):
         super().__init__(groups)

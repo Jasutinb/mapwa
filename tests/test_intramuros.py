@@ -33,7 +33,7 @@ def test_intramuros_transition(game):
     assert game.money == 0
     assert "Intramuros" in game.location_display_text
 
-def test_intramuros_to_school(game):
+def test_intramuros_to_school_entrance(game):
     game.current_room = 'intramuros'
     game.create_map()
     
@@ -47,7 +47,7 @@ def test_intramuros_to_school(game):
     event_e = pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_e})
     game.handle_events([event_e])
     
-    assert game.current_room == 'school'
+    assert game.current_room == 'school_entrance'
 
 def test_intramuros_to_outside(game):
     game.current_room = 'intramuros'
@@ -65,7 +65,7 @@ def test_intramuros_to_outside(game):
     
     assert game.current_room == 'outside'
 
-def test_school_to_intramuros(game):
+def test_school_to_school_entrance(game):
     game.current_room = 'school'
     game.create_map()
     
@@ -76,4 +76,4 @@ def test_school_to_intramuros(game):
     event_e = pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_e})
     game.handle_events([event_e])
     
-    assert game.current_room == 'intramuros'
+    assert game.current_room == 'school_entrance'

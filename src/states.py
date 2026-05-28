@@ -4,6 +4,7 @@ from src.config import (
     ROOM_INTRAMUROS,
     ROOM_MAIN,
     ROOM_OUTSIDE,
+    ROOM_SCHOOL_ENTRANCE,
     ROOM_SCHOOL,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
@@ -23,6 +24,8 @@ class PlayState(State):
                         self.game.talk_to_mom()
                     elif self.game.current_room in (ROOM_OUTSIDE, ROOM_SCHOOL, ROOM_INTRAMUROS) and hasattr(self.game, 'bus') and self.game.check_proximity(self.game.player, self.game.bus, 100):
                         self.game.ride_bus()
+                    elif self.game.current_room == ROOM_SCHOOL_ENTRANCE and self.game.try_enter_school_gate():
+                        pass
                     elif self.game.current_room == ROOM_SCHOOL and hasattr(self.game, 'school_desk') and self.game.check_proximity(self.game.player, self.game.school_desk, 64):
                         self.game.study_at_school()
                     else:
@@ -62,7 +65,7 @@ class PlayState(State):
                 if self.game.player.rect.centerx < self.game.bus.rect.centerx:
                     text = "Press E to ride back to Outside"
                 else:
-                    text = "Press E to ride to School"
+                    text = "Press E to ride to School Entrance"
             else:
                 text = "Press E to ride back"
             
@@ -74,6 +77,13 @@ class PlayState(State):
             hint_surf = self.game.font.render("Press E to study", True, 'white')
             hint_rect = hint_surf.get_rect(center=(self.game.school_desk.rect.centerx, self.game.school_desk.rect.top - 20))
             screen.blit(hint_surf, hint_rect)
+
+        if self.game.current_room == ROOM_SCHOOL_ENTRANCE:
+            gate = next((sprite for sprite in self.game.gate_sprites if self.game.check_proximity(self.game.player, sprite, 80)), None)
+            if gate:
+                hint_surf = self.game.font.render("Press E to enter school", True, 'white')
+                hint_rect = hint_surf.get_rect(center=(gate.rect.centerx, gate.rect.top - 20))
+                screen.blit(hint_surf, hint_rect)
 
         # Draw item interaction hint
         item_hits = pygame.sprite.spritecollide(self.game.player, self.game.item_sprites, False)

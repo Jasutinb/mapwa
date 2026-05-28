@@ -15,19 +15,18 @@ def game():
     yield g
     pygame.quit()
 
-def test_transition_from_school_to_intramuros(game):
+def test_transition_from_school_to_school_entrance(game):
     # Setup school
     game.current_room = 'school'
     game.create_map()
     
-    # Find the door to intramuros
-    intramuros_door = next(s for s in game.door_sprites if getattr(s, 'target_room', None) == 'intramuros')
+    # Find the door to the school entrance
+    entrance_door = next(s for s in game.door_sprites if getattr(s, 'target_room', None) == 'school_entrance')
     
     # Place player on the door
-    game.player.rect.topleft = intramuros_door.rect.topleft
+    game.player.rect.topleft = entrance_door.rect.topleft
     game.update()
     
-    assert game.current_room == 'intramuros'
-    assert game.player.rect.topleft == intramuros_door.spawn_pos
-    # Verify intramuros specific items (bus should be there)
-    assert hasattr(game, 'bus')
+    assert game.current_room == 'school_entrance'
+    assert game.player.rect.topleft == entrance_door.spawn_pos
+    assert len(game.gate_sprites) == 1
