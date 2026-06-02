@@ -27,6 +27,12 @@ FIRST_MOM_DIALOGUE = [
     "Here's your allowance for today.",
 ]
 
+DAILY_ALLOWANCE_MOM_DIALOGUE = [
+    "Hi sweetie!",
+    "Spend it wisely.",
+    "Here's your allowance for today.",
+]
+
 REPEAT_MOM_DIALOGUE = [
     "Hi sweetie!",
     "Make sure to study hard!",

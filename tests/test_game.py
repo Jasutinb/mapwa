@@ -10,6 +10,8 @@ from src.game import Game
 from src.game import DEV_LOADOUT_ENV
 from src.config import ITEM_ID
 
+ALLOWANCE_LINE = "Here's your allowance for today."
+
 @pytest.fixture
 def game():
     pygame.init()
@@ -17,7 +19,17 @@ def game():
     yield g
     pygame.quit()
 
+def press_interact(game):
+    pygame.event.post(pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_e}))
+    game.handle_events()
+
+def complete_current_dialogue(game):
+    while game.current_dialogue is not None:
+        press_interact(game)
+
 def test_game_initialization(game):
+    assert game.current_day == 1
+    assert game.last_allowance_day == 0
     assert game.money == 0
     assert not game.has_talked_to_mom
     assert game.player is not None
@@ -40,65 +52,75 @@ def test_money_system(game):
     game.player.rect.topleft = (400, 150) # Near Mom
     
     # Start interaction (Mom has 4 lines now)
-    event_e = pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_e})
-    pygame.event.post(event_e)
-    game.handle_events()
+    press_interact(game)
     assert game.current_dialogue is not None
     assert game.money == 0
     
     # Advance 2 more times (total 3 lines seen)
     for _ in range(2):
-        pygame.event.post(event_e)
-        game.handle_events()
+        press_interact(game)
     assert game.money == 0
         
     # Advance to the 4th line (money should be given now)
-    pygame.event.post(event_e)
-    game.handle_events()
+    press_interact(game)
     assert game.money == 250
     assert game.has_talked_to_mom is True
+    assert game.last_allowance_day == 1
     assert game.current_dialogue is not None
     assert game.dialogue_index == 3
     
     # Final 'E' to finish dialogue
-    pygame.event.post(event_e)
-    game.handle_events()
+    press_interact(game)
     
     assert game.money == 250
     assert game.current_dialogue is None
 
-def test_no_double_money(game):
+def test_no_double_money_on_same_day(game):
     game.money = 250
     game.has_talked_to_mom = True
+    game.last_allowance_day = game.current_day
     
     # Interaction again
     game.player.rect.topleft = (400, 150)
-    event_e = pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_e})
-    
-    # Complete dialogue (4 lines + 1 to end)
-    for _ in range(5):
-        pygame.event.post(event_e)
-        game.handle_events()
+    press_interact(game)
+    complete_current_dialogue(game)
         
     assert game.money == 250 # Should still be 250
+
+def test_mom_gives_allowance_again_on_new_day(game):
+    game.player.rect.topleft = (400, 150)
+
+    press_interact(game)
+    complete_current_dialogue(game)
+
+    assert game.money == 250
+    assert game.last_allowance_day == 1
+
+    game.current_day = 2
+    press_interact(game)
+
+    assert game.current_dialogue is not None
+    assert ALLOWANCE_LINE in game.current_dialogue
+
+    while game.dialogue_index < len(game.current_dialogue) - 1:
+        press_interact(game)
+
+    assert game.money == 500
+    assert game.last_allowance_day == 2
 
 def test_mom_dialogue_changes_after_allowance(game):
     # First interaction
     game.player.rect.topleft = (400, 150)
-    event_e = pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_e})
     
     # Complete first interaction (5 'E' presses for 4 lines)
-    for _ in range(5):
-        pygame.event.post(event_e)
-        game.handle_events()
+    press_interact(game)
+    complete_current_dialogue(game)
     
     assert game.has_talked_to_mom is True
     
     # Start second interaction
-    pygame.event.post(event_e)
-    game.handle_events()
+    press_interact(game)
     
     # Check that the "allowance" line is NOT in the second dialogue
-    allowance_line = "Here's your allowance for today."
-    assert allowance_line not in game.current_dialogue
+    assert ALLOWANCE_LINE not in game.current_dialogue
     assert "Make sure to study hard!" in game.current_dialogue

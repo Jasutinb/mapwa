@@ -14,6 +14,7 @@ from src.game_state import GameState
 from src.config import (
     ALLOWANCE_AMOUNT,
     BUS_FARE,
+    DAILY_ALLOWANCE_MOM_DIALOGUE,
     FIRST_MOM_DIALOGUE,
     FPS,
     ITEM_ID,
@@ -140,6 +141,22 @@ class Game:
         self.state.experience = value
 
     @property
+    def current_day(self):
+        return self.state.current_day
+
+    @current_day.setter
+    def current_day(self, value):
+        self.state.current_day = value
+
+    @property
+    def last_allowance_day(self):
+        return self.state.last_allowance_day
+
+    @last_allowance_day.setter
+    def last_allowance_day(self, value):
+        self.state.last_allowance_day = value
+
+    @property
     def has_talked_to_mom(self):
         return self.state.has_talked_to_mom
 
@@ -211,9 +228,28 @@ class Game:
 
     def finish_dialogue(self):
         self.state.clear_dialogue()
-        if self.has_talked_to_mom:
+        if not self.can_receive_allowance_today():
             self.mom.dialogue = list(REPEAT_MOM_DIALOGUE)
         self.state_machine.change_state(STATE_PLAY)
+
+    def can_receive_allowance_today(self):
+        return self.last_allowance_day < self.current_day
+
+    def give_daily_allowance(self):
+        if not self.can_receive_allowance_today():
+            return False
+
+        self.money += ALLOWANCE_AMOUNT
+        self.last_allowance_day = self.current_day
+        self.has_talked_to_mom = True
+        return True
+
+    def get_mom_dialogue(self):
+        if not self.can_receive_allowance_today():
+            return list(REPEAT_MOM_DIALOGUE)
+        if self.has_talked_to_mom:
+            return list(DAILY_ALLOWANCE_MOM_DIALOGUE)
+        return list(FIRST_MOM_DIALOGUE)
 
     def advance_dialogue(self):
         if not self.current_dialogue:
@@ -224,11 +260,11 @@ class Game:
             self.finish_dialogue()
             return
 
-        if not self.has_talked_to_mom and self.dialogue_index == len(self.current_dialogue) - 1:
-            self.money += ALLOWANCE_AMOUNT
-            self.has_talked_to_mom = True
+        if self.dialogue_index == len(self.current_dialogue) - 1:
+            self.give_daily_allowance()
 
     def talk_to_mom(self):
+        self.mom.dialogue = self.get_mom_dialogue()
         self.show_dialogue(self.mom.interact())
 
     def talk_to_guard(self):

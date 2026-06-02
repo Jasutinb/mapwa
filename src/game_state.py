@@ -6,9 +6,11 @@ from src.config import ROOM_MAIN
 @dataclass
 class GameState:
     current_room: str = ROOM_MAIN
+    current_day: int = 1
     money: int = 0
     experience: int = 0
     has_talked_to_mom: bool = False
+    last_allowance_day: int = 0
     current_dialogue: list[str] | None = None
     dialogue_index: int = 0
     picked_item_ids: set[str] = field(default_factory=set)
