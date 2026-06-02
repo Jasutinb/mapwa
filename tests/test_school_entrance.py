@@ -13,6 +13,7 @@ from src.config import (
     ROOM_INTRAMUROS,
     ROOM_SCHOOL,
     ROOM_SCHOOL_ENTRANCE,
+    SCREEN_HEIGHT,
     SCREEN_WIDTH,
 )
 from src.game import Game
@@ -159,13 +160,30 @@ def test_school_entrance_guard_is_interactable(game):
     assert game.current_dialogue == guard.dialogue
 
 
-def test_admin_office_has_nine_by_nine_chairs(game):
+def test_admin_office_has_compact_waiting_area_with_clear_exit_path(game):
     game.current_room = ROOM_ADMIN_OFFICE
     game.create_map()
 
-    assert len(game.chair_sprites) == 81
-    assert len({chair.rect.x for chair in game.chair_sprites}) == 9
-    assert len({chair.rect.y for chair in game.chair_sprites}) == 9
+    exit_door = next(s for s in game.door_sprites if getattr(s, 'target_room', None) == ROOM_SCHOOL_ENTRANCE)
+    spawn_path = pygame.Rect(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 96, game.player.rect.width, 96)
+
+    assert len(game.chair_sprites) == 24
+    assert len({chair.rect.x for chair in game.chair_sprites}) == 6
+    assert len({chair.rect.y for chair in game.chair_sprites}) == 4
+    assert not any(chair.rect.colliderect(spawn_path) for chair in game.chair_sprites)
+    assert not any(chair.rect.colliderect(exit_door.rect) for chair in game.chair_sprites)
+
+
+def test_admin_office_exit_returns_to_school_entrance(game):
+    game.current_room = ROOM_ADMIN_OFFICE
+    game.create_map()
+
+    exit_door = next(s for s in game.door_sprites if getattr(s, 'target_room', None) == ROOM_SCHOOL_ENTRANCE)
+    game.player.rect.topleft = exit_door.rect.topleft
+    game.update()
+
+    assert game.current_room == ROOM_SCHOOL_ENTRANCE
+    assert game.player.rect.topleft == exit_door.spawn_pos
 
 
 def test_admin_office_has_interactable_attendant(game):

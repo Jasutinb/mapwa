@@ -562,16 +562,21 @@ class Game:
         Decoration((SCREEN_WIDTH // 2 - 80, 120), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
         self.attendant = self.create_attendant_npc((SCREEN_WIDTH // 2 - 8, 150))
 
-        chair_start_x = 160
-        chair_start_y = 235
+        chair_rows = 4
         chair_gap_x = 48
-        chair_gap_y = 32
-        for row in range(9):
-            for col in range(9):
-                Chair(
-                    (chair_start_x + col * chair_gap_x, chair_start_y + row * chair_gap_y),
-                    [self.visible_sprites, self.obstacle_sprites, self.chair_sprites],
-                )
+        chair_gap_y = 40
+        chair_start_y = 240
+        waiting_sections = (
+            (176, 3),
+            (504, 3),
+        )
+        for section_start_x, chair_cols in waiting_sections:
+            for row in range(chair_rows):
+                for col in range(chair_cols):
+                    Chair(
+                        (section_start_x + col * chair_gap_x, chair_start_y + row * chair_gap_y),
+                        [self.visible_sprites, self.obstacle_sprites, self.chair_sprites],
+                    )
 
         Door((SCREEN_WIDTH // 2 - TILE_SIZE // 2, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_ADMIN_OFFICE].down.name, (SCREEN_WIDTH // 2, 96))
 
