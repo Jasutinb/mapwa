@@ -6,7 +6,7 @@ import os
 from src.player import Player
 from src.npc import NPC
 from src.inventory import Inventory
-from src.level import Tile, Decoration, Door, Bus, Item, PassGate, RoomNode
+from src.level import Tile, Chair, Decoration, Door, Bus, Item, PassGate, RoomNode
 from src.mobile_controls import MobileControls
 from src.state import StateMachine
 from src.states import PlayState, DialogueState, MenuState
@@ -57,6 +57,8 @@ class Game:
         self.item_sprites = pygame.sprite.Group()
         self.gate_sprites = pygame.sprite.Group()
         self.guard_sprites = pygame.sprite.Group()
+        self.chair_sprites = pygame.sprite.Group()
+        self.attendant_sprites = pygame.sprite.Group()
 
         self.location_display_text = ""
         self.location_display_timer = 0
@@ -235,6 +237,13 @@ class Game:
         self.show_dialogue(guard.interact())
         return True
 
+    def talk_to_attendant(self):
+        attendant = next((sprite for sprite in self.attendant_sprites if self.check_proximity(self.player, sprite, 64)), None)
+        if attendant is None:
+            return False
+        self.show_dialogue(attendant.interact())
+        return True
+
     def travel_to_room(self, room_name, spawn_pos=None, use_topleft=False):
         self.current_room = room_name
         self.create_map()
@@ -303,6 +312,13 @@ class Game:
         guard.sprite_base_assets = ('assets/images/player.png', 'assets/images/mom.png')
         return guard
 
+    def create_attendant_npc(self, pos):
+        attendant = NPC(pos, [self.visible_sprites, self.obstacle_sprites, self.attendant_sprites], 'assets/images/mom.png', name="Attendant", can_wander=False)
+        attendant.dialogue = ["Good day. Please wait for your number to be called."]
+        attendant.sprite_asset = 'assets/images/mom.png'
+        attendant.sprite_base_assets = ('assets/images/player.png', 'assets/images/mom.png')
+        return attendant
+
     def create_map(self):
         # Clear existing sprites
         for sprite in self.visible_sprites:
@@ -318,6 +334,10 @@ class Game:
         for sprite in self.gate_sprites:
             sprite.kill()
         for sprite in self.guard_sprites:
+            sprite.kill()
+        for sprite in self.chair_sprites:
+            sprite.kill()
+        for sprite in self.attendant_sprites:
             sprite.kill()
 
         # Set location display
@@ -540,6 +560,19 @@ class Game:
             Tile((SCREEN_WIDTH - TILE_SIZE, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
 
         Decoration((SCREEN_WIDTH // 2 - 80, 120), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
+        self.attendant = self.create_attendant_npc((SCREEN_WIDTH // 2 - 8, 150))
+
+        chair_start_x = 160
+        chair_start_y = 235
+        chair_gap_x = 48
+        chair_gap_y = 32
+        for row in range(9):
+            for col in range(9):
+                Chair(
+                    (chair_start_x + col * chair_gap_x, chair_start_y + row * chair_gap_y),
+                    [self.visible_sprites, self.obstacle_sprites, self.chair_sprites],
+                )
+
         Door((SCREEN_WIDTH // 2 - TILE_SIZE // 2, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_ADMIN_OFFICE].down.name, (SCREEN_WIDTH // 2, 96))
 
     def create_school(self):

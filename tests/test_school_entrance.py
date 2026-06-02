@@ -157,3 +157,26 @@ def test_school_entrance_guard_is_interactable(game):
     game.handle_events([event])
 
     assert game.current_dialogue == guard.dialogue
+
+
+def test_admin_office_has_nine_by_nine_chairs(game):
+    game.current_room = ROOM_ADMIN_OFFICE
+    game.create_map()
+
+    assert len(game.chair_sprites) == 81
+    assert len({chair.rect.x for chair in game.chair_sprites}) == 9
+    assert len({chair.rect.y for chair in game.chair_sprites}) == 9
+
+
+def test_admin_office_has_interactable_attendant(game):
+    game.current_room = ROOM_ADMIN_OFFICE
+    game.create_map()
+    attendant = next(iter(game.attendant_sprites))
+    game.player.rect.center = attendant.rect.center
+
+    event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
+    game.handle_events([event])
+
+    assert attendant.name == "Attendant"
+    assert attendant.sprite_base_assets == ('assets/images/player.png', 'assets/images/mom.png')
+    assert game.current_dialogue == attendant.dialogue

@@ -2,6 +2,7 @@ import pygame
 from src.state import State
 from src.config import (
     ROOM_INTRAMUROS,
+    ROOM_ADMIN_OFFICE,
     ROOM_MAIN,
     ROOM_OUTSIDE,
     ROOM_SCHOOL_ENTRANCE,
@@ -27,6 +28,8 @@ class PlayState(State):
                     elif self.game.current_room == ROOM_SCHOOL_ENTRANCE and self.game.try_enter_school_gate():
                         pass
                     elif self.game.current_room == ROOM_SCHOOL_ENTRANCE and self.game.talk_to_guard():
+                        pass
+                    elif self.game.current_room == ROOM_ADMIN_OFFICE and self.game.talk_to_attendant():
                         pass
                     elif self.game.current_room == ROOM_SCHOOL and hasattr(self.game, 'school_desk') and self.game.check_proximity(self.game.player, self.game.school_desk, 64):
                         self.game.study_at_school()
@@ -76,6 +79,13 @@ class PlayState(State):
             hint_surf = self.game.font.render("Press E to study", True, 'white')
             hint_rect = hint_surf.get_rect(center=(self.game.school_desk.rect.centerx, self.game.school_desk.rect.top - 20))
             screen.blit(hint_surf, hint_rect)
+
+        if self.game.current_room == ROOM_ADMIN_OFFICE:
+            attendant = next((sprite for sprite in self.game.attendant_sprites if self.game.check_proximity(self.game.player, sprite, 64)), None)
+            if attendant:
+                hint_surf = self.game.font.render("Press E to talk", True, 'white')
+                hint_rect = hint_surf.get_rect(center=(attendant.rect.centerx, attendant.rect.top - 20))
+                screen.blit(hint_surf, hint_rect)
 
         if self.game.current_room == ROOM_SCHOOL_ENTRANCE:
             gate = next((sprite for sprite in self.game.gate_sprites if self.game.check_proximity(self.game.player, sprite, 80)), None)
