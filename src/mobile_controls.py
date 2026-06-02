@@ -24,6 +24,8 @@ class MobileControls:
         self.joystick_vector = pygame.math.Vector2()
         self.action_down = False
         self.action_pressed = False
+        self.inventory_slot_pressed = None
+        self.inventory_slot_rects = []
         self.font = None
         self.rects = self.create_rects()
 
@@ -74,6 +76,8 @@ class MobileControls:
         elif control == "action":
             self.action_down = True
             self.action_pressed = True
+        elif control.startswith("inventory_slot:"):
+            self.inventory_slot_pressed = int(control.split(":", 1)[1])
 
     def move(self, pointer_id, pos):
         control = self.pointer_controls.get(pointer_id)
@@ -94,6 +98,9 @@ class MobileControls:
             self.action_down = False
 
     def hit_test(self, pos):
+        for index, rect in enumerate(self.inventory_slot_rects):
+            if rect.collidepoint(pos):
+                return f"inventory_slot:{index}"
         if pygame.math.Vector2(pos).distance_to(self.joystick_center) <= (
             self.joystick_radius + self.knob_radius
         ):
@@ -101,6 +108,9 @@ class MobileControls:
         if self.rects["action"].collidepoint(pos):
             return "action"
         return None
+
+    def set_inventory_slot_rects(self, slot_rects):
+        self.inventory_slot_rects = [rect.copy() for rect in slot_rects]
 
     def update_joystick(self, pos):
         offset = pygame.math.Vector2(pos) - self.joystick_center
@@ -121,6 +131,11 @@ class MobileControls:
         was_pressed = self.action_pressed
         self.action_pressed = False
         return was_pressed
+
+    def consume_inventory_slot_press(self):
+        slot_index = self.inventory_slot_pressed
+        self.inventory_slot_pressed = None
+        return slot_index
 
     def draw(self, screen):
         if self.font is None:

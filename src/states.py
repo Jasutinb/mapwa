@@ -19,6 +19,10 @@ class PlayState(State):
 
         for event in events:
             if event.type == pygame.KEYDOWN:
+                if pygame.K_1 <= event.key <= pygame.K_5:
+                    self.game.use_inventory_slot(event.key - pygame.K_1)
+                    continue
+
                 if event.key == pygame.K_e:
                     # Try to start interaction
                     if self.game.current_room == ROOM_MAIN and hasattr(self.game, 'mom') and self.game.mom in self.game.visible_sprites and self.game.check_proximity(self.game.player, self.game.mom, 64):
