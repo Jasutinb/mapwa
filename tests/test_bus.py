@@ -16,7 +16,7 @@ def game():
     g.money = 100
     return g
 
-def test_bus_interaction_to_school(game):
+def test_bus_interaction_to_intramuros(game):
     game.current_room = 'outside'
     game.create_map()
     
@@ -27,15 +27,6 @@ def test_bus_interaction_to_school(game):
     event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
     game.handle_events([event])
     assert game.current_room == 'intramuros'
-    assert game.money == 80
-
-    # Ensure player is visible for next check
-    game.visible_sprites.add(game.player)
-    # Move to right side of Intramuros bus to go to school
-    game.player.rect.center = (game.bus.rect.right - 10, game.bus.rect.centery)
-    game.handle_events([event])
-    
-    assert game.current_room == 'school'
     assert game.money == 80
 
 def test_bus_interaction_no_money(game):
@@ -56,23 +47,15 @@ def test_bus_interaction_no_money(game):
     assert game.current_dialogue is not None
     assert "enough money" in game.current_dialogue[0]
 
-def test_bus_interaction_to_outside(game):
+def test_bus_interaction_from_school_to_entrance(game):
     game.current_room = 'school'
     game.create_map()
     
     # Move player near bus
     game.player.rect.center = game.bus.rect.center
     
-    # Ride back to Intramuros
+    # Ride back to the school entrance
     event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
     game.handle_events([event])
-    assert game.current_room == 'intramuros'
-
-    # Ensure player is visible
-    game.visible_sprites.add(game.player)
-    # Move to left side of Intramuros bus to go home
-    game.player.rect.center = (game.bus.rect.left + 10, game.bus.rect.centery)
-    game.handle_events([event])
-    
-    assert game.current_room == 'outside'
+    assert game.current_room == 'school_entrance'
     assert game.money == 100 # No cost to go home

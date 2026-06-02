@@ -2,8 +2,10 @@ import pygame
 from src.state import State
 from src.config import (
     ROOM_INTRAMUROS,
+    ROOM_ADMIN_OFFICE,
     ROOM_MAIN,
     ROOM_OUTSIDE,
+    ROOM_SCHOOL_ENTRANCE,
     ROOM_SCHOOL,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
@@ -23,6 +25,12 @@ class PlayState(State):
                         self.game.talk_to_mom()
                     elif self.game.current_room in (ROOM_OUTSIDE, ROOM_SCHOOL, ROOM_INTRAMUROS) and hasattr(self.game, 'bus') and self.game.check_proximity(self.game.player, self.game.bus, 100):
                         self.game.ride_bus()
+                    elif self.game.current_room == ROOM_SCHOOL_ENTRANCE and self.game.try_enter_school_gate():
+                        pass
+                    elif self.game.current_room == ROOM_SCHOOL_ENTRANCE and self.game.talk_to_guard():
+                        pass
+                    elif self.game.current_room == ROOM_ADMIN_OFFICE and self.game.talk_to_attendant():
+                        pass
                     elif self.game.current_room == ROOM_SCHOOL and hasattr(self.game, 'school_desk') and self.game.check_proximity(self.game.player, self.game.school_desk, 64):
                         self.game.study_at_school()
                     else:
@@ -59,10 +67,7 @@ class PlayState(State):
             if self.game.current_room == ROOM_OUTSIDE:
                 text = "Press E to ride to Intramuros (20)"
             elif self.game.current_room == ROOM_INTRAMUROS:
-                if self.game.player.rect.centerx < self.game.bus.rect.centerx:
-                    text = "Press E to ride back to Outside"
-                else:
-                    text = "Press E to ride to School"
+                text = "Press E to ride back to Outside"
             else:
                 text = "Press E to ride back"
             
@@ -74,6 +79,26 @@ class PlayState(State):
             hint_surf = self.game.font.render("Press E to study", True, 'white')
             hint_rect = hint_surf.get_rect(center=(self.game.school_desk.rect.centerx, self.game.school_desk.rect.top - 20))
             screen.blit(hint_surf, hint_rect)
+
+        if self.game.current_room == ROOM_ADMIN_OFFICE:
+            attendant = next((sprite for sprite in self.game.attendant_sprites if self.game.check_proximity(self.game.player, sprite, 64)), None)
+            if attendant:
+                hint_surf = self.game.font.render("Press E to talk", True, 'white')
+                hint_rect = hint_surf.get_rect(center=(attendant.rect.centerx, attendant.rect.top - 20))
+                screen.blit(hint_surf, hint_rect)
+
+        if self.game.current_room == ROOM_SCHOOL_ENTRANCE:
+            gate = next((sprite for sprite in self.game.gate_sprites if self.game.check_proximity(self.game.player, sprite, 80)), None)
+            if gate:
+                hint_surf = self.game.font.render("Press E to use gate", True, 'white')
+                hint_rect = hint_surf.get_rect(center=(gate.rect.centerx, gate.rect.top - 20))
+                screen.blit(hint_surf, hint_rect)
+            else:
+                guard = next((sprite for sprite in self.game.guard_sprites if self.game.check_proximity(self.game.player, sprite, 64)), None)
+                if guard:
+                    hint_surf = self.game.font.render("Press E to talk", True, 'white')
+                    hint_rect = hint_surf.get_rect(center=(guard.rect.centerx, guard.rect.top - 20))
+                    screen.blit(hint_surf, hint_rect)
 
         # Draw item interaction hint
         item_hits = pygame.sprite.spritecollide(self.game.player, self.game.item_sprites, False)

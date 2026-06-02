@@ -1,11 +1,12 @@
 import pygame
 import sys
 import asyncio
+import os
 
 from src.player import Player
 from src.npc import NPC
 from src.inventory import Inventory
-from src.level import Tile, Decoration, Door, Bus, Item, RoomNode
+from src.level import Tile, Chair, Decoration, Door, Bus, Item, PassGate, RoomNode
 from src.mobile_controls import MobileControls
 from src.state import StateMachine
 from src.states import PlayState, DialogueState, MenuState
@@ -15,13 +16,15 @@ from src.config import (
     BUS_FARE,
     FIRST_MOM_DIALOGUE,
     FPS,
-    ITEM_NOTEBOOK,
+    ITEM_ID,
     REPEAT_MOM_DIALOGUE,
+    ROOM_ADMIN_OFFICE,
     ROOM_BEDROOM,
     ROOM_INTRAMUROS,
     ROOM_MAIN,
     ROOM_OUTSIDE,
     ROOM_SCHOOL,
+    ROOM_SCHOOL_ENTRANCE,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
     STATE_DIALOGUE,
@@ -31,6 +34,11 @@ from src.config import (
     STUDY_XP,
     TILE_SIZE,
 )
+
+DEV_LOADOUT_ENV = "MAPWA_DEV_LOADOUT"
+DEV_LOADOUT_ITEMS = [
+    (ITEM_ID, "ID"),
+]
 
 class Game:
     def __init__(self):
@@ -47,6 +55,10 @@ class Game:
         self.floor_sprites = pygame.sprite.Group()
         self.door_sprites = pygame.sprite.Group()
         self.item_sprites = pygame.sprite.Group()
+        self.gate_sprites = pygame.sprite.Group()
+        self.guard_sprites = pygame.sprite.Group()
+        self.chair_sprites = pygame.sprite.Group()
+        self.attendant_sprites = pygame.sprite.Group()
 
         self.location_display_text = ""
         self.location_display_timer = 0
@@ -72,6 +84,8 @@ class Game:
 
         # Inventory setup
         self.inventory = Inventory()
+        if os.environ.get(DEV_LOADOUT_ENV) == "1":
+            self.apply_dev_loadout()
 
         # UI Assets
         self.money_icon = self.create_money_icon()
@@ -139,6 +153,8 @@ class Game:
             ROOM_BEDROOM: RoomNode(ROOM_BEDROOM, 'Bedroom'),
             ROOM_OUTSIDE: RoomNode(ROOM_OUTSIDE, 'Outside'),
             ROOM_INTRAMUROS: RoomNode(ROOM_INTRAMUROS, 'Intramuros'),
+            ROOM_SCHOOL_ENTRANCE: RoomNode(ROOM_SCHOOL_ENTRANCE, 'School Entrance'),
+            ROOM_ADMIN_OFFICE: RoomNode(ROOM_ADMIN_OFFICE, 'Admin Office'),
             ROOM_SCHOOL: RoomNode(ROOM_SCHOOL, 'School')
         }
 
@@ -156,9 +172,13 @@ class Game:
         self.rooms[ROOM_OUTSIDE].right = self.rooms[ROOM_INTRAMUROS]
         self.rooms[ROOM_INTRAMUROS].left = self.rooms[ROOM_OUTSIDE]
 
-        # School is linked via Bus from Intramuros, let's say it's to the right of Intramuros
-        self.rooms[ROOM_INTRAMUROS].right = self.rooms[ROOM_SCHOOL]
-        self.rooms[ROOM_SCHOOL].left = self.rooms[ROOM_INTRAMUROS]
+        # School Entrance sits between Intramuros and School
+        self.rooms[ROOM_INTRAMUROS].right = self.rooms[ROOM_SCHOOL_ENTRANCE]
+        self.rooms[ROOM_SCHOOL_ENTRANCE].left = self.rooms[ROOM_INTRAMUROS]
+        self.rooms[ROOM_SCHOOL_ENTRANCE].right = self.rooms[ROOM_SCHOOL]
+        self.rooms[ROOM_SCHOOL_ENTRANCE].up = self.rooms[ROOM_ADMIN_OFFICE]
+        self.rooms[ROOM_ADMIN_OFFICE].down = self.rooms[ROOM_SCHOOL_ENTRANCE]
+        self.rooms[ROOM_SCHOOL].left = self.rooms[ROOM_SCHOOL_ENTRANCE]
 
     def create_money_icon(self):
         icon = pygame.Surface((24, 24), pygame.SRCALPHA)
@@ -210,6 +230,20 @@ class Game:
     def talk_to_mom(self):
         self.show_dialogue(self.mom.interact())
 
+    def talk_to_guard(self):
+        guard = next((sprite for sprite in self.guard_sprites if self.check_proximity(self.player, sprite, 64)), None)
+        if guard is None:
+            return False
+        self.show_dialogue(guard.interact())
+        return True
+
+    def talk_to_attendant(self):
+        attendant = next((sprite for sprite in self.attendant_sprites if self.check_proximity(self.player, sprite, 64)), None)
+        if attendant is None:
+            return False
+        self.show_dialogue(attendant.interact())
+        return True
+
     def travel_to_room(self, room_name, spawn_pos=None, use_topleft=False):
         self.current_room = room_name
         self.create_map()
@@ -228,10 +262,7 @@ class Game:
             self.money -= BUS_FARE
             destination = current_node.right.name if current_node and current_node.right else ROOM_INTRAMUROS
         elif self.current_room == ROOM_INTRAMUROS:
-            if self.player.rect.centerx < self.bus.rect.centerx:
-                destination = current_node.left.name if current_node and current_node.left else ROOM_OUTSIDE
-            else:
-                destination = current_node.right.name if current_node and current_node.right else ROOM_SCHOOL
+            destination = current_node.left.name if current_node and current_node.left else ROOM_OUTSIDE
         else:
             destination = current_node.left.name if current_node and current_node.left else ROOM_INTRAMUROS
 
@@ -242,6 +273,13 @@ class Game:
         self.experience += STUDY_XP
         self.player.start_study(STUDY_DURATION_FRAMES)
 
+    def apply_dev_loadout(self):
+        self.money = 999
+        for item_id, item_name in DEV_LOADOUT_ITEMS:
+            self.state.mark_item_picked(item_id)
+            if not any(getattr(item, 'item_id', None) == item_id for item in self.inventory.slots):
+                self.inventory.add_item(Item((0, 0), [], item_name, item_id=item_id))
+
     def pick_up_item(self, item):
         if not self.inventory.add_item(item):
             return False
@@ -250,6 +288,36 @@ class Game:
         item.kill()
         self.show_dialogue([f"You picked up a {item.name}!"])
         return True
+
+    def try_enter_school_gate(self):
+        gate = next((sprite for sprite in self.gate_sprites if self.check_proximity(self.player, sprite, 80)), None)
+        if gate is None:
+            return False
+
+        if gate.required_item_id not in self.state.inventory_item_ids:
+            self.show_dialogue(["I need my ID to enter the school."])
+            return True
+
+        if gate.target_room == self.current_room:
+            spawn_pos = gate.right_spawn_pos if self.player.rect.centerx < gate.rect.centerx else gate.left_spawn_pos
+            self.travel_to_room(gate.target_room, spawn_pos, use_topleft=True)
+        else:
+            self.travel_to_room(gate.target_room, gate.spawn_pos, use_topleft=True)
+        return True
+
+    def create_guard_npc(self, pos, dialogue):
+        guard = NPC(pos, [self.visible_sprites, self.obstacle_sprites, self.guard_sprites], 'assets/images/guard.png', name="Guard", can_wander=False)
+        guard.dialogue = dialogue
+        guard.sprite_asset = 'assets/images/guard.png'
+        guard.sprite_base_assets = ('assets/images/player.png', 'assets/images/mom.png')
+        return guard
+
+    def create_attendant_npc(self, pos):
+        attendant = NPC(pos, [self.visible_sprites, self.obstacle_sprites, self.attendant_sprites], 'assets/images/mom.png', name="Attendant", can_wander=False)
+        attendant.dialogue = ["Good day. Please wait for your number to be called."]
+        attendant.sprite_asset = 'assets/images/mom.png'
+        attendant.sprite_base_assets = ('assets/images/player.png', 'assets/images/mom.png')
+        return attendant
 
     def create_map(self):
         # Clear existing sprites
@@ -262,6 +330,14 @@ class Game:
         for sprite in self.door_sprites:
             sprite.kill()
         for sprite in self.item_sprites:
+            sprite.kill()
+        for sprite in self.gate_sprites:
+            sprite.kill()
+        for sprite in self.guard_sprites:
+            sprite.kill()
+        for sprite in self.chair_sprites:
+            sprite.kill()
+        for sprite in self.attendant_sprites:
             sprite.kill()
 
         # Set location display
@@ -279,6 +355,10 @@ class Game:
             self.create_outside()
         elif self.current_room == ROOM_INTRAMUROS:
             self.create_intramuros()
+        elif self.current_room == ROOM_SCHOOL_ENTRANCE:
+            self.create_school_entrance()
+        elif self.current_room == ROOM_ADMIN_OFFICE:
+            self.create_admin_office()
         elif self.current_room == ROOM_SCHOOL:
             self.create_school()
 
@@ -340,8 +420,8 @@ class Game:
         Decoration((200, 300), [self.visible_sprites], 'assets/images/rug.png')
 
         # Add items
-        if ITEM_NOTEBOOK not in self.state.picked_item_ids:
-            Item((300, 150), [self.visible_sprites, self.item_sprites], "Notebook", item_id=ITEM_NOTEBOOK)
+        if ITEM_ID not in self.state.picked_item_ids:
+            Item((300, 150), [self.visible_sprites, self.item_sprites], "ID", item_id=ITEM_ID)
 
         # Add door back to Main
         Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_BEDROOM].right.name, (64, SCREEN_HEIGHT // 2))
@@ -383,21 +463,10 @@ class Game:
             for col in range(0, SCREEN_WIDTH, TILE_SIZE):
                 Tile((col, row), [self.floor_sprites], stone_surf)
 
-        # Add heavy stone walls (The Walled City)
-        # Left wall with a gap for the gate
-        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
-            if abs(row - SCREEN_HEIGHT // 2) > TILE_SIZE:
-                Tile((0, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
-        
         # Top and Bottom walls
         for col in range(0, SCREEN_WIDTH, TILE_SIZE):
             Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
             Tile((col, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
-
-        # Right wall with a gap
-        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
-            if abs(row - SCREEN_HEIGHT // 2) > TILE_SIZE:
-                Tile((SCREEN_WIDTH - TILE_SIZE, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
 
         # Add a landmark - Manila Cathedral placeholder
         # We can use a table as placeholder or something else, but let's just use Decoration
@@ -406,6 +475,105 @@ class Game:
         # Add bus
         # Position it near the center
         self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT // 2 + 50), [self.visible_sprites])
+
+        Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_INTRAMUROS].right.name, (64, SCREEN_HEIGHT // 2))
+
+    def create_school_entrance(self):
+        tile_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        tile_surf.fill((188, 194, 198))
+        pygame.draw.line(tile_surf, (226, 230, 232), (0, 0), (TILE_SIZE, 0), 2)
+        pygame.draw.line(tile_surf, (130, 138, 144), (0, TILE_SIZE - 1), (TILE_SIZE, TILE_SIZE - 1), 1)
+        pygame.draw.line(tile_surf, (226, 230, 232), (0, 0), (0, TILE_SIZE), 2)
+        pygame.draw.line(tile_surf, (130, 138, 144), (TILE_SIZE - 1, 0), (TILE_SIZE - 1, TILE_SIZE), 1)
+
+        wall_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        wall_surf.fill((82, 92, 102))
+        fence_surf = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
+        fence_surf.fill((0, 0, 0, 0))
+        for x in (6, 15, 24):
+            pygame.draw.rect(fence_surf, (112, 120, 126), (x, 2, 3, TILE_SIZE - 4))
+        pygame.draw.rect(fence_surf, (172, 178, 184), (3, 8, TILE_SIZE - 6, 3))
+        pygame.draw.rect(fence_surf, (172, 178, 184), (3, 22, TILE_SIZE - 6, 3))
+
+        section_width = SCREEN_WIDTH // 4
+        admin_door_x = SCREEN_WIDTH // 2 + section_width
+        gate_x = section_width + section_width // 2 - TILE_SIZE // 2
+        gate_y = SCREEN_HEIGHT // 2 - TILE_SIZE
+
+        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
+            for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+                Tile((col, row), [self.floor_sprites], tile_surf)
+
+        for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+            if not (admin_door_x - TILE_SIZE <= col <= admin_door_x + TILE_SIZE):
+                Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            Tile((col, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+
+        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL_ENTRANCE].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
+
+        for row in range(TILE_SIZE, SCREEN_HEIGHT - TILE_SIZE, TILE_SIZE):
+            if not (gate_y - TILE_SIZE <= row <= gate_y + TILE_SIZE * 2):
+                Tile((gate_x, row), [self.visible_sprites, self.obstacle_sprites], fence_surf)
+
+        gate = PassGate(
+            (gate_x, gate_y),
+            [self.visible_sprites, self.obstacle_sprites, self.gate_sprites],
+            ROOM_SCHOOL_ENTRANCE,
+            (gate_x + 96, SCREEN_HEIGHT // 2),
+            ITEM_ID,
+        )
+        gate.left_spawn_pos = (gate_x - 64, SCREEN_HEIGHT // 2)
+        gate.right_spawn_pos = (gate_x + 96, SCREEN_HEIGHT // 2)
+
+        self.guard_1 = self.create_guard_npc(
+            (gate_x - 48, gate_y + 112),
+            ["Please present your ID at the gate."],
+        )
+        self.guard_2 = self.create_guard_npc(
+            (gate_x + 48, gate_y + 112),
+            ["Students only beyond this point."],
+        )
+
+        Door((admin_door_x, 0), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL_ENTRANCE].up.name, (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 96))
+        Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL_ENTRANCE].right.name, (64, SCREEN_HEIGHT // 2))
+
+    def create_admin_office(self):
+        floor_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        floor_surf.fill((205, 208, 210))
+        pygame.draw.line(floor_surf, (235, 238, 240), (0, 0), (TILE_SIZE, 0), 2)
+        pygame.draw.line(floor_surf, (150, 155, 160), (0, TILE_SIZE - 1), (TILE_SIZE, TILE_SIZE - 1), 1)
+
+        wall_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        wall_surf.fill((95, 105, 115))
+
+        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
+            for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+                Tile((col, row), [self.floor_sprites], floor_surf)
+
+        for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+            Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            if not (SCREEN_WIDTH // 2 - TILE_SIZE <= col <= SCREEN_WIDTH // 2 + TILE_SIZE):
+                Tile((col, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+
+        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
+            Tile((0, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            Tile((SCREEN_WIDTH - TILE_SIZE, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+
+        Decoration((SCREEN_WIDTH // 2 - 80, 120), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
+        self.attendant = self.create_attendant_npc((SCREEN_WIDTH // 2 - 8, 150))
+
+        chair_start_x = 160
+        chair_start_y = 235
+        chair_gap_x = 48
+        chair_gap_y = 32
+        for row in range(9):
+            for col in range(9):
+                Chair(
+                    (chair_start_x + col * chair_gap_x, chair_start_y + row * chair_gap_y),
+                    [self.visible_sprites, self.obstacle_sprites, self.chair_sprites],
+                )
+
+        Door((SCREEN_WIDTH // 2 - TILE_SIZE // 2, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_ADMIN_OFFICE].down.name, (SCREEN_WIDTH // 2, 96))
 
     def create_school(self):
         try:
@@ -436,7 +604,7 @@ class Game:
         self.bus = Bus((SCREEN_WIDTH // 2 - 64, SCREEN_HEIGHT - 100), [self.visible_sprites])
 
         # Add door to exit school
-        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL].left.name, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100))
+        Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
 
     async def run(self):
         while self.running:

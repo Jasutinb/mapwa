@@ -25,6 +25,16 @@ class Decoration(pygame.sprite.Sprite):
             self.image.fill('gray')
         self.rect = self.image.get_rect(topleft=pos)
 
+class Chair(pygame.sprite.Sprite):
+    def __init__(self, pos, groups):
+        super().__init__(groups)
+        self.image = pygame.Surface((24, 24), pygame.SRCALPHA)
+        pygame.draw.rect(self.image, (92, 75, 58), (4, 5, 16, 11), border_radius=2)
+        pygame.draw.rect(self.image, (125, 102, 76), (5, 2, 14, 5), border_radius=2)
+        pygame.draw.rect(self.image, (55, 48, 42), (6, 16, 3, 6))
+        pygame.draw.rect(self.image, (55, 48, 42), (15, 16, 3, 6))
+        self.rect = self.image.get_rect(topleft=pos)
+
 class Door(pygame.sprite.Sprite):
     def __init__(self, pos, groups, target_room, spawn_pos):
         super().__init__(groups)
@@ -35,6 +45,21 @@ class Door(pygame.sprite.Sprite):
         except (pygame.error, FileNotFoundError):
             self.image = pygame.Surface((32, 64))
             self.image.fill('brown')
+        self.rect = self.image.get_rect(topleft=pos)
+
+class PassGate(pygame.sprite.Sprite):
+    def __init__(self, pos, groups, target_room, spawn_pos, required_item_id):
+        super().__init__(groups)
+        self.target_room = target_room
+        self.spawn_pos = spawn_pos
+        self.required_item_id = required_item_id
+        self.image = pygame.Surface((32, 96), pygame.SRCALPHA)
+        self.image.fill((0, 0, 0, 0))
+        for x in (4, 14, 24):
+            pygame.draw.rect(self.image, (105, 112, 118), (x, 4, 4, 88))
+        for y in (12, 42, 72):
+            pygame.draw.rect(self.image, (165, 172, 178), (2, y, 28, 4))
+        pygame.draw.rect(self.image, (220, 220, 80), (11, 38, 10, 20))
         self.rect = self.image.get_rect(topleft=pos)
 
 class Bus(pygame.sprite.Sprite):

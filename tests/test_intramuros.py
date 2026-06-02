@@ -33,21 +33,15 @@ def test_intramuros_transition(game):
     assert game.money == 0
     assert "Intramuros" in game.location_display_text
 
-def test_intramuros_to_school(game):
+def test_intramuros_to_school_entrance(game):
     game.current_room = 'intramuros'
     game.create_map()
+
+    entrance_door = next(s for s in game.door_sprites if getattr(s, 'target_room', None) == 'school_entrance')
+    game.player.rect.topleft = entrance_door.rect.topleft
+    game.update()
     
-    # Ensure player is in visible sprites for collision/proximity check
-    game.visible_sprites.add(game.player)
-    
-    # Move to the right side of the bus and ensure proximity
-    game.player.rect.center = (game.bus.rect.right - 10, game.bus.rect.centery)
-    
-    # Press E
-    event_e = pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_e})
-    game.handle_events([event_e])
-    
-    assert game.current_room == 'school'
+    assert game.current_room == 'school_entrance'
 
 def test_intramuros_to_outside(game):
     game.current_room = 'intramuros'
@@ -65,7 +59,7 @@ def test_intramuros_to_outside(game):
     
     assert game.current_room == 'outside'
 
-def test_school_to_intramuros(game):
+def test_school_to_school_entrance(game):
     game.current_room = 'school'
     game.create_map()
     
@@ -76,4 +70,4 @@ def test_school_to_intramuros(game):
     event_e = pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_e})
     game.handle_events([event_e])
     
-    assert game.current_room == 'intramuros'
+    assert game.current_room == 'school_entrance'

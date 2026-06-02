@@ -11,6 +11,8 @@ ROOM_MAIN = "main"
 ROOM_BEDROOM = "bedroom"
 ROOM_OUTSIDE = "outside"
 ROOM_INTRAMUROS = "intramuros"
+ROOM_SCHOOL_ENTRANCE = "school_entrance"
+ROOM_ADMIN_OFFICE = "admin_office"
 ROOM_SCHOOL = "school"
 
 BUS_FARE = 20
@@ -31,4 +33,4 @@ REPEAT_MOM_DIALOGUE = [
     "I'll see you later.",
 ]
 
-ITEM_NOTEBOOK = "bedroom:notebook"
+ITEM_ID = "bedroom:id"

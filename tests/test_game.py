@@ -7,6 +7,8 @@ os.environ['SDL_VIDEODRIVER'] = 'dummy'
 os.environ['SDL_AUDIODRIVER'] = 'dummy'
 
 from src.game import Game
+from src.game import DEV_LOADOUT_ENV
+from src.config import ITEM_ID
 
 @pytest.fixture
 def game():
@@ -20,6 +22,18 @@ def test_game_initialization(game):
     assert not game.has_talked_to_mom
     assert game.player is not None
     assert game.mom is not None
+
+def test_dev_loadout_starts_with_money_and_items(monkeypatch):
+    monkeypatch.setenv(DEV_LOADOUT_ENV, "1")
+    pygame.init()
+    g = Game()
+    try:
+        assert g.money == 999
+        assert ITEM_ID in g.state.inventory_item_ids
+        assert ITEM_ID in g.state.picked_item_ids
+        assert any(getattr(item, 'item_id', None) == ITEM_ID for item in g.inventory.slots)
+    finally:
+        pygame.quit()
 
 def test_money_system(game):
     # Simulate first interaction with Mom
