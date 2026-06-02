@@ -84,6 +84,7 @@ class Game:
 
         # Inventory setup
         self.inventory = Inventory()
+        self.mobile_controls.set_inventory_slot_rects(self.inventory.get_slot_rects())
         if os.environ.get(DEV_LOADOUT_ENV) == "1":
             self.apply_dev_loadout()
 
@@ -663,6 +664,10 @@ class Game:
         if self.mobile_controls.consume_action_press():
             events = list(events)
             events.append(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e))
+        inventory_slot_index = self.mobile_controls.consume_inventory_slot_press()
+        if inventory_slot_index is not None:
+            events = list(events)
+            events.append(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_1 + inventory_slot_index))
         for event in events:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 if self.state_machine.current_state_name == STATE_MENU:

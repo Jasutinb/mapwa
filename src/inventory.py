@@ -142,6 +142,16 @@ class Inventory:
         print(summary)
         return summary
 
+    def get_slot_rect(self, index):
+        if index < 0 or index >= self.slot_count:
+            raise IndexError("Inventory slot index out of range")
+        slot_x = self.rect.x + self.padding + (index * (self.slot_size + self.padding))
+        slot_y = self.rect.y + self.padding
+        return pygame.Rect(slot_x, slot_y, self.slot_size, self.slot_size)
+
+    def get_slot_rects(self):
+        return [self.get_slot_rect(index) for index in range(self.slot_count)]
+
     def get_definition(self, item_id_or_name):
         query = self._normalize(item_id_or_name)
         for item_definition in self.item_definitions.values():
@@ -182,9 +192,7 @@ class Inventory:
         
         # Draw slots
         for i in range(self.slot_count):
-            slot_x = self.rect.x + self.padding + (i * (self.slot_size + self.padding))
-            slot_y = self.rect.y + self.padding
-            slot_rect = pygame.Rect(slot_x, slot_y, self.slot_size, self.slot_size)
+            slot_rect = self.get_slot_rect(i)
             
             # Draw slot background
             pygame.draw.rect(surface, (60, 60, 60), slot_rect, border_radius=5)

@@ -114,6 +114,11 @@ def test_player_movement():
 - **Sprite Groups**: The game uses `pygame.sprite.Group` for management and rendering.
 - **Character Sprites**: When creating new character sprites, use the existing main character and Mom sprites as visual references first, then add role-specific personalization such as clothing, color accents, accessories, or badges. Avoid unrelated hand-drawn placeholder characters when an NPC should belong to the same visual style.
 
+### Controls and Mobile Parity
+- **Control Parity Requirement**: Every player-facing PC control must have a corresponding mobile control. If a feature adds or changes a keyboard/mouse action, update `src/mobile_controls.py` and the relevant event handling so the same action is available on mobile.
+- **Testing Requirement**: Add or update tests for both the PC input path and the matching mobile input path when introducing a new control.
+- **Current Pattern**: Directional movement maps to the mobile directional pad, and the `E` interaction key maps to the mobile action button. Follow this pattern for new actions instead of creating PC-only controls.
+
 ### WebAssembly Compatibility (pygbag)
 When developing features, keep these WASM-specific constraints in mind:
 - **Async Loop**: The main game loop must be `async` and include `await asyncio.sleep(0)` to prevent the browser from hanging.

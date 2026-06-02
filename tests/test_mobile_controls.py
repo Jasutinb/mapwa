@@ -7,6 +7,8 @@ os.environ["SDL_VIDEODRIVER"] = "dummy"
 os.environ["SDL_AUDIODRIVER"] = "dummy"
 
 from src.game import Game
+from src.config import ITEM_ID
+from src.level import Item
 from src.mobile_controls import MobileControls
 from src.player import Player
 
@@ -144,6 +146,19 @@ def test_mobile_action_press_is_consumed_once():
     assert controls.consume_action_press() is False
 
 
+def test_mobile_inventory_slot_press_is_consumed_once():
+    controls = MobileControls()
+    slot_rect = pygame.Rect(300, 520, 64, 64)
+    controls.set_inventory_slot_rects([slot_rect])
+
+    controls.handle_events(
+        [pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"button": 1, "pos": slot_rect.center})]
+    )
+
+    assert controls.consume_inventory_slot_press() == 0
+    assert controls.consume_inventory_slot_press() is None
+
+
 def test_player_uses_mobile_direction():
     player = Player((0, 0), [])
     player.mobile_direction.xy = (1, 0)
@@ -164,3 +179,16 @@ def test_mobile_action_button_triggers_interaction():
     )
 
     assert game.current_dialogue == game.mom.dialogue
+
+
+def test_mobile_inventory_slot_tap_uses_item():
+    pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    game = Game()
+    game.inventory.add_item(Item((0, 0), [], "Student ID", item_id=ITEM_ID))
+    slot_pos = game.inventory.get_slot_rect(0).center
+
+    game.handle_events(
+        [pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"button": 1, "pos": slot_pos})]
+    )
+
+    assert game.current_dialogue == ["You check your Student ID. Keep it with you."]
