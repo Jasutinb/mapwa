@@ -37,7 +37,7 @@ from src.config import (
 
 DEV_LOADOUT_ENV = "MAPWA_DEV_LOADOUT"
 DEV_LOADOUT_ITEMS = [
-    (ITEM_ID, "ID"),
+    (ITEM_ID, "Student ID"),
 ]
 
 class Game:
@@ -276,9 +276,9 @@ class Game:
     def apply_dev_loadout(self):
         self.money = 999
         for item_id, item_name in DEV_LOADOUT_ITEMS:
-            self.state.mark_item_picked(item_id)
-            if not any(getattr(item, 'item_id', None) == item_id for item in self.inventory.slots):
+            if not self.inventory.has_item(item_id):
                 self.inventory.add_item(Item((0, 0), [], item_name, item_id=item_id))
+            self.state.mark_item_picked(item_id)
 
     def pick_up_item(self, item):
         if not self.inventory.add_item(item):
@@ -289,12 +289,41 @@ class Game:
         self.show_dialogue([f"You picked up a {item.name}!"])
         return True
 
+    def has_inventory_item(self, item_id_or_name):
+        return (
+            self.inventory.has_item(item_id_or_name)
+            or item_id_or_name in self.state.inventory_item_ids
+        )
+
+    def remove_inventory_item(self, item_id_or_name):
+        item = self.inventory.remove_item(item_id_or_name)
+        if item:
+            self.state.remove_inventory_item(item.item_id)
+        return item
+
+    def use_inventory_item(self, item_id_or_name):
+        message = self.inventory.use_item(item_id_or_name)
+        if message is None:
+            self.show_dialogue(["You do not have that item."])
+            return False
+        self.show_dialogue([message])
+        return True
+
+    def use_inventory_slot(self, slot_index):
+        if slot_index < 0 or slot_index >= self.inventory.slot_count:
+            return False
+        item = self.inventory.slots[slot_index]
+        if item is None:
+            self.show_dialogue(["That inventory slot is empty."])
+            return False
+        return self.use_inventory_item(item.item_id)
+
     def try_enter_school_gate(self):
         gate = next((sprite for sprite in self.gate_sprites if self.check_proximity(self.player, sprite, 80)), None)
         if gate is None:
             return False
 
-        if gate.required_item_id not in self.state.inventory_item_ids:
+        if not self.has_inventory_item(gate.required_item_id):
             self.show_dialogue(["I need my ID to enter the school."])
             return True
 
@@ -421,7 +450,7 @@ class Game:
 
         # Add items
         if ITEM_ID not in self.state.picked_item_ids:
-            Item((300, 150), [self.visible_sprites, self.item_sprites], "ID", item_id=ITEM_ID)
+            Item((300, 150), [self.visible_sprites, self.item_sprites], "Student ID", item_id=ITEM_ID)
 
         # Add door back to Main
         Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_BEDROOM].right.name, (64, SCREEN_HEIGHT // 2))

@@ -33,3 +33,7 @@ class GameState:
         self.picked_item_ids.add(item_id)
         if item_id not in self.inventory_item_ids:
             self.inventory_item_ids.append(item_id)
+
+    def remove_inventory_item(self, item_id: str) -> None:
+        if item_id in self.inventory_item_ids:
+            self.inventory_item_ids.remove(item_id)

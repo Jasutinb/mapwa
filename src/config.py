@@ -33,4 +33,4 @@ REPEAT_MOM_DIALOGUE = [
     "I'll see you later.",
 ]
 
-ITEM_ID = "bedroom:id"
+ITEM_ID = "student_id"

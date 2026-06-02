@@ -17,6 +17,7 @@ from src.config import (
     SCREEN_WIDTH,
 )
 from src.game import Game
+from src.level import Item
 from src.npc import NPC
 
 
@@ -43,7 +44,7 @@ def test_bedroom_contains_id_instead_of_notebook(game):
 
     item = next(iter(game.item_sprites))
 
-    assert item.name == "ID"
+    assert item.name == "Student ID"
     assert item.item_id == ITEM_ID
 
 
@@ -61,7 +62,8 @@ def test_school_gate_blocks_player_without_id(game):
 
 
 def test_school_gate_allows_player_with_id(game):
-    game.state.inventory_item_ids.append(ITEM_ID)
+    game.inventory.add_item(Item((0, 0), [], "Student ID", item_id=ITEM_ID))
+    game.state.mark_item_picked(ITEM_ID)
     game.current_room = ROOM_SCHOOL_ENTRANCE
     game.create_map()
     gate = next(iter(game.gate_sprites))
