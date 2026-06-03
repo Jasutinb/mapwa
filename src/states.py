@@ -8,8 +8,10 @@ from src.config import (
     ROOM_OUTSIDE,
     ROOM_SCHOOL_ENTRANCE,
     ROOM_SCHOOL,
+    ROOM_BEDROOM,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
+    STATE_PLAY,
     TILE_SIZE,
 )
 
@@ -38,6 +40,8 @@ class PlayState(State):
                         pass
                     elif self.game.current_room == ROOM_SCHOOL and hasattr(self.game, 'school_desk') and self.game.check_proximity(self.game.player, self.game.school_desk, 64):
                         self.game.study_at_school()
+                    elif self.game.current_room == ROOM_BEDROOM and hasattr(self.game, 'bed') and self.game.check_proximity(self.game.player, self.game.bed, 64):
+                        self.game.open_sleep_confirmation()
                     else:
                         # Try to pick up items
                         hits = pygame.sprite.spritecollide(self.game.player, self.game.item_sprites, False)
@@ -83,6 +87,11 @@ class PlayState(State):
         if self.game.current_room == ROOM_SCHOOL and hasattr(self.game, 'school_desk') and self.game.check_proximity(self.game.player, self.game.school_desk, 64):
             hint_surf = self.game.font.render("Press E to study", True, 'white')
             hint_rect = hint_surf.get_rect(center=(self.game.school_desk.rect.centerx, self.game.school_desk.rect.top - 20))
+            screen.blit(hint_surf, hint_rect)
+
+        if self.game.current_room == ROOM_BEDROOM and hasattr(self.game, 'bed') and self.game.check_proximity(self.game.player, self.game.bed, 64):
+            hint_surf = self.game.font.render("Press E to sleep", True, 'white')
+            hint_rect = hint_surf.get_rect(center=(self.game.bed.rect.centerx, self.game.bed.rect.top - 20))
             screen.blit(hint_surf, hint_rect)
 
         if self.game.current_room == ROOM_ADMIN_OFFICE:
@@ -132,6 +141,89 @@ class DialogueState(State):
             
             prompt_surf = self.game.font.render("Press E to continue...", True, (150, 150, 150))
             screen.blit(prompt_surf, (box_rect.right - 180, box_rect.bottom - 30))
+
+
+class SleepConfirmState(State):
+    def __init__(self, game):
+        super().__init__(game)
+        self.options = ["Sleep", "Cancel"]
+        self.selected_index = 0
+        self.joystick_latched = False
+
+    def enter(self):
+        self.selected_index = 0
+        self.joystick_latched = False
+
+    def handle_events(self, events):
+        for event in events:
+            if event.type != pygame.KEYDOWN:
+                continue
+
+            if event.key in (pygame.K_LEFT, pygame.K_a, pygame.K_UP, pygame.K_w):
+                self.selected_index = 0
+            elif event.key in (pygame.K_RIGHT, pygame.K_d, pygame.K_DOWN, pygame.K_s):
+                self.selected_index = 1
+            elif event.key in (pygame.K_e, pygame.K_RETURN, pygame.K_SPACE):
+                self.select_current_option()
+
+    def update(self):
+        direction = self.game.mobile_controls.direction
+        if direction.length_squared() < 0.16:
+            self.joystick_latched = False
+            return
+
+        if self.joystick_latched:
+            return
+
+        if abs(direction.x) >= abs(direction.y):
+            self.selected_index = 0 if direction.x < 0 else 1
+        else:
+            self.selected_index = 0 if direction.y < 0 else 1
+        self.joystick_latched = True
+
+    def select_current_option(self):
+        selected = self.options[self.selected_index]
+        if selected == "Sleep":
+            self.game.sleep_until_next_day()
+        elif selected == "Cancel":
+            self.game.cancel_sleep_confirmation()
+
+    def draw(self, screen):
+        play_state = self.game.state_machine.states.get(STATE_PLAY)
+        if play_state:
+            play_state.draw(screen)
+
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 120))
+        screen.blit(overlay, (0, 0))
+
+        prompt_rect = pygame.Rect(0, 0, 380, 210)
+        prompt_rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+        pygame.draw.rect(screen, (30, 30, 30), prompt_rect, border_radius=8)
+        pygame.draw.rect(screen, (220, 220, 220), prompt_rect, 2, border_radius=8)
+
+        title_surf = self.game.font.render("Sleep until tomorrow?", True, "white")
+        title_rect = title_surf.get_rect(center=(prompt_rect.centerx, prompt_rect.top + 55))
+        screen.blit(title_surf, title_rect)
+
+        button_width = 130
+        button_height = 44
+        button_gap = 22
+        total_width = button_width * 2 + button_gap
+        start_x = prompt_rect.centerx - total_width // 2
+        y = prompt_rect.top + 115
+
+        for index, option in enumerate(self.options):
+            option_rect = pygame.Rect(start_x + index * (button_width + button_gap), y, button_width, button_height)
+            is_selected = index == self.selected_index
+            bg_color = (70, 120, 180) if is_selected else (45, 45, 45)
+            border_color = (240, 240, 240) if is_selected else (100, 100, 100)
+            pygame.draw.rect(screen, bg_color, option_rect, border_radius=6)
+            pygame.draw.rect(screen, border_color, option_rect, 2, border_radius=6)
+
+            text_surf = self.game.font.render(option, True, "white")
+            text_rect = text_surf.get_rect(center=option_rect.center)
+            screen.blit(text_surf, text_rect)
 
 
 class MenuState(State):
