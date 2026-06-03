@@ -7,6 +7,7 @@ os.environ['SDL_AUDIODRIVER'] = 'dummy'
 
 import pygame
 from src.game import Game
+from src.transport import BUS_TRANSPORT
 
 @pytest.fixture
 def game():
@@ -27,7 +28,7 @@ def test_bus_interaction_to_intramuros(game):
     event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
     game.handle_events([event])
     assert game.current_room == 'intramuros'
-    assert game.money == 80
+    assert game.money == 100 - BUS_TRANSPORT.fare
 
 def test_bus_interaction_no_money(game):
     game.current_room = 'outside'
@@ -58,4 +59,21 @@ def test_bus_interaction_from_school_to_entrance(game):
     event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
     game.handle_events([event])
     assert game.current_room == 'school_entrance'
-    assert game.money == 100 # No cost to go home
+    assert game.money == 100 - BUS_TRANSPORT.fare
+
+def test_bus_return_trip_no_money(game):
+    game.current_room = 'school'
+    game.create_map()
+    game.money = BUS_TRANSPORT.fare - 1
+
+    # Move player near bus
+    game.player.rect.center = game.bus.rect.center
+
+    # Simulate 'E' key press event
+    event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
+    game.handle_events([event])
+
+    assert game.current_room == 'school'
+    assert game.money == BUS_TRANSPORT.fare - 1
+    assert game.current_dialogue is not None
+    assert "enough money" in game.current_dialogue[0]

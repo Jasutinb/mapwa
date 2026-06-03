@@ -1,5 +1,6 @@
 import pygame
 from src.state import State
+from src.transport import BUS_TRANSPORT
 from src.config import (
     ROOM_INTRAMUROS,
     ROOM_ADMIN_OFFICE,
@@ -69,11 +70,11 @@ class PlayState(State):
         
         if self.game.current_room in (ROOM_OUTSIDE, ROOM_SCHOOL, ROOM_INTRAMUROS) and hasattr(self.game, 'bus') and self.game.check_proximity(self.game.player, self.game.bus, 100):
             if self.game.current_room == ROOM_OUTSIDE:
-                text = "Press E to ride to Intramuros (20)"
+                text = f"Press E to ride to Intramuros ({BUS_TRANSPORT.fare_label()})"
             elif self.game.current_room == ROOM_INTRAMUROS:
-                text = "Press E to ride back to Outside"
+                text = f"Press E to ride back to Outside ({BUS_TRANSPORT.fare_label()})"
             else:
-                text = "Press E to ride back"
+                text = f"Press E to ride back ({BUS_TRANSPORT.fare_label()})"
             
             hint_surf = self.game.font.render(text, True, 'white')
             hint_rect = hint_surf.get_rect(center=(self.game.bus.rect.centerx, self.game.bus.rect.top - 20))

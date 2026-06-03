@@ -11,9 +11,9 @@ from src.mobile_controls import MobileControls
 from src.state import StateMachine
 from src.states import PlayState, DialogueState, MenuState
 from src.game_state import GameState
+from src.transport import TRANSPORT_BUS, get_transport_mode
 from src.config import (
     ALLOWANCE_AMOUNT,
-    BUS_FARE,
     DAILY_ALLOWANCE_MOM_DIALOGUE,
     FIRST_MOM_DIALOGUE,
     FPS,
@@ -290,13 +290,21 @@ class Game:
             self.player.rect.center = spawn_pos or (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
         self.visible_sprites.add(self.player)
 
+    def pay_transport_fare(self, transport_key):
+        transport = get_transport_mode(transport_key)
+        if self.money < transport.fare:
+            self.show_dialogue([transport.insufficient_funds_dialogue()])
+            return False
+
+        self.money -= transport.fare
+        return True
+
     def ride_bus(self):
         current_node = self.rooms.get(self.current_room)
+        if not self.pay_transport_fare(TRANSPORT_BUS):
+            return False
+
         if self.current_room == ROOM_OUTSIDE:
-            if self.money < BUS_FARE:
-                self.show_dialogue([f"I don't have enough money for the bus... (Need {BUS_FARE})"])
-                return False
-            self.money -= BUS_FARE
             destination = current_node.right.name if current_node and current_node.right else ROOM_INTRAMUROS
         elif self.current_room == ROOM_INTRAMUROS:
             destination = current_node.left.name if current_node and current_node.left else ROOM_OUTSIDE
