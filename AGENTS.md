@@ -139,7 +139,7 @@ Note that `src/game.py` manually adjusts `sys.path` to allow imports from its ow
 - **Basic Movement**: Player can move in four directions using arrow keys or WASD.
 - **Rooms**: Multiple rooms (Living Room, Bedroom, Outside, School).
 - **NPCs**: Interaction with Mom (provides allowance and wanders around the house).
-- **Bus System**: Ride the bus between Outside and School (₱20 fee to school, free home).
+- **Bus System**: Ride the bus between Outside and School (₱20 fee per ride).
 - **Location Display**: Temporary display of location names upon entering a new room.
 - **Inventory System**: Functional inventory system that allows picking up and displaying items.
 - **Money System**: Tracking and displaying player money with a custom icon.

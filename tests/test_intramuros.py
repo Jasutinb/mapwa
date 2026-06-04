@@ -7,6 +7,7 @@ os.environ['SDL_VIDEODRIVER'] = 'dummy'
 os.environ['SDL_AUDIODRIVER'] = 'dummy'
 
 from src.game import Game
+from src.transport import BUS_TRANSPORT
 
 @pytest.fixture
 def game():
@@ -18,7 +19,7 @@ def game():
 
 def test_intramuros_transition(game):
     # Setup: Start at Outside with enough money
-    game.money = 20
+    game.money = BUS_TRANSPORT.fare
     game.current_room = 'outside'
     game.create_map()
     
@@ -44,6 +45,7 @@ def test_intramuros_to_school_entrance(game):
     assert game.current_room == 'school_entrance'
 
 def test_intramuros_to_outside(game):
+    game.money = BUS_TRANSPORT.fare
     game.current_room = 'intramuros'
     game.create_map()
     
@@ -58,8 +60,10 @@ def test_intramuros_to_outside(game):
     game.handle_events([event_e])
     
     assert game.current_room == 'outside'
+    assert game.money == 0
 
 def test_school_to_school_entrance(game):
+    game.money = BUS_TRANSPORT.fare
     game.current_room = 'school'
     game.create_map()
     
@@ -71,3 +75,4 @@ def test_school_to_school_entrance(game):
     game.handle_events([event_e])
     
     assert game.current_room == 'school_entrance'
+    assert game.money == 0
