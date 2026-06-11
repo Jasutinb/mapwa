@@ -9,7 +9,7 @@ from src.inventory import Inventory
 from src.level import Tile, Chair, Decoration, Door, Bus, Item, PassGate, RoomNode
 from src.mobile_controls import MobileControls
 from src.state import StateMachine
-from src.states import PlayState, DialogueState, MenuState
+from src.states import PlayState, DialogueState, MenuState, SleepConfirmState
 from src.game_state import GameState
 from src.transport import TRANSPORT_BUS, get_transport_mode
 from src.config import (
@@ -31,6 +31,7 @@ from src.config import (
     STATE_DIALOGUE,
     STATE_MENU,
     STATE_PLAY,
+    STATE_SLEEP_CONFIRM,
     STUDY_DURATION_FRAMES,
     STUDY_XP,
     TILE_SIZE,
@@ -56,6 +57,7 @@ class Game:
         self.floor_sprites = pygame.sprite.Group()
         self.door_sprites = pygame.sprite.Group()
         self.item_sprites = pygame.sprite.Group()
+        self.bed_sprites = pygame.sprite.Group()
         self.gate_sprites = pygame.sprite.Group()
         self.guard_sprites = pygame.sprite.Group()
         self.chair_sprites = pygame.sprite.Group()
@@ -98,6 +100,7 @@ class Game:
         self.state_machine.add_state(STATE_PLAY, PlayState(self))
         self.state_machine.add_state(STATE_DIALOGUE, DialogueState(self))
         self.state_machine.add_state(STATE_MENU, MenuState(self))
+        self.state_machine.add_state(STATE_SLEEP_CONFIRM, SleepConfirmState(self))
         self.state_machine.change_state(STATE_PLAY)
 
     @property
@@ -225,6 +228,16 @@ class Game:
     def close_menu(self):
         target_state = self.previous_state_before_menu or STATE_PLAY
         self.state_machine.change_state(target_state)
+
+    def open_sleep_confirmation(self):
+        self.state_machine.change_state(STATE_SLEEP_CONFIRM)
+
+    def cancel_sleep_confirmation(self):
+        self.state_machine.change_state(STATE_PLAY)
+
+    def sleep_until_next_day(self):
+        self.current_day += 1
+        self.show_dialogue([f"You slept through the night. Day {self.current_day} begins."])
 
     def finish_dialogue(self):
         self.state.clear_dialogue()
@@ -405,6 +418,8 @@ class Game:
             sprite.kill()
         for sprite in self.item_sprites:
             sprite.kill()
+        for sprite in self.bed_sprites:
+            sprite.kill()
         for sprite in self.gate_sprites:
             sprite.kill()
         for sprite in self.guard_sprites:
@@ -490,7 +505,7 @@ class Game:
             Tile((col, TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
 
         # Add bedroom decorations
-        Decoration((100, 100), [self.visible_sprites, self.obstacle_sprites], 'assets/images/bed.png')
+        self.bed = Decoration((100, 100), [self.visible_sprites, self.obstacle_sprites, self.bed_sprites], 'assets/images/bed.png')
         Decoration((200, 300), [self.visible_sprites], 'assets/images/rug.png')
 
         # Add items
