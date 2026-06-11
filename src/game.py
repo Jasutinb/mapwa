@@ -28,6 +28,7 @@ from src.config import (
     ROOM_SCHOOL_ENTRANCE,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
+    SKILL_ACADEMICS,
     STATE_DIALOGUE,
     STATE_MENU,
     STATE_PLAY,
@@ -139,9 +140,9 @@ class Game:
     def experience(self):
         return self.state.experience
 
-    @experience.setter
-    def experience(self, value):
-        self.state.experience = value
+    @property
+    def skill_xp_manager(self):
+        return self.state.skill_xp_manager
 
     @property
     def current_day(self):
@@ -328,8 +329,14 @@ class Game:
         return True
 
     def study_at_school(self):
-        self.experience += STUDY_XP
+        self.grant_skill_xp(SKILL_ACADEMICS, STUDY_XP)
         self.player.start_study(STUDY_DURATION_FRAMES)
+
+    def grant_skill_xp(self, skill, amount):
+        return self.skill_xp_manager.grant_xp(skill, amount)
+
+    def get_skill_xp(self, skill):
+        return self.skill_xp_manager.get_xp(skill)
 
     def apply_dev_loadout(self):
         self.money = 999

@@ -11,7 +11,9 @@ from src.config import (
     ROOM_BEDROOM,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
+    SKILL_ACADEMICS,
     STATE_PLAY,
+    STUDY_XP,
     TILE_SIZE,
 )
 
@@ -58,7 +60,8 @@ class PlayState(State):
         
         # If studying just finished, show dialogue
         if was_studying and not self.game.player.studying:
-            self.game.show_dialogue(["You studied hard and gained 10 XP!"])
+            skill_xp = self.game.get_skill_xp(SKILL_ACADEMICS)
+            self.game.show_dialogue([f"You studied hard and gained {STUDY_XP} academics XP! Total: {skill_xp}."])
         
         # Constrain Mom within boundaries if she's in the current room
         if self.game.current_room == ROOM_MAIN and hasattr(self.game, 'mom') and self.game.mom in self.game.visible_sprites:

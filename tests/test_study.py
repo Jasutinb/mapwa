@@ -7,6 +7,7 @@ os.environ['SDL_VIDEODRIVER'] = 'dummy'
 os.environ['SDL_AUDIODRIVER'] = 'dummy'
 
 from src.game import Game
+from src.config import SKILL_ACADEMICS
 
 @pytest.fixture
 def game():
@@ -32,6 +33,7 @@ def test_study_at_school(game):
     game.handle_events()
     
     assert game.experience == initial_xp + 10
+    assert game.get_skill_xp(SKILL_ACADEMICS) == 10
     
     # Fast forward study
     for _ in range(61):
