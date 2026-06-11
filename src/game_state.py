@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 
 from src.config import ROOM_MAIN
+from src.skill_xp import SkillXPManager
 
 
 @dataclass
@@ -8,13 +9,17 @@ class GameState:
     current_room: str = ROOM_MAIN
     current_day: int = 1
     money: int = 0
-    experience: int = 0
+    skill_xp_manager: SkillXPManager = field(default_factory=SkillXPManager)
     has_talked_to_mom: bool = False
     last_allowance_day: int = 0
     current_dialogue: list[str] | None = None
     dialogue_index: int = 0
     picked_item_ids: set[str] = field(default_factory=set)
     inventory_item_ids: list[str] = field(default_factory=list)
+
+    @property
+    def experience(self) -> int:
+        return self.skill_xp_manager.total_xp
 
     def start_dialogue(self, lines: list[str]) -> None:
         self.current_dialogue = list(lines)
