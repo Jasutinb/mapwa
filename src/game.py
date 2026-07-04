@@ -11,6 +11,7 @@ from src.mobile_controls import MobileControls
 from src.state import StateMachine
 from src.states import PlayState, DialogueState, MenuState, SleepConfirmState
 from src.game_state import GameState
+from src.quests import QuestReward
 from src.transport import TRANSPORT_BUS, get_transport_mode
 from src.config import (
     ALLOWANCE_AMOUNT,
@@ -143,6 +144,10 @@ class Game:
     @property
     def skill_xp_manager(self):
         return self.state.skill_xp_manager
+
+    @property
+    def quest_manager(self):
+        return self.state.quest_manager
 
     @property
     def current_day(self):
@@ -337,6 +342,31 @@ class Game:
 
     def get_skill_xp(self, skill):
         return self.skill_xp_manager.get_xp(skill)
+
+    def add_quest(self, quest):
+        return self.quest_manager.add_quest(quest)
+
+    def start_quest(self, quest_id):
+        return self.quest_manager.start_quest(quest_id)
+
+    def advance_quest(self, quest_id, amount=1, objective_index=None):
+        reward = self.quest_manager.advance_quest(quest_id, amount, objective_index)
+        self.apply_quest_reward(reward)
+        return reward
+
+    def advance_quest_objective(self, quest_id, objective_id, amount=1):
+        reward = self.quest_manager.advance_objective(quest_id, objective_id, amount)
+        self.apply_quest_reward(reward)
+        return reward
+
+    def apply_quest_reward(self, reward):
+        if reward is None:
+            return
+        if not isinstance(reward, QuestReward):
+            raise TypeError("Quest reward must be a QuestReward")
+        self.money += reward.money
+        for skill, amount in reward.skill_xp.items():
+            self.grant_skill_xp(skill, amount)
 
     def apply_dev_loadout(self):
         self.money = 999
