@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 
 from src.config import ROOM_MAIN
+from src.quest_definitions import create_initial_quest_manager
 from src.quests import QuestManager
 from src.skill_xp import SkillXPManager
 
@@ -11,7 +12,7 @@ class GameState:
     current_day: int = 1
     money: int = 0
     skill_xp_manager: SkillXPManager = field(default_factory=SkillXPManager)
-    quest_manager: QuestManager = field(default_factory=QuestManager)
+    quest_manager: QuestManager = field(default_factory=create_initial_quest_manager)
     has_talked_to_mom: bool = False
     last_allowance_day: int = 0
     current_dialogue: list[str] | None = None

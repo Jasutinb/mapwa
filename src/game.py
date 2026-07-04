@@ -11,6 +11,16 @@ from src.mobile_controls import MobileControls
 from src.state import StateMachine
 from src.states import PlayState, DialogueState, MenuState, SleepConfirmState
 from src.game_state import GameState
+from src.quest_definitions import (
+    FIRST_DAY_ENTER_CAMPUS,
+    FIRST_DAY_PICK_UP_ID,
+    FIRST_DAY_RIDE_BUS,
+    FIRST_DAY_STUDY,
+    FIRST_DAY_TALK_TO_MOM,
+    FIRST_DAY_QUEST_ID,
+    is_first_day_bus_destination,
+    is_first_day_item,
+)
 from src.quests import QuestReward
 from src.transport import TRANSPORT_BUS, get_transport_mode
 from src.config import (
@@ -261,6 +271,7 @@ class Game:
         self.money += ALLOWANCE_AMOUNT
         self.last_allowance_day = self.current_day
         self.has_talked_to_mom = True
+        self.advance_first_day_objective(FIRST_DAY_TALK_TO_MOM)
         return True
 
     def get_mom_dialogue(self):
@@ -331,11 +342,14 @@ class Game:
             destination = current_node.left.name if current_node and current_node.left else ROOM_INTRAMUROS
 
         self.travel_to_room(destination)
+        if is_first_day_bus_destination(destination):
+            self.advance_first_day_objective(FIRST_DAY_RIDE_BUS)
         return True
 
     def study_at_school(self):
         self.grant_skill_xp(SKILL_ACADEMICS, STUDY_XP)
         self.player.start_study(STUDY_DURATION_FRAMES)
+        self.advance_first_day_objective(FIRST_DAY_STUDY)
 
     def grant_skill_xp(self, skill, amount):
         return self.skill_xp_manager.grant_xp(skill, amount)
@@ -359,6 +373,9 @@ class Game:
         self.apply_quest_reward(reward)
         return reward
 
+    def advance_first_day_objective(self, objective_id):
+        return self.advance_quest_objective(FIRST_DAY_QUEST_ID, objective_id)
+
     def apply_quest_reward(self, reward):
         if reward is None:
             return
@@ -380,6 +397,8 @@ class Game:
             return False
 
         self.state.mark_item_picked(item.item_id)
+        if is_first_day_item(item.item_id):
+            self.advance_first_day_objective(FIRST_DAY_PICK_UP_ID)
         item.kill()
         self.show_dialogue([f"You picked up a {item.name}!"])
         return True
@@ -427,6 +446,7 @@ class Game:
             self.travel_to_room(gate.target_room, spawn_pos, use_topleft=True)
         else:
             self.travel_to_room(gate.target_room, gate.spawn_pos, use_topleft=True)
+        self.advance_first_day_objective(FIRST_DAY_ENTER_CAMPUS)
         return True
 
     def create_guard_npc(self, pos, dialogue):
