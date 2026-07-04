@@ -40,4 +40,18 @@ REPEAT_MOM_DIALOGUE = [
     "I'll see you later.",
 ]
 
+SCHOOL_GATE_NO_ID_DIALOGUE = [
+    'The guard blocks the gate. "Please present your Student ID first."',
+]
+
+SCHOOL_GUARD_NO_ID_DIALOGUE = [
+    "Please present your Student ID at the gate.",
+    "No ID, no campus entry.",
+]
+
+SCHOOL_GUARD_HAS_ID_DIALOGUE = [
+    "ID verified. You may proceed through the gate.",
+    "Stay safe on campus.",
+]
+
 ITEM_ID = "student_id"
