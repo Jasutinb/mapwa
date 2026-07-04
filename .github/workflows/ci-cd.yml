@@ -112,7 +112,7 @@ jobs:
           $butlerDir = Join-Path $env:RUNNER_TEMP "butler"
 
           Invoke-WebRequest `
-            -Uri "https://broth.itch.ovh/butler/windows-amd64/LATEST/archive/default" `
+            -Uri "https://broth.itch.zone/butler/windows-amd64/LATEST/archive/default" `
             -OutFile $butlerZip
 
           Expand-Archive -Path $butlerZip -DestinationPath $butlerDir -Force
