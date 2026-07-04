@@ -39,6 +39,9 @@ from src.config import (
     ROOM_SCHOOL_ENTRANCE,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
+    SCHOOL_GATE_NO_ID_DIALOGUE,
+    SCHOOL_GUARD_HAS_ID_DIALOGUE,
+    SCHOOL_GUARD_NO_ID_DIALOGUE,
     SKILL_ACADEMICS,
     STATE_DIALOGUE,
     STATE_MENU,
@@ -301,8 +304,14 @@ class Game:
         guard = next((sprite for sprite in self.guard_sprites if self.check_proximity(self.player, sprite, 64)), None)
         if guard is None:
             return False
+        guard.dialogue = self.get_school_guard_dialogue()
         self.show_dialogue(guard.interact())
         return True
+
+    def get_school_guard_dialogue(self):
+        if self.has_inventory_item(ITEM_ID):
+            return list(SCHOOL_GUARD_HAS_ID_DIALOGUE)
+        return list(SCHOOL_GUARD_NO_ID_DIALOGUE)
 
     def talk_to_attendant(self):
         attendant = next((sprite for sprite in self.attendant_sprites if self.check_proximity(self.player, sprite, 64)), None)
@@ -438,7 +447,7 @@ class Game:
             return False
 
         if not self.has_inventory_item(gate.required_item_id):
-            self.show_dialogue(["I need my ID to enter the school."])
+            self.show_dialogue(list(SCHOOL_GATE_NO_ID_DIALOGUE))
             return True
 
         if gate.target_room == self.current_room:
@@ -673,11 +682,11 @@ class Game:
 
         self.guard_1 = self.create_guard_npc(
             (gate_x - 48, gate_y + 112),
-            ["Please present your ID at the gate."],
+            SCHOOL_GUARD_NO_ID_DIALOGUE,
         )
         self.guard_2 = self.create_guard_npc(
             (gate_x + 48, gate_y + 112),
-            ["Students only beyond this point."],
+            SCHOOL_GUARD_NO_ID_DIALOGUE,
         )
 
         Door((admin_door_x, 0), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL_ENTRANCE].up.name, (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 96))
