@@ -24,6 +24,10 @@ from src.quest_definitions import (
 from src.quests import QuestReward
 from src.transport import TRANSPORT_BUS, get_transport_mode
 from src.config import (
+    ADMIN_OFFICE_CHECKED_IN_DIALOGUE,
+    ADMIN_OFFICE_CHECK_IN_DIALOGUE,
+    ADMIN_OFFICE_CHECK_IN_XP,
+    ADMIN_OFFICE_NO_ID_DIALOGUE,
     ALLOWANCE_AMOUNT,
     DAILY_ALLOWANCE_MOM_DIALOGUE,
     FIRST_MOM_DIALOGUE,
@@ -317,7 +321,23 @@ class Game:
         attendant = next((sprite for sprite in self.attendant_sprites if self.check_proximity(self.player, sprite, 64)), None)
         if attendant is None:
             return False
+        attendant.dialogue = self.get_admin_attendant_dialogue()
+        self.complete_admin_office_check_in()
         self.show_dialogue(attendant.interact())
+        return True
+
+    def get_admin_attendant_dialogue(self):
+        if not self.has_inventory_item(ITEM_ID):
+            return list(ADMIN_OFFICE_NO_ID_DIALOGUE)
+        if self.state.admin_office_checked_in:
+            return list(ADMIN_OFFICE_CHECKED_IN_DIALOGUE)
+        return list(ADMIN_OFFICE_CHECK_IN_DIALOGUE)
+
+    def complete_admin_office_check_in(self):
+        if self.state.admin_office_checked_in or not self.has_inventory_item(ITEM_ID):
+            return False
+        self.state.admin_office_checked_in = True
+        self.grant_skill_xp(SKILL_ACADEMICS, ADMIN_OFFICE_CHECK_IN_XP)
         return True
 
     def travel_to_room(self, room_name, spawn_pos=None, use_topleft=False):
@@ -467,7 +487,7 @@ class Game:
 
     def create_attendant_npc(self, pos):
         attendant = NPC(pos, [self.visible_sprites, self.obstacle_sprites, self.attendant_sprites], 'assets/images/mom.png', name="Attendant", can_wander=False)
-        attendant.dialogue = ["Good day. Please wait for your number to be called."]
+        attendant.dialogue = list(ADMIN_OFFICE_NO_ID_DIALOGUE)
         attendant.sprite_asset = 'assets/images/mom.png'
         attendant.sprite_base_assets = ('assets/images/player.png', 'assets/images/mom.png')
         return attendant

@@ -20,6 +20,7 @@ ALLOWANCE_AMOUNT = 250
 SKILL_ACADEMICS = "academics"
 STUDY_XP = 10
 STUDY_DURATION_FRAMES = 60
+ADMIN_OFFICE_CHECK_IN_XP = 5
 
 FIRST_MOM_DIALOGUE = [
     "Hi sweetie!",
@@ -52,6 +53,20 @@ SCHOOL_GUARD_NO_ID_DIALOGUE = [
 SCHOOL_GUARD_HAS_ID_DIALOGUE = [
     "ID verified. You may proceed through the gate.",
     "Stay safe on campus.",
+]
+
+ADMIN_OFFICE_NO_ID_DIALOGUE = [
+    "Please bring your Student ID before we can process your enrollment record.",
+]
+
+ADMIN_OFFICE_CHECK_IN_DIALOGUE = [
+    "Student ID verified. Your enrollment record is now active.",
+    "You receive 5 academics XP for learning how admin check-in works.",
+]
+
+ADMIN_OFFICE_CHECKED_IN_DIALOGUE = [
+    "Your enrollment record is already active.",
+    "Check the school office if you need help with documents later.",
 ]
 
 ITEM_ID = "student_id"
