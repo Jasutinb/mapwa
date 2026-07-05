@@ -40,6 +40,7 @@ from src.config import (
     ROOM_INTRAMUROS,
     ROOM_MAIN,
     ROOM_OUTSIDE,
+    ROOM_PROGRAMMING_LAB,
     ROOM_SCHOOL,
     ROOM_SCHOOL_ENTRANCE,
     SCREEN_HEIGHT,
@@ -50,10 +51,12 @@ from src.config import (
     SCHOOL_GUARD_NO_ID_REDIRECT_DIALOGUE,
     SCHOOL_GUARD_TEMP_PASS_DIALOGUE,
     SKILL_ACADEMICS,
+    SKILL_PROGRAMMING,
     STATE_DIALOGUE,
     STATE_MENU,
     STATE_PLAY,
     STATE_SLEEP_CONFIRM,
+    PROGRAMMING_LAB_XP,
     STUDY_DURATION_FRAMES,
     STUDY_XP,
     TILE_SIZE,
@@ -202,7 +205,8 @@ class Game:
             ROOM_INTRAMUROS: RoomNode(ROOM_INTRAMUROS, 'Intramuros'),
             ROOM_SCHOOL_ENTRANCE: RoomNode(ROOM_SCHOOL_ENTRANCE, 'School Entrance'),
             ROOM_ADMIN_OFFICE: RoomNode(ROOM_ADMIN_OFFICE, 'Admin Office'),
-            ROOM_SCHOOL: RoomNode(ROOM_SCHOOL, 'School')
+            ROOM_SCHOOL: RoomNode(ROOM_SCHOOL, 'School'),
+            ROOM_PROGRAMMING_LAB: RoomNode(ROOM_PROGRAMMING_LAB, 'Programming Lab')
         }
 
         # Link rooms
@@ -226,6 +230,8 @@ class Game:
         self.rooms[ROOM_SCHOOL_ENTRANCE].up = self.rooms[ROOM_ADMIN_OFFICE]
         self.rooms[ROOM_ADMIN_OFFICE].down = self.rooms[ROOM_SCHOOL_ENTRANCE]
         self.rooms[ROOM_SCHOOL].left = self.rooms[ROOM_SCHOOL_ENTRANCE]
+        self.rooms[ROOM_SCHOOL].up = self.rooms[ROOM_PROGRAMMING_LAB]
+        self.rooms[ROOM_PROGRAMMING_LAB].down = self.rooms[ROOM_SCHOOL]
 
     def create_money_icon(self):
         icon = pygame.Surface((24, 24), pygame.SRCALPHA)
@@ -407,6 +413,10 @@ class Game:
         self.player.start_study(STUDY_DURATION_FRAMES)
         self.advance_first_day_objective(FIRST_DAY_STUDY)
 
+    def practice_programming(self):
+        skill_xp = self.grant_skill_xp(SKILL_PROGRAMMING, PROGRAMMING_LAB_XP)
+        self.show_dialogue([f"You practiced coding and gained {PROGRAMMING_LAB_XP} programming XP! Total: {skill_xp}."])
+
     def grant_skill_xp(self, skill, amount):
         return self.skill_xp_manager.grant_xp(skill, amount)
 
@@ -563,6 +573,8 @@ class Game:
             self.create_admin_office()
         elif self.current_room == ROOM_SCHOOL:
             self.create_school()
+        elif self.current_room == ROOM_PROGRAMMING_LAB:
+            self.create_programming_lab()
 
     def create_main_room(self):
         try:
@@ -797,10 +809,13 @@ class Game:
             for col in range(0, SCREEN_WIDTH, TILE_SIZE):
                 Tile((col, row), [self.floor_sprites], floor_surf)
         
+        lab_door_x = SCREEN_WIDTH // 2 - TILE_SIZE // 2
+
         # Add walls at the top
         for col in range(0, SCREEN_WIDTH, TILE_SIZE):
-            Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
-            Tile((col, TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            if not (lab_door_x - TILE_SIZE <= col <= lab_door_x + TILE_SIZE):
+                Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+                Tile((col, TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
 
         # Add text to indicate it's the school
         # Note: we don't have a specific way to draw static text on map yet, 
@@ -812,6 +827,37 @@ class Game:
 
         # Add door to exit school
         Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
+        Door((lab_door_x, 0), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL].up.name, (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 96))
+
+    def create_programming_lab(self):
+        floor_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        floor_surf.fill((74, 82, 92))
+        pygame.draw.line(floor_surf, (105, 116, 128), (0, 0), (TILE_SIZE, 0), 1)
+        pygame.draw.line(floor_surf, (44, 50, 58), (0, TILE_SIZE - 1), (TILE_SIZE, TILE_SIZE - 1), 1)
+
+        wall_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        wall_surf.fill((42, 48, 56))
+
+        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
+            for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+                Tile((col, row), [self.floor_sprites], floor_surf)
+
+        exit_door_x = SCREEN_WIDTH // 2 - TILE_SIZE // 2
+        for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+            Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            if not (exit_door_x - TILE_SIZE <= col <= exit_door_x + TILE_SIZE):
+                Tile((col, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+
+        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
+            Tile((0, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            Tile((SCREEN_WIDTH - TILE_SIZE, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+
+        self.programming_station = Decoration((SCREEN_WIDTH // 2 - 64, 120), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
+        Decoration((SCREEN_WIDTH // 2 + 64, 120), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
+        Decoration((SCREEN_WIDTH // 2 - 64, 260), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
+        Decoration((SCREEN_WIDTH // 2 + 64, 260), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
+
+        Door((exit_door_x, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_PROGRAMMING_LAB].down.name, (SCREEN_WIDTH // 2, 96))
 
     async def run(self):
         while self.running:
