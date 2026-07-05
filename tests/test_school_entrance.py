@@ -13,6 +13,9 @@ from src.config import (
     ROOM_INTRAMUROS,
     ROOM_SCHOOL,
     ROOM_SCHOOL_ENTRANCE,
+    SCHOOL_GATE_NO_ID_DIALOGUE,
+    SCHOOL_GUARD_HAS_ID_DIALOGUE,
+    SCHOOL_GUARD_NO_ID_DIALOGUE,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
 )
@@ -58,7 +61,7 @@ def test_school_gate_blocks_player_without_id(game):
     game.handle_events([event])
 
     assert game.current_room == ROOM_SCHOOL_ENTRANCE
-    assert game.current_dialogue == ["I need my ID to enter the school."]
+    assert game.current_dialogue == SCHOOL_GATE_NO_ID_DIALOGUE
 
 
 def test_school_gate_allows_player_with_id(game):
@@ -200,3 +203,29 @@ def test_admin_office_has_interactable_attendant(game):
     assert attendant.name == "Attendant"
     assert attendant.sprite_base_assets == ('assets/images/player.png', 'assets/images/mom.png')
     assert game.current_dialogue == attendant.dialogue
+
+
+def test_school_guard_requests_id_before_entry(game):
+    game.current_room = ROOM_SCHOOL_ENTRANCE
+    game.create_map()
+    guard = next(iter(game.guard_sprites))
+    game.player.rect.center = guard.rect.center
+
+    event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
+    game.handle_events([event])
+
+    assert game.current_dialogue == SCHOOL_GUARD_NO_ID_DIALOGUE
+
+
+def test_school_guard_verifies_student_with_id(game):
+    game.inventory.add_item(Item((0, 0), [], "Student ID", item_id=ITEM_ID))
+    game.state.mark_item_picked(ITEM_ID)
+    game.current_room = ROOM_SCHOOL_ENTRANCE
+    game.create_map()
+    guard = next(iter(game.guard_sprites))
+    game.player.rect.center = guard.rect.center
+
+    event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
+    game.handle_events([event])
+
+    assert game.current_dialogue == SCHOOL_GUARD_HAS_ID_DIALOGUE

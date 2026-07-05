@@ -1,0 +1,123 @@
+name: CI/CD
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SDL_VIDEODRIVER: dummy
+  SDL_AUDIODRIVER: dummy
+  UV_CACHE_DIR: .uv-cache
+  UV_PYTHON_INSTALL_DIR: .uv-python
+
+jobs:
+  checks:
+    name: Lint and test
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Run checks
+        run: pwsh -NoProfile -ExecutionPolicy Bypass -File ./run-checks.ps1
+
+  build-web:
+    name: Build web archive
+    runs-on: windows-latest
+    needs: checks
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Build web archive
+        run: pwsh -NoProfile -ExecutionPolicy Bypass -File ./run-build.ps1
+
+      - name: Upload web archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: mapwa-web
+          path: build/web.zip
+          if-no-files-found: error
+
+  deploy-itch:
+    name: Deploy to itch.io
+    runs-on: windows-latest
+    needs: build-web
+    if: github.event_name != 'pull_request'
+
+    env:
+      BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Install Butler
+        run: |
+          if (-not $env:BUTLER_API_KEY) {
+            throw "BUTLER_API_KEY secret is not set."
+          }
+
+          $butlerZip = Join-Path $env:RUNNER_TEMP "butler.zip"
+          $butlerDir = Join-Path $env:RUNNER_TEMP "butler"
+
+          Invoke-WebRequest `
+            -Uri "https://broth.itch.zone/butler/windows-amd64/LATEST/archive/default" `
+            -OutFile $butlerZip
+
+          Expand-Archive -Path $butlerZip -DestinationPath $butlerDir -Force
+          Add-Content -Path $env:GITHUB_PATH -Value $butlerDir
+          & (Join-Path $butlerDir "butler.exe") -V
+
+      - name: Deploy web archive
+        run: pwsh -NoProfile -ExecutionPolicy Bypass -File ./run-push.ps1

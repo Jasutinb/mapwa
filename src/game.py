@@ -11,6 +11,17 @@ from src.mobile_controls import MobileControls
 from src.state import StateMachine
 from src.states import PlayState, DialogueState, MenuState, SleepConfirmState
 from src.game_state import GameState
+from src.quest_definitions import (
+    FIRST_DAY_ENTER_CAMPUS,
+    FIRST_DAY_PICK_UP_ID,
+    FIRST_DAY_RIDE_BUS,
+    FIRST_DAY_STUDY,
+    FIRST_DAY_TALK_TO_MOM,
+    FIRST_DAY_QUEST_ID,
+    is_first_day_bus_destination,
+    is_first_day_item,
+)
+from src.quests import QuestReward
 from src.transport import TRANSPORT_BUS, get_transport_mode
 from src.config import (
     ALLOWANCE_AMOUNT,
@@ -28,6 +39,9 @@ from src.config import (
     ROOM_SCHOOL_ENTRANCE,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
+    SCHOOL_GATE_NO_ID_DIALOGUE,
+    SCHOOL_GUARD_HAS_ID_DIALOGUE,
+    SCHOOL_GUARD_NO_ID_DIALOGUE,
     SKILL_ACADEMICS,
     STATE_DIALOGUE,
     STATE_MENU,
@@ -145,6 +159,10 @@ class Game:
         return self.state.skill_xp_manager
 
     @property
+    def quest_manager(self):
+        return self.state.quest_manager
+
+    @property
     def current_day(self):
         return self.state.current_day
 
@@ -256,6 +274,7 @@ class Game:
         self.money += ALLOWANCE_AMOUNT
         self.last_allowance_day = self.current_day
         self.has_talked_to_mom = True
+        self.advance_first_day_objective(FIRST_DAY_TALK_TO_MOM)
         return True
 
     def get_mom_dialogue(self):
@@ -285,8 +304,14 @@ class Game:
         guard = next((sprite for sprite in self.guard_sprites if self.check_proximity(self.player, sprite, 64)), None)
         if guard is None:
             return False
+        guard.dialogue = self.get_school_guard_dialogue()
         self.show_dialogue(guard.interact())
         return True
+
+    def get_school_guard_dialogue(self):
+        if self.has_inventory_item(ITEM_ID):
+            return list(SCHOOL_GUARD_HAS_ID_DIALOGUE)
+        return list(SCHOOL_GUARD_NO_ID_DIALOGUE)
 
     def talk_to_attendant(self):
         attendant = next((sprite for sprite in self.attendant_sprites if self.check_proximity(self.player, sprite, 64)), None)
@@ -326,17 +351,48 @@ class Game:
             destination = current_node.left.name if current_node and current_node.left else ROOM_INTRAMUROS
 
         self.travel_to_room(destination)
+        if is_first_day_bus_destination(destination):
+            self.advance_first_day_objective(FIRST_DAY_RIDE_BUS)
         return True
 
     def study_at_school(self):
         self.grant_skill_xp(SKILL_ACADEMICS, STUDY_XP)
         self.player.start_study(STUDY_DURATION_FRAMES)
+        self.advance_first_day_objective(FIRST_DAY_STUDY)
 
     def grant_skill_xp(self, skill, amount):
         return self.skill_xp_manager.grant_xp(skill, amount)
 
     def get_skill_xp(self, skill):
         return self.skill_xp_manager.get_xp(skill)
+
+    def add_quest(self, quest):
+        return self.quest_manager.add_quest(quest)
+
+    def start_quest(self, quest_id):
+        return self.quest_manager.start_quest(quest_id)
+
+    def advance_quest(self, quest_id, amount=1, objective_index=None):
+        reward = self.quest_manager.advance_quest(quest_id, amount, objective_index)
+        self.apply_quest_reward(reward)
+        return reward
+
+    def advance_quest_objective(self, quest_id, objective_id, amount=1):
+        reward = self.quest_manager.advance_objective(quest_id, objective_id, amount)
+        self.apply_quest_reward(reward)
+        return reward
+
+    def advance_first_day_objective(self, objective_id):
+        return self.advance_quest_objective(FIRST_DAY_QUEST_ID, objective_id)
+
+    def apply_quest_reward(self, reward):
+        if reward is None:
+            return
+        if not isinstance(reward, QuestReward):
+            raise TypeError("Quest reward must be a QuestReward")
+        self.money += reward.money
+        for skill, amount in reward.skill_xp.items():
+            self.grant_skill_xp(skill, amount)
 
     def apply_dev_loadout(self):
         self.money = 999
@@ -350,6 +406,8 @@ class Game:
             return False
 
         self.state.mark_item_picked(item.item_id)
+        if is_first_day_item(item.item_id):
+            self.advance_first_day_objective(FIRST_DAY_PICK_UP_ID)
         item.kill()
         self.show_dialogue([f"You picked up a {item.name}!"])
         return True
@@ -389,7 +447,7 @@ class Game:
             return False
 
         if not self.has_inventory_item(gate.required_item_id):
-            self.show_dialogue(["I need my ID to enter the school."])
+            self.show_dialogue(list(SCHOOL_GATE_NO_ID_DIALOGUE))
             return True
 
         if gate.target_room == self.current_room:
@@ -397,6 +455,7 @@ class Game:
             self.travel_to_room(gate.target_room, spawn_pos, use_topleft=True)
         else:
             self.travel_to_room(gate.target_room, gate.spawn_pos, use_topleft=True)
+        self.advance_first_day_objective(FIRST_DAY_ENTER_CAMPUS)
         return True
 
     def create_guard_npc(self, pos, dialogue):
@@ -623,11 +682,11 @@ class Game:
 
         self.guard_1 = self.create_guard_npc(
             (gate_x - 48, gate_y + 112),
-            ["Please present your ID at the gate."],
+            SCHOOL_GUARD_NO_ID_DIALOGUE,
         )
         self.guard_2 = self.create_guard_npc(
             (gate_x + 48, gate_y + 112),
-            ["Students only beyond this point."],
+            SCHOOL_GUARD_NO_ID_DIALOGUE,
         )
 
         Door((admin_door_x, 0), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL_ENTRANCE].up.name, (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 96))
