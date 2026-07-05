@@ -10,6 +10,7 @@ from src.config import (
     ELECTRONICS_LAB_XP,
     ROOM_ELECTRONICS_LAB,
     ROOM_SCHOOL,
+    TILE_SIZE,
     SKILL_ELECTRONICS,
 )
 from src.game import Game
@@ -57,6 +58,15 @@ def test_electronics_lab_exit_returns_to_clear_school_path(game):
     assert game.player.rect.topleft == school_door.spawn_pos
     assert hasattr(game, "school_desk")
     assert not pygame.sprite.spritecollide(game.player, game.obstacle_sprites, False)
+
+
+def test_electronics_lab_exit_trigger_is_reachable_from_inside_room(game):
+    game.current_room = ROOM_ELECTRONICS_LAB
+    game.create_map()
+
+    school_door = next(s for s in game.door_sprites if s.target_room == ROOM_SCHOOL)
+
+    assert school_door.rect.left >= TILE_SIZE
 
 
 def test_electronics_station_interaction_grants_electronics_xp(game):

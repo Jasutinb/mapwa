@@ -922,7 +922,7 @@ class Game:
         Decoration((SCREEN_WIDTH // 2 - 64, 280), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
         Decoration((SCREEN_WIDTH // 2 + 64, 280), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
 
-        Door((0, entry_door_y), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_ELECTRONICS_LAB].left.name, (SCREEN_WIDTH - 96, SCREEN_HEIGHT // 2))
+        Door((TILE_SIZE, entry_door_y), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_ELECTRONICS_LAB].left.name, (SCREEN_WIDTH - 96, SCREEN_HEIGHT // 2))
 
     def create_library(self):
         floor_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
