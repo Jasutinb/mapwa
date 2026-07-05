@@ -40,7 +40,10 @@ from src.config import (
     ELECTRONICS_LAB_XP,
     FIRST_MOM_DIALOGUE,
     FPS,
+    ELECTRONICS_PRACTICE_ENERGY_COST,
     ITEM_ID,
+    INSUFFICIENT_ENERGY_DIALOGUE,
+    LIBRARY_STUDY_ENERGY_COST,
     MAX_ENERGY,
     MEAL_ENERGY,
     MEAL_PRICE,
@@ -63,6 +66,7 @@ from src.config import (
     SCHOOL_GUARD_NO_ID_DIALOGUE,
     SCHOOL_GUARD_NO_ID_REDIRECT_DIALOGUE,
     SCHOOL_GUARD_TEMP_PASS_DIALOGUE,
+    SCHOOL_STUDY_ENERGY_COST,
     SKILL_ACADEMICS,
     SKILL_ELECTRONICS,
     SKILL_PROGRAMMING,
@@ -71,6 +75,7 @@ from src.config import (
     STATE_PLAY,
     STATE_SLEEP_CONFIRM,
     LIBRARY_STUDY_XP,
+    PROGRAMMING_PRACTICE_ENERGY_COST,
     PROGRAMMING_LAB_XP,
     STUDY_DURATION_FRAMES,
     STUDY_XP,
@@ -301,6 +306,7 @@ class Game:
 
     def sleep_until_next_day(self):
         self.current_day += 1
+        self.energy = MAX_ENERGY
         self.state.temporary_campus_pass_day = None
         self.show_dialogue([f"You slept through the night. Day {self.current_day} begins."])
 
@@ -443,23 +449,42 @@ class Game:
         return True
 
     def study_at_school(self):
+        if not self.spend_energy(SCHOOL_STUDY_ENERGY_COST):
+            return False
         self.grant_skill_xp(SKILL_ACADEMICS, STUDY_XP)
         self.player.start_study(STUDY_DURATION_FRAMES)
         self.advance_first_day_objective(FIRST_DAY_STUDY)
+        return True
 
     def practice_programming(self):
+        if not self.spend_energy(PROGRAMMING_PRACTICE_ENERGY_COST):
+            return False
         skill_xp = self.grant_skill_xp(SKILL_PROGRAMMING, PROGRAMMING_LAB_XP)
         self.advance_hello_world_objective(HELLO_WORLD_PRACTICE_PROGRAMMING)
         skill_xp = self.get_skill_xp(SKILL_PROGRAMMING)
         self.show_dialogue([f"You practiced coding and gained {PROGRAMMING_LAB_XP} programming XP! Total: {skill_xp}."])
+        return True
 
     def practice_electronics(self):
+        if not self.spend_energy(ELECTRONICS_PRACTICE_ENERGY_COST):
+            return False
         skill_xp = self.grant_skill_xp(SKILL_ELECTRONICS, ELECTRONICS_LAB_XP)
         self.show_dialogue([f"You practiced circuits and gained {ELECTRONICS_LAB_XP} electronics XP! Total: {skill_xp}."])
+        return True
 
     def study_at_library(self, skill, label):
+        if not self.spend_energy(LIBRARY_STUDY_ENERGY_COST):
+            return False
         skill_xp = self.grant_skill_xp(skill, LIBRARY_STUDY_XP)
         self.show_dialogue([f"You studied {label} and gained {LIBRARY_STUDY_XP} {label} XP! Total: {skill_xp}."])
+        return True
+
+    def spend_energy(self, amount):
+        if self.energy < amount:
+            self.show_dialogue(list(INSUFFICIENT_ENERGY_DIALOGUE))
+            return False
+        self.energy -= amount
+        return True
 
     def restore_energy(self, amount):
         before = self.energy

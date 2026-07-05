@@ -1,0 +1,25 @@
+# Tasks
+
+- [x] Fetch and summarize the Notion ticket.
+- [x] Confirm the implementation plan with the user.
+- [x] Create a dedicated branch/worktree.
+- [x] Implement only the approved ticket scope.
+- [x] Add energy-cost constants for study, programming, electronics, and library activities.
+- [x] Add helper methods to check, spend, and block on insufficient energy.
+- [x] Reset energy to max when sleeping into the next day.
+- [x] Apply energy costs to School study, Programming Lab practice, Electronics Lab practice, and Library station study.
+- [x] Ensure blocked actions do not grant XP, start study animation, advance quests, or spend money.
+- [x] Preserve Cafeteria food restoration behavior from Ticket 017.
+- [x] Add or update focused tests for energy reset, action costs, blocked actions, quest non-advancement, mobile parity, and food restore regression.
+- [x] Run focused tests.
+- [x] Run `uv run ruff check .`.
+- [x] Run `uv run pytest -n auto`.
+- [ ] Stage only ticket files.
+- [ ] Commit and push the ticket branch.
+- [ ] Create one GitHub PR.
+- [ ] Add a PR verification comment with manual and command checks.
+- [ ] Wait for PR CI/CD to pass.
+- [ ] Merge the PR.
+- [ ] Confirm post-merge main CI/CD is green.
+- [ ] Update the Notion ticket status and implementation notes.
+- [ ] Archive this OpenSpec change folder.
