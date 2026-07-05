@@ -44,9 +44,13 @@ from src.config import (
     ITEM_ID,
     INSUFFICIENT_ENERGY_DIALOGUE,
     LIBRARY_STUDY_ENERGY_COST,
+    LOW_ENERGY_STRESS_DIALOGUE,
+    LOW_ENERGY_STRESS_INCREASE,
     MAX_ENERGY,
+    MAX_STRESS,
     MEAL_ENERGY,
     MEAL_PRICE,
+    MIN_STRESS,
     REPEAT_MOM_DIALOGUE,
     ROOM_ADMIN_OFFICE,
     ROOM_BEDROOM,
@@ -67,6 +71,7 @@ from src.config import (
     SCHOOL_GUARD_NO_ID_REDIRECT_DIALOGUE,
     SCHOOL_GUARD_TEMP_PASS_DIALOGUE,
     SCHOOL_STUDY_ENERGY_COST,
+    SLEEP_STRESS_RECOVERY,
     SKILL_ACADEMICS,
     SKILL_ELECTRONICS,
     SKILL_PROGRAMMING,
@@ -112,6 +117,7 @@ class Game:
         self.location_display_timer = 0
         self.location_display_duration = 120 # 2 seconds at 60 FPS
         self.energy_hud_rect = pygame.Rect(0, 0, 0, 0)
+        self.stress_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.mobile_controls = MobileControls((SCREEN_WIDTH, SCREEN_HEIGHT))
 
         # Level setup
@@ -188,6 +194,14 @@ class Game:
     @energy.setter
     def energy(self, value):
         self.state.energy = max(0, min(MAX_ENERGY, value))
+
+    @property
+    def stress(self):
+        return self.state.stress
+
+    @stress.setter
+    def stress(self, value):
+        self.state.stress = max(MIN_STRESS, min(MAX_STRESS, value))
 
     @property
     def experience(self):
@@ -307,6 +321,7 @@ class Game:
     def sleep_until_next_day(self):
         self.current_day += 1
         self.energy = MAX_ENERGY
+        self.reduce_stress(SLEEP_STRESS_RECOVERY)
         self.state.temporary_campus_pass_day = None
         self.show_dialogue([f"You slept through the night. Day {self.current_day} begins."])
 
@@ -481,7 +496,11 @@ class Game:
 
     def spend_energy(self, amount):
         if self.energy < amount:
-            self.show_dialogue(list(INSUFFICIENT_ENERGY_DIALOGUE))
+            stress_increased = self.increase_stress(LOW_ENERGY_STRESS_INCREASE)
+            dialogue = list(INSUFFICIENT_ENERGY_DIALOGUE)
+            if stress_increased:
+                dialogue.append(LOW_ENERGY_STRESS_DIALOGUE.format(amount=stress_increased))
+            self.show_dialogue(dialogue)
             return False
         self.energy -= amount
         return True
@@ -490,6 +509,16 @@ class Game:
         before = self.energy
         self.energy = self.energy + amount
         return self.energy - before
+
+    def increase_stress(self, amount):
+        before = self.stress
+        self.stress = self.stress + amount
+        return self.stress - before
+
+    def reduce_stress(self, amount):
+        before = self.stress
+        self.stress = self.stress - amount
+        return before - self.stress
 
     def buy_cafeteria_meal(self):
         if self.energy >= MAX_ENERGY:
@@ -1152,6 +1181,14 @@ class Game:
         pygame.draw.rect(self.screen, (30, 30, 30), self.energy_hud_rect, border_radius=5)
         pygame.draw.rect(self.screen, (200, 200, 200), self.energy_hud_rect, 1, border_radius=5)
         self.screen.blit(energy_surf, energy_rect)
+
+        stress_text = f"Stress: {self.stress}/{MAX_STRESS}"
+        stress_surf = self.font.render(stress_text, True, 'white')
+        stress_rect = stress_surf.get_rect(topright=(SCREEN_WIDTH - 25, self.energy_hud_rect.bottom + 10))
+        self.stress_hud_rect = stress_rect.inflate(20, 10)
+        pygame.draw.rect(self.screen, (30, 30, 30), self.stress_hud_rect, border_radius=5)
+        pygame.draw.rect(self.screen, (200, 200, 200), self.stress_hud_rect, 1, border_radius=5)
+        self.screen.blit(stress_surf, stress_rect)
 
         # Draw location name
         if self.location_display_timer > 0:

@@ -13,6 +13,8 @@ from src.config import (
     INSUFFICIENT_ENERGY_DIALOGUE,
     LIBRARY_STUDY_ENERGY_COST,
     LIBRARY_STUDY_XP,
+    LOW_ENERGY_STRESS_DIALOGUE,
+    LOW_ENERGY_STRESS_INCREASE,
     MAX_ENERGY,
     MEAL_ENERGY,
     MEAL_PRICE,
@@ -37,6 +39,11 @@ from src.quest_definitions import (
     HELLO_WORLD_REWARD_XP,
 )
 from src.quests import QUEST_DONE
+
+
+LOW_ENERGY_DIALOGUE = INSUFFICIENT_ENERGY_DIALOGUE + [
+    LOW_ENERGY_STRESS_DIALOGUE.format(amount=LOW_ENERGY_STRESS_INCREASE)
+]
 
 
 @pytest.fixture
@@ -80,7 +87,7 @@ def test_school_study_blocks_when_energy_is_low(game):
     assert game.energy == SCHOOL_STUDY_ENERGY_COST - 1
     assert game.get_skill_xp(SKILL_ACADEMICS) == 0
     assert game.player.studying is False
-    assert game.current_dialogue == INSUFFICIENT_ENERGY_DIALOGUE
+    assert game.current_dialogue == LOW_ENERGY_DIALOGUE
 
 
 def test_programming_practice_spends_energy_and_completes_quest(game):
@@ -105,7 +112,7 @@ def test_programming_practice_blocks_without_quest_progress_when_energy_is_low(g
     assert game.energy == PROGRAMMING_PRACTICE_ENERGY_COST - 1
     assert quest.current_objective.objective_id == HELLO_WORLD_PRACTICE_PROGRAMMING
     assert game.get_skill_xp(SKILL_PROGRAMMING) == 0
-    assert game.current_dialogue == INSUFFICIENT_ENERGY_DIALOGUE
+    assert game.current_dialogue == LOW_ENERGY_DIALOGUE
 
 
 def test_electronics_practice_spends_energy(game):
@@ -127,7 +134,7 @@ def test_electronics_practice_blocks_when_energy_is_low(game):
 
     assert game.energy == ELECTRONICS_PRACTICE_ENERGY_COST - 1
     assert game.get_skill_xp(SKILL_ELECTRONICS) == 0
-    assert game.current_dialogue == INSUFFICIENT_ENERGY_DIALOGUE
+    assert game.current_dialogue == LOW_ENERGY_DIALOGUE
 
 
 def test_library_study_spends_energy(game):
@@ -153,7 +160,7 @@ def test_mobile_library_study_blocks_when_energy_is_low(game):
 
     assert game.energy == LIBRARY_STUDY_ENERGY_COST - 1
     assert game.get_skill_xp(SKILL_MATH) == 0
-    assert game.current_dialogue == INSUFFICIENT_ENERGY_DIALOGUE
+    assert game.current_dialogue == LOW_ENERGY_DIALOGUE
 
 
 def test_food_still_restores_spent_energy_after_activity_costs(game):

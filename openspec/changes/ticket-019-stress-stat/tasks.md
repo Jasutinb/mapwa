@@ -1,0 +1,25 @@
+# Tasks
+
+- [x] Fetch and summarize the Notion ticket.
+- [x] Confirm the implementation plan with the user.
+- [x] Create a dedicated branch/worktree.
+- [x] Implement only the approved ticket scope.
+- [x] Add stress constants for max, starting value, sleep recovery, and low-energy increase.
+- [x] Add stress state, property accessors, clamp behavior, and change helper methods.
+- [x] Add HUD rendering for stress without overlapping existing HUD or mobile controls.
+- [x] Reduce stress when sleeping into the next day.
+- [x] Increase stress when energy-gated schoolwork is blocked due to insufficient energy.
+- [x] Preserve existing energy costs, quest progression, XP awards, and cafeteria behavior.
+- [x] Add focused tests for initial stress, clamping, HUD layout, sleep recovery, low-energy stress increase, mobile parity, and no unrelated stress change.
+- [x] Run focused tests.
+- [x] Run `uv run ruff check .`.
+- [x] Run `uv run pytest -n auto`.
+- [x] Stage only ticket files.
+- [x] Commit and push the ticket branch.
+- [x] Create one GitHub PR.
+- [x] Add a PR verification comment with manual and command checks.
+- [x] Wait for PR CI/CD to pass.
+- [ ] Merge the PR.
+- [ ] Confirm post-merge main CI/CD is green.
+- [ ] Update the Notion ticket status and implementation notes.
+- [ ] Archive this OpenSpec change folder.
