@@ -50,13 +50,27 @@ SCHOOL_GUARD_NO_ID_DIALOGUE = [
     "No ID, no campus entry.",
 ]
 
+SCHOOL_GUARD_NO_ID_REDIRECT_DIALOGUE = [
+    "You forgot your Student ID. Please report to the Admin Office for a temporary campus pass.",
+]
+
 SCHOOL_GUARD_HAS_ID_DIALOGUE = [
     "ID verified. You may proceed through the gate.",
     "Stay safe on campus.",
 ]
 
+SCHOOL_GUARD_TEMP_PASS_DIALOGUE = [
+    "Temporary campus pass verified. You may use the gate today.",
+]
+
 ADMIN_OFFICE_NO_ID_DIALOGUE = [
-    "Please bring your Student ID before we can process your enrollment record.",
+    "Admin issued you a temporary campus pass for today.",
+    "Bring your Student ID tomorrow to avoid another admin stop.",
+]
+
+ADMIN_OFFICE_TEMP_PASS_ACTIVE_DIALOGUE = [
+    "Your temporary campus pass is already active for today.",
+    "You can enter campus through the gate now.",
 ]
 
 ADMIN_OFFICE_CHECK_IN_DIALOGUE = [

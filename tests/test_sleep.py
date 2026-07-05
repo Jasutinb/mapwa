@@ -65,6 +65,18 @@ def test_confirming_sleep_advances_to_next_day(game):
     assert game.current_dialogue == ["You slept through the night. Day 2 begins."]
 
 
+def test_sleeping_resets_temporary_campus_pass(game):
+    game.state.temporary_campus_pass_day = game.current_day
+    move_to_bedroom_bed(game)
+    press_key(game, pygame.K_e)
+
+    press_key(game, pygame.K_RETURN)
+
+    assert game.current_day == 2
+    assert game.state.temporary_campus_pass_day is None
+    assert game.has_temporary_campus_pass() is False
+
+
 def test_cancel_sleep_keeps_current_day(game):
     move_to_bedroom_bed(game)
     press_key(game, pygame.K_e)

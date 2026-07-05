@@ -28,6 +28,7 @@ from src.config import (
     ADMIN_OFFICE_CHECK_IN_DIALOGUE,
     ADMIN_OFFICE_CHECK_IN_XP,
     ADMIN_OFFICE_NO_ID_DIALOGUE,
+    ADMIN_OFFICE_TEMP_PASS_ACTIVE_DIALOGUE,
     ALLOWANCE_AMOUNT,
     DAILY_ALLOWANCE_MOM_DIALOGUE,
     FIRST_MOM_DIALOGUE,
@@ -46,6 +47,8 @@ from src.config import (
     SCHOOL_GATE_NO_ID_DIALOGUE,
     SCHOOL_GUARD_HAS_ID_DIALOGUE,
     SCHOOL_GUARD_NO_ID_DIALOGUE,
+    SCHOOL_GUARD_NO_ID_REDIRECT_DIALOGUE,
+    SCHOOL_GUARD_TEMP_PASS_DIALOGUE,
     SKILL_ACADEMICS,
     STATE_DIALOGUE,
     STATE_MENU,
@@ -260,6 +263,7 @@ class Game:
 
     def sleep_until_next_day(self):
         self.current_day += 1
+        self.state.temporary_campus_pass_day = None
         self.show_dialogue([f"You slept through the night. Day {self.current_day} begins."])
 
     def finish_dialogue(self):
@@ -308,6 +312,10 @@ class Game:
         guard = next((sprite for sprite in self.guard_sprites if self.check_proximity(self.player, sprite, 64)), None)
         if guard is None:
             return False
+        if not self.has_inventory_item(ITEM_ID) and not self.has_temporary_campus_pass():
+            self.travel_to_room(ROOM_ADMIN_OFFICE, (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 96))
+            self.show_dialogue(list(SCHOOL_GUARD_NO_ID_REDIRECT_DIALOGUE))
+            return True
         guard.dialogue = self.get_school_guard_dialogue()
         self.show_dialogue(guard.interact())
         return True
@@ -315,6 +323,8 @@ class Game:
     def get_school_guard_dialogue(self):
         if self.has_inventory_item(ITEM_ID):
             return list(SCHOOL_GUARD_HAS_ID_DIALOGUE)
+        if self.has_temporary_campus_pass():
+            return list(SCHOOL_GUARD_TEMP_PASS_DIALOGUE)
         return list(SCHOOL_GUARD_NO_ID_DIALOGUE)
 
     def talk_to_attendant(self):
@@ -328,17 +338,34 @@ class Game:
 
     def get_admin_attendant_dialogue(self):
         if not self.has_inventory_item(ITEM_ID):
+            if self.has_temporary_campus_pass():
+                return list(ADMIN_OFFICE_TEMP_PASS_ACTIVE_DIALOGUE)
             return list(ADMIN_OFFICE_NO_ID_DIALOGUE)
         if self.state.admin_office_checked_in:
             return list(ADMIN_OFFICE_CHECKED_IN_DIALOGUE)
         return list(ADMIN_OFFICE_CHECK_IN_DIALOGUE)
 
     def complete_admin_office_check_in(self):
-        if self.state.admin_office_checked_in or not self.has_inventory_item(ITEM_ID):
+        if not self.has_inventory_item(ITEM_ID):
+            if self.has_temporary_campus_pass():
+                return False
+            self.grant_temporary_campus_pass()
+            return True
+
+        if self.state.admin_office_checked_in:
             return False
         self.state.admin_office_checked_in = True
         self.grant_skill_xp(SKILL_ACADEMICS, ADMIN_OFFICE_CHECK_IN_XP)
         return True
+
+    def grant_temporary_campus_pass(self):
+        self.state.temporary_campus_pass_day = self.current_day
+
+    def has_temporary_campus_pass(self):
+        return self.state.temporary_campus_pass_day == self.current_day
+
+    def has_school_gate_access(self, required_item_id):
+        return self.has_inventory_item(required_item_id) or self.has_temporary_campus_pass()
 
     def travel_to_room(self, room_name, spawn_pos=None, use_topleft=False):
         self.current_room = room_name
@@ -466,7 +493,7 @@ class Game:
         if gate is None:
             return False
 
-        if not self.has_inventory_item(gate.required_item_id):
+        if not self.has_school_gate_access(gate.required_item_id):
             self.show_dialogue(list(SCHOOL_GATE_NO_ID_DIALOGUE))
             return True
 
