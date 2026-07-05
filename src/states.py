@@ -38,7 +38,7 @@ class PlayState(State):
                     # Try to start interaction
                     if self.game.current_room == ROOM_MAIN and hasattr(self.game, 'mom') and self.game.mom in self.game.visible_sprites and self.game.check_proximity(self.game.player, self.game.mom, 64):
                         self.game.talk_to_mom()
-                    elif self.game.current_room in (ROOM_OUTSIDE, ROOM_SCHOOL, ROOM_INTRAMUROS) and hasattr(self.game, 'bus') and self.game.check_proximity(self.game.player, self.game.bus, 100):
+                    elif self.game.current_room in (ROOM_OUTSIDE, ROOM_INTRAMUROS) and hasattr(self.game, 'bus') and self.game.check_proximity(self.game.player, self.game.bus, 100):
                         self.game.ride_bus()
                     elif self.game.current_room == ROOM_SCHOOL_ENTRANCE and self.game.try_enter_school_gate():
                         pass
@@ -93,13 +93,11 @@ class PlayState(State):
             hint_rect = hint_surf.get_rect(center=(self.game.mom.rect.centerx, self.game.mom.rect.top - 20))
             screen.blit(hint_surf, hint_rect)
         
-        if self.game.current_room in (ROOM_OUTSIDE, ROOM_SCHOOL, ROOM_INTRAMUROS) and hasattr(self.game, 'bus') and self.game.check_proximity(self.game.player, self.game.bus, 100):
+        if self.game.current_room in (ROOM_OUTSIDE, ROOM_INTRAMUROS) and hasattr(self.game, 'bus') and self.game.check_proximity(self.game.player, self.game.bus, 100):
             if self.game.current_room == ROOM_OUTSIDE:
                 text = f"Press E to ride to Intramuros ({BUS_TRANSPORT.fare_label()})"
-            elif self.game.current_room == ROOM_INTRAMUROS:
-                text = f"Press E to ride back to Outside ({BUS_TRANSPORT.fare_label()})"
             else:
-                text = f"Press E to ride back ({BUS_TRANSPORT.fare_label()})"
+                text = f"Press E to ride back to Outside ({BUS_TRANSPORT.fare_label()})"
             
             hint_surf = self.game.font.render(text, True, 'white')
             hint_rect = hint_surf.get_rect(center=(self.game.bus.rect.centerx, self.game.bus.rect.top - 20))
@@ -173,24 +171,101 @@ class PlayState(State):
             screen.blit(hint_surf, hint_rect)
 
 class DialogueState(State):
+    BOX_MARGIN_X = 50
+    BOX_HEIGHT = 130
+    BOX_BOTTOM_MARGIN = 20
+    BOX_PADDING_X = 20
+    BOX_PADDING_TOP = 18
+    PROMPT_BOTTOM_MARGIN = 26
+
     def handle_events(self, events):
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_e:
                     self.game.advance_dialogue()
 
+    @staticmethod
+    def wrap_text(text, font, max_width, max_lines):
+        words = text.split()
+        if not words:
+            return [""]
+
+        lines = []
+        current = ""
+        for word in words:
+            candidate = word if not current else f"{current} {word}"
+            if font.size(candidate)[0] <= max_width:
+                current = candidate
+                continue
+
+            if current:
+                lines.append(current)
+            current = word
+
+            while font.size(current)[0] > max_width:
+                split_at = len(current)
+                while split_at > 1 and font.size(current[:split_at])[0] > max_width:
+                    split_at -= 1
+                lines.append(current[:split_at])
+                current = current[split_at:]
+
+            if len(lines) >= max_lines:
+                return DialogueState.truncate_lines([*lines, current], font, max_width, max_lines)
+
+        if current:
+            lines.append(current)
+
+        return DialogueState.truncate_lines(lines, font, max_width, max_lines)
+
+    @staticmethod
+    def truncate_lines(lines, font, max_width, max_lines):
+        if len(lines) <= max_lines:
+            return lines
+
+        visible = lines[:max_lines]
+        ellipsis = "..."
+        last = visible[-1]
+        while last and font.size(last + ellipsis)[0] > max_width:
+            last = last[:-1].rstrip()
+        visible[-1] = (last + ellipsis) if last else ellipsis
+        return visible
+
     def draw(self, screen):
         # Draw dialogue box
         if self.game.current_dialogue:
-            box_rect = pygame.Rect(50, SCREEN_HEIGHT - 150, SCREEN_WIDTH - 100, 100)
+            box_rect = pygame.Rect(
+                self.BOX_MARGIN_X,
+                SCREEN_HEIGHT - self.BOX_HEIGHT - self.BOX_BOTTOM_MARGIN,
+                SCREEN_WIDTH - self.BOX_MARGIN_X * 2,
+                self.BOX_HEIGHT,
+            )
             pygame.draw.rect(screen, (30, 30, 30), box_rect, border_radius=10)
             pygame.draw.rect(screen, (200, 200, 200), box_rect, 2, border_radius=10)
-            
-            text_surf = self.game.font.render(self.game.current_dialogue[self.game.dialogue_index], True, 'white')
-            screen.blit(text_surf, (box_rect.x + 20, box_rect.y + 20))
-            
+
+            text_area_width = box_rect.width - self.BOX_PADDING_X * 2
             prompt_surf = self.game.font.render("Press E to continue...", True, (150, 150, 150))
-            screen.blit(prompt_surf, (box_rect.right - 180, box_rect.bottom - 30))
+            prompt_pos = (box_rect.right - prompt_surf.get_width() - 20, box_rect.bottom - self.PROMPT_BOTTOM_MARGIN)
+            line_height = self.game.font.get_linesize()
+            available_height = prompt_pos[1] - (box_rect.y + self.BOX_PADDING_TOP) - 8
+            max_lines = max(1, available_height // line_height)
+
+            lines = self.wrap_text(
+                self.game.current_dialogue[self.game.dialogue_index],
+                self.game.font,
+                text_area_width,
+                max_lines,
+            )
+            for line_index, line in enumerate(lines):
+                text_surf = self.game.font.render(line, True, 'white')
+                screen.blit(
+                    text_surf,
+                    (
+                        box_rect.x + self.BOX_PADDING_X,
+                        box_rect.y + self.BOX_PADDING_TOP + line_index * line_height,
+                    ),
+                )
+            
+            screen.blit(prompt_surf, prompt_pos)
 
 
 class SleepConfirmState(State):

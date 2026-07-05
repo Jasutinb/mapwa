@@ -63,16 +63,12 @@ def test_intramuros_to_outside(game):
     assert game.money == 0
 
 def test_school_to_school_entrance(game):
-    game.money = BUS_TRANSPORT.fare
     game.current_room = 'school'
     game.create_map()
-    
-    # Move near bus
-    game.player.rect.center = game.bus.rect.center
-    
-    # Press E
-    event_e = pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_e})
-    game.handle_events([event_e])
-    
+
+    entrance_door = next(s for s in game.door_sprites if getattr(s, 'target_room', None) == 'school_entrance')
+    game.player.rect.topleft = entrance_door.rect.topleft
+    game.update()
+
     assert game.current_room == 'school_entrance'
     assert game.money == 0
