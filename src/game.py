@@ -33,14 +33,21 @@ from src.config import (
     ADMIN_OFFICE_NO_ID_DIALOGUE,
     ADMIN_OFFICE_TEMP_PASS_ACTIVE_DIALOGUE,
     ALLOWANCE_AMOUNT,
+    CAFETERIA_FULL_ENERGY_DIALOGUE,
+    CAFETERIA_NOT_ENOUGH_MONEY_DIALOGUE,
+    CAFETERIA_VENDOR_DIALOGUE,
     DAILY_ALLOWANCE_MOM_DIALOGUE,
     ELECTRONICS_LAB_XP,
     FIRST_MOM_DIALOGUE,
     FPS,
     ITEM_ID,
+    MAX_ENERGY,
+    MEAL_ENERGY,
+    MEAL_PRICE,
     REPEAT_MOM_DIALOGUE,
     ROOM_ADMIN_OFFICE,
     ROOM_BEDROOM,
+    ROOM_CAFETERIA,
     ROOM_ELECTRONICS_LAB,
     ROOM_INTRAMUROS,
     ROOM_LIBRARY,
@@ -99,6 +106,7 @@ class Game:
         self.location_display_text = ""
         self.location_display_timer = 0
         self.location_display_duration = 120 # 2 seconds at 60 FPS
+        self.energy_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.mobile_controls = MobileControls((SCREEN_WIDTH, SCREEN_HEIGHT))
 
         # Level setup
@@ -169,6 +177,14 @@ class Game:
         self.state.money = value
 
     @property
+    def energy(self):
+        return self.state.energy
+
+    @energy.setter
+    def energy(self, value):
+        self.state.energy = max(0, min(MAX_ENERGY, value))
+
+    @property
     def experience(self):
         return self.state.experience
 
@@ -216,7 +232,8 @@ class Game:
             ROOM_SCHOOL: RoomNode(ROOM_SCHOOL, 'School'),
             ROOM_PROGRAMMING_LAB: RoomNode(ROOM_PROGRAMMING_LAB, 'Programming Lab'),
             ROOM_ELECTRONICS_LAB: RoomNode(ROOM_ELECTRONICS_LAB, 'Electronics Lab'),
-            ROOM_LIBRARY: RoomNode(ROOM_LIBRARY, 'Library')
+            ROOM_LIBRARY: RoomNode(ROOM_LIBRARY, 'Library'),
+            ROOM_CAFETERIA: RoomNode(ROOM_CAFETERIA, 'Cafeteria')
         }
 
         # Link rooms
@@ -246,6 +263,7 @@ class Game:
         self.rooms[ROOM_PROGRAMMING_LAB].down = self.rooms[ROOM_SCHOOL]
         self.rooms[ROOM_ELECTRONICS_LAB].left = self.rooms[ROOM_SCHOOL]
         self.rooms[ROOM_LIBRARY].up = self.rooms[ROOM_SCHOOL]
+        self.rooms[ROOM_CAFETERIA].up = self.rooms[ROOM_SCHOOL]
 
     def create_money_icon(self):
         icon = pygame.Surface((24, 24), pygame.SRCALPHA)
@@ -443,6 +461,29 @@ class Game:
         skill_xp = self.grant_skill_xp(skill, LIBRARY_STUDY_XP)
         self.show_dialogue([f"You studied {label} and gained {LIBRARY_STUDY_XP} {label} XP! Total: {skill_xp}."])
 
+    def restore_energy(self, amount):
+        before = self.energy
+        self.energy = self.energy + amount
+        return self.energy - before
+
+    def buy_cafeteria_meal(self):
+        if self.energy >= MAX_ENERGY:
+            self.show_dialogue(list(CAFETERIA_FULL_ENERGY_DIALOGUE))
+            return False
+        if self.money < MEAL_PRICE:
+            self.show_dialogue(list(CAFETERIA_NOT_ENOUGH_MONEY_DIALOGUE))
+            return False
+
+        self.money -= MEAL_PRICE
+        restored = self.restore_energy(MEAL_ENERGY)
+        self.show_dialogue(
+            [
+                f"You bought a meal for {MEAL_PRICE} and restored {restored} energy. "
+                f"Energy: {self.energy}/{MAX_ENERGY}."
+            ]
+        )
+        return True
+
     def grant_skill_xp(self, skill, amount):
         return self.skill_xp_manager.grant_xp(skill, amount)
 
@@ -608,6 +649,8 @@ class Game:
             self.create_electronics_lab()
         elif self.current_room == ROOM_LIBRARY:
             self.create_library()
+        elif self.current_room == ROOM_CAFETERIA:
+            self.create_cafeteria()
 
     def create_main_room(self):
         try:
@@ -863,6 +906,7 @@ class Game:
         Door((lab_door_x, 0), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL].up.name, (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 96))
         Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL].right.name, (96, SCREEN_HEIGHT // 2))
         Door((SCREEN_WIDTH - 6 * TILE_SIZE, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL].down.name, (SCREEN_WIDTH - 6 * TILE_SIZE, 96))
+        Door((5 * TILE_SIZE, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.door_sprites], ROOM_CAFETERIA, (5 * TILE_SIZE, 96))
 
     def create_programming_lab(self):
         floor_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
@@ -956,6 +1000,41 @@ class Game:
 
         Door((exit_door_x, 0), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_LIBRARY].up.name, (SCREEN_WIDTH - 6 * TILE_SIZE, SCREEN_HEIGHT - 96))
 
+    def create_cafeteria(self):
+        floor_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        floor_surf.fill((112, 88, 70))
+        pygame.draw.line(floor_surf, (142, 112, 90), (0, 0), (TILE_SIZE, 0), 1)
+        pygame.draw.line(floor_surf, (75, 57, 46), (0, TILE_SIZE - 1), (TILE_SIZE, TILE_SIZE - 1), 1)
+
+        wall_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        wall_surf.fill((72, 54, 42))
+
+        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
+            for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+                Tile((col, row), [self.floor_sprites], floor_surf)
+
+        exit_door_x = 5 * TILE_SIZE
+        for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+            if not (exit_door_x - TILE_SIZE <= col <= exit_door_x + TILE_SIZE):
+                Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            Tile((col, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+
+        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
+            Tile((0, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            Tile((SCREEN_WIDTH - TILE_SIZE, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+
+        self.food_vendor = NPC((SCREEN_WIDTH // 2 - 32, 128), [self.visible_sprites, self.obstacle_sprites], 'assets/images/mom.png', name="Food Vendor", can_wander=False)
+        self.food_vendor.dialogue = list(CAFETERIA_VENDOR_DIALOGUE)
+        self.food_vendor.sprite_asset = 'assets/images/mom.png'
+        self.food_vendor.sprite_base_assets = ('assets/images/player.png', 'assets/images/mom.png')
+
+        for table_x in (160, 320, 480, 640):
+            Decoration((table_x, 320), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
+            Chair((table_x, 280), [self.visible_sprites, self.obstacle_sprites])
+            Chair((table_x, 368), [self.visible_sprites, self.obstacle_sprites])
+
+        Door((exit_door_x, 0), [self.visible_sprites, self.door_sprites], ROOM_SCHOOL, (5 * TILE_SIZE, SCREEN_HEIGHT - 96))
+
     async def run(self):
         while self.running:
             events = pygame.event.get()
@@ -1042,6 +1121,15 @@ class Game:
         pygame.draw.rect(self.screen, (30, 30, 30), xp_bg_rect, border_radius=5)
         pygame.draw.rect(self.screen, (200, 200, 200), xp_bg_rect, 1, border_radius=5)
         self.screen.blit(xp_surf, xp_rect)
+
+        # Draw energy counter away from bottom inventory and mobile controls
+        energy_text = f"Energy: {self.energy}/{MAX_ENERGY}"
+        energy_surf = self.font.render(energy_text, True, 'white')
+        energy_rect = energy_surf.get_rect(topright=(SCREEN_WIDTH - 25, 20))
+        self.energy_hud_rect = energy_rect.inflate(20, 10)
+        pygame.draw.rect(self.screen, (30, 30, 30), self.energy_hud_rect, border_radius=5)
+        pygame.draw.rect(self.screen, (200, 200, 200), self.energy_hud_rect, 1, border_radius=5)
+        self.screen.blit(energy_surf, energy_rect)
 
         # Draw location name
         if self.location_display_timer > 0:

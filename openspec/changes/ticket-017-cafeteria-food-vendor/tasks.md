@@ -1,0 +1,25 @@
+# Tasks
+
+- [x] Fetch and summarize the Notion ticket.
+- [x] Confirm the implementation plan with the user.
+- [x] Create a dedicated branch/worktree.
+- [x] Implement only the approved ticket scope.
+- [x] Add `ROOM_CAFETERIA` plus meal price, meal energy, and max-energy constants.
+- [x] Add an energy field to game state with accessors and capped restore behavior.
+- [x] Add Cafeteria map access from School without breaking existing school-room doors.
+- [x] Add a Cafeteria map with clear walls, entry/exit spawn positions, furniture, and a vendor.
+- [x] Add keyboard and mobile action handling for food purchase.
+- [x] Add an energy HUD readout that does not overlap existing HUD or mobile controls.
+- [x] Add or update focused tests for room access, pathing, purchase outcomes, mobile parity, and location display.
+- [x] Run focused tests.
+- [x] Run `uv run ruff check .`.
+- [x] Run `uv run pytest -n auto`.
+- [ ] Stage only ticket files.
+- [ ] Commit and push the ticket branch.
+- [ ] Create one GitHub PR.
+- [ ] Add a PR verification comment with manual and command checks.
+- [ ] Wait for PR CI/CD to pass.
+- [ ] Merge the PR.
+- [ ] Confirm post-merge main CI/CD is green.
+- [ ] Update the Notion ticket status and implementation notes.
+- [ ] Archive this OpenSpec change folder.
