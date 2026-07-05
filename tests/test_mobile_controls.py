@@ -11,7 +11,6 @@ from src.config import ITEM_ID
 from src.level import Item
 from src.mobile_controls import MobileControls
 from src.player import Player
-from src.transport import BUS_TRANSPORT
 
 
 SCREEN_WIDTH = 800
@@ -182,21 +181,21 @@ def test_mobile_action_button_triggers_interaction():
     assert game.current_dialogue == game.mom.dialogue
 
 
-def test_mobile_action_button_charges_bus_return_fare():
+def test_mobile_action_button_does_not_trigger_bus_inside_school():
     pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     game = Game()
     game.current_room = "school"
     game.create_map()
     game.money = 100
-    game.player.rect.center = game.bus.rect.center
     action_pos = game.mobile_controls.rects["action"].center
 
     game.handle_events(
         [pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"button": 1, "pos": action_pos})]
     )
 
-    assert game.current_room == "school_entrance"
-    assert game.money == 100 - BUS_TRANSPORT.fare
+    assert not hasattr(game, "bus")
+    assert game.current_room == "school"
+    assert game.money == 100
 
 
 def test_mobile_inventory_slot_tap_uses_item():

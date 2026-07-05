@@ -48,32 +48,12 @@ def test_bus_interaction_no_money(game):
     assert game.current_dialogue is not None
     assert "enough money" in game.current_dialogue[0]
 
-def test_bus_interaction_from_school_to_entrance(game):
+def test_school_has_no_bus_interaction(game):
     game.current_room = 'school'
     game.create_map()
-    
-    # Move player near bus
-    game.player.rect.center = game.bus.rect.center
-    
-    # Ride back to the school entrance
-    event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
-    game.handle_events([event])
-    assert game.current_room == 'school_entrance'
-    assert game.money == 100 - BUS_TRANSPORT.fare
 
-def test_bus_return_trip_no_money(game):
-    game.current_room = 'school'
-    game.create_map()
-    game.money = BUS_TRANSPORT.fare - 1
+    assert not hasattr(game, 'bus')
 
-    # Move player near bus
-    game.player.rect.center = game.bus.rect.center
-
-    # Simulate 'E' key press event
-    event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
-    game.handle_events([event])
-
+    game.handle_events([pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)])
     assert game.current_room == 'school'
-    assert game.money == BUS_TRANSPORT.fare - 1
-    assert game.current_dialogue is not None
-    assert "enough money" in game.current_dialogue[0]
+    assert game.money == 100
