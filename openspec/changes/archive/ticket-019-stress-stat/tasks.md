@@ -19,7 +19,7 @@
 - [x] Create one GitHub PR.
 - [x] Add a PR verification comment with manual and command checks.
 - [x] Wait for PR CI/CD to pass.
-- [ ] Merge the PR.
-- [ ] Confirm post-merge main CI/CD is green.
-- [ ] Update the Notion ticket status and implementation notes.
-- [ ] Archive this OpenSpec change folder.
+- [x] Merge the PR.
+- [x] Confirm post-merge main CI/CD is green.
+- [x] Update the Notion ticket status and implementation notes.
+- [x] Archive this OpenSpec change folder.
