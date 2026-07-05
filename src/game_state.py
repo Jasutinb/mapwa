@@ -15,6 +15,7 @@ class GameState:
     quest_manager: QuestManager = field(default_factory=create_initial_quest_manager)
     has_talked_to_mom: bool = False
     last_allowance_day: int = 0
+    admin_office_checked_in: bool = False
     current_dialogue: list[str] | None = None
     dialogue_index: int = 0
     picked_item_ids: set[str] = field(default_factory=set)

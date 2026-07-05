@@ -8,6 +8,10 @@ import pytest
 from pathlib import Path
 
 from src.config import (
+    ADMIN_OFFICE_CHECKED_IN_DIALOGUE,
+    ADMIN_OFFICE_CHECK_IN_DIALOGUE,
+    ADMIN_OFFICE_CHECK_IN_XP,
+    ADMIN_OFFICE_NO_ID_DIALOGUE,
     ITEM_ID,
     ROOM_ADMIN_OFFICE,
     ROOM_INTRAMUROS,
@@ -18,6 +22,7 @@ from src.config import (
     SCHOOL_GUARD_NO_ID_DIALOGUE,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
+    SKILL_ACADEMICS,
 )
 from src.game import Game
 from src.level import Item
@@ -203,6 +208,53 @@ def test_admin_office_has_interactable_attendant(game):
     assert attendant.name == "Attendant"
     assert attendant.sprite_base_assets == ('assets/images/player.png', 'assets/images/mom.png')
     assert game.current_dialogue == attendant.dialogue
+
+
+def test_admin_office_attendant_requires_student_id(game):
+    game.current_room = ROOM_ADMIN_OFFICE
+    game.create_map()
+    attendant = next(iter(game.attendant_sprites))
+    game.player.rect.center = attendant.rect.center
+
+    event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
+    game.handle_events([event])
+
+    assert game.current_dialogue == ADMIN_OFFICE_NO_ID_DIALOGUE
+    assert game.state.admin_office_checked_in is False
+    assert game.get_skill_xp(SKILL_ACADEMICS) == 0
+
+
+def test_admin_office_attendant_checks_in_student_with_id(game):
+    game.inventory.add_item(Item((0, 0), [], "Student ID", item_id=ITEM_ID))
+    game.state.mark_item_picked(ITEM_ID)
+    game.current_room = ROOM_ADMIN_OFFICE
+    game.create_map()
+    attendant = next(iter(game.attendant_sprites))
+    game.player.rect.center = attendant.rect.center
+
+    event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
+    game.handle_events([event])
+
+    assert game.current_dialogue == ADMIN_OFFICE_CHECK_IN_DIALOGUE
+    assert game.state.admin_office_checked_in is True
+    assert game.get_skill_xp(SKILL_ACADEMICS) == ADMIN_OFFICE_CHECK_IN_XP
+
+
+def test_admin_office_check_in_reward_only_happens_once(game):
+    game.inventory.add_item(Item((0, 0), [], "Student ID", item_id=ITEM_ID))
+    game.state.mark_item_picked(ITEM_ID)
+    game.current_room = ROOM_ADMIN_OFFICE
+    game.create_map()
+    attendant = next(iter(game.attendant_sprites))
+    game.player.rect.center = attendant.rect.center
+
+    event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
+    game.handle_events([event])
+    game.finish_dialogue()
+    game.handle_events([event])
+
+    assert game.current_dialogue == ADMIN_OFFICE_CHECKED_IN_DIALOGUE
+    assert game.get_skill_xp(SKILL_ACADEMICS) == ADMIN_OFFICE_CHECK_IN_XP
 
 
 def test_school_guard_requests_id_before_entry(game):
