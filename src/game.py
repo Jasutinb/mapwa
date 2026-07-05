@@ -17,6 +17,9 @@ from src.quest_definitions import (
     FIRST_DAY_RIDE_BUS,
     FIRST_DAY_STUDY,
     FIRST_DAY_TALK_TO_MOM,
+    HELLO_WORLD_ENTER_LAB,
+    HELLO_WORLD_PRACTICE_PROGRAMMING,
+    HELLO_WORLD_QUEST_ID,
     FIRST_DAY_QUEST_ID,
     is_first_day_bus_destination,
     is_first_day_item,
@@ -381,6 +384,8 @@ class Game:
         else:
             self.player.rect.center = spawn_pos or (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
         self.visible_sprites.add(self.player)
+        if room_name == ROOM_PROGRAMMING_LAB:
+            self.advance_hello_world_objective(HELLO_WORLD_ENTER_LAB)
 
     def pay_transport_fare(self, transport_key):
         transport = get_transport_mode(transport_key)
@@ -415,6 +420,8 @@ class Game:
 
     def practice_programming(self):
         skill_xp = self.grant_skill_xp(SKILL_PROGRAMMING, PROGRAMMING_LAB_XP)
+        self.advance_hello_world_objective(HELLO_WORLD_PRACTICE_PROGRAMMING)
+        skill_xp = self.get_skill_xp(SKILL_PROGRAMMING)
         self.show_dialogue([f"You practiced coding and gained {PROGRAMMING_LAB_XP} programming XP! Total: {skill_xp}."])
 
     def grant_skill_xp(self, skill, amount):
@@ -441,6 +448,9 @@ class Game:
 
     def advance_first_day_objective(self, objective_id):
         return self.advance_quest_objective(FIRST_DAY_QUEST_ID, objective_id)
+
+    def advance_hello_world_objective(self, objective_id):
+        return self.advance_quest_objective(HELLO_WORLD_QUEST_ID, objective_id)
 
     def apply_quest_reward(self, reward):
         if reward is None:
