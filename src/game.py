@@ -34,12 +34,14 @@ from src.config import (
     ADMIN_OFFICE_TEMP_PASS_ACTIVE_DIALOGUE,
     ALLOWANCE_AMOUNT,
     DAILY_ALLOWANCE_MOM_DIALOGUE,
+    ELECTRONICS_LAB_XP,
     FIRST_MOM_DIALOGUE,
     FPS,
     ITEM_ID,
     REPEAT_MOM_DIALOGUE,
     ROOM_ADMIN_OFFICE,
     ROOM_BEDROOM,
+    ROOM_ELECTRONICS_LAB,
     ROOM_INTRAMUROS,
     ROOM_MAIN,
     ROOM_OUTSIDE,
@@ -54,6 +56,7 @@ from src.config import (
     SCHOOL_GUARD_NO_ID_REDIRECT_DIALOGUE,
     SCHOOL_GUARD_TEMP_PASS_DIALOGUE,
     SKILL_ACADEMICS,
+    SKILL_ELECTRONICS,
     SKILL_PROGRAMMING,
     STATE_DIALOGUE,
     STATE_MENU,
@@ -209,7 +212,8 @@ class Game:
             ROOM_SCHOOL_ENTRANCE: RoomNode(ROOM_SCHOOL_ENTRANCE, 'School Entrance'),
             ROOM_ADMIN_OFFICE: RoomNode(ROOM_ADMIN_OFFICE, 'Admin Office'),
             ROOM_SCHOOL: RoomNode(ROOM_SCHOOL, 'School'),
-            ROOM_PROGRAMMING_LAB: RoomNode(ROOM_PROGRAMMING_LAB, 'Programming Lab')
+            ROOM_PROGRAMMING_LAB: RoomNode(ROOM_PROGRAMMING_LAB, 'Programming Lab'),
+            ROOM_ELECTRONICS_LAB: RoomNode(ROOM_ELECTRONICS_LAB, 'Electronics Lab')
         }
 
         # Link rooms
@@ -234,7 +238,9 @@ class Game:
         self.rooms[ROOM_ADMIN_OFFICE].down = self.rooms[ROOM_SCHOOL_ENTRANCE]
         self.rooms[ROOM_SCHOOL].left = self.rooms[ROOM_SCHOOL_ENTRANCE]
         self.rooms[ROOM_SCHOOL].up = self.rooms[ROOM_PROGRAMMING_LAB]
+        self.rooms[ROOM_SCHOOL].right = self.rooms[ROOM_ELECTRONICS_LAB]
         self.rooms[ROOM_PROGRAMMING_LAB].down = self.rooms[ROOM_SCHOOL]
+        self.rooms[ROOM_ELECTRONICS_LAB].left = self.rooms[ROOM_SCHOOL]
 
     def create_money_icon(self):
         icon = pygame.Surface((24, 24), pygame.SRCALPHA)
@@ -424,6 +430,10 @@ class Game:
         skill_xp = self.get_skill_xp(SKILL_PROGRAMMING)
         self.show_dialogue([f"You practiced coding and gained {PROGRAMMING_LAB_XP} programming XP! Total: {skill_xp}."])
 
+    def practice_electronics(self):
+        skill_xp = self.grant_skill_xp(SKILL_ELECTRONICS, ELECTRONICS_LAB_XP)
+        self.show_dialogue([f"You practiced circuits and gained {ELECTRONICS_LAB_XP} electronics XP! Total: {skill_xp}."])
+
     def grant_skill_xp(self, skill, amount):
         return self.skill_xp_manager.grant_xp(skill, amount)
 
@@ -585,6 +595,8 @@ class Game:
             self.create_school()
         elif self.current_room == ROOM_PROGRAMMING_LAB:
             self.create_programming_lab()
+        elif self.current_room == ROOM_ELECTRONICS_LAB:
+            self.create_electronics_lab()
 
     def create_main_room(self):
         try:
@@ -838,6 +850,7 @@ class Game:
         # Add door to exit school
         Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
         Door((lab_door_x, 0), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL].up.name, (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 96))
+        Door((SCREEN_WIDTH - TILE_SIZE, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL].right.name, (96, SCREEN_HEIGHT // 2))
 
     def create_programming_lab(self):
         floor_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
@@ -867,7 +880,37 @@ class Game:
         Decoration((SCREEN_WIDTH // 2 - 64, 260), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
         Decoration((SCREEN_WIDTH // 2 + 64, 260), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
 
-        Door((exit_door_x, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_PROGRAMMING_LAB].down.name, (SCREEN_WIDTH // 2, 96))
+        Door((exit_door_x, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_PROGRAMMING_LAB].down.name, (SCREEN_WIDTH // 2 - 96, 96))
+
+    def create_electronics_lab(self):
+        floor_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        floor_surf.fill((69, 84, 76))
+        pygame.draw.line(floor_surf, (102, 124, 112), (0, 0), (TILE_SIZE, 0), 1)
+        pygame.draw.line(floor_surf, (38, 52, 45), (0, TILE_SIZE - 1), (TILE_SIZE, TILE_SIZE - 1), 1)
+
+        wall_surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        wall_surf.fill((35, 54, 48))
+
+        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
+            for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+                Tile((col, row), [self.floor_sprites], floor_surf)
+
+        entry_door_y = SCREEN_HEIGHT // 2
+        for col in range(0, SCREEN_WIDTH, TILE_SIZE):
+            Tile((col, 0), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            Tile((col, SCREEN_HEIGHT - TILE_SIZE), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+
+        for row in range(0, SCREEN_HEIGHT, TILE_SIZE):
+            if not (entry_door_y - TILE_SIZE <= row <= entry_door_y + TILE_SIZE):
+                Tile((0, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+            Tile((SCREEN_WIDTH - TILE_SIZE, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
+
+        self.electronics_station = Decoration((SCREEN_WIDTH // 2 - 64, 120), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
+        Decoration((SCREEN_WIDTH // 2 + 64, 120), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
+        Decoration((SCREEN_WIDTH // 2 - 64, 280), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
+        Decoration((SCREEN_WIDTH // 2 + 64, 280), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
+
+        Door((0, entry_door_y), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_ELECTRONICS_LAB].left.name, (SCREEN_WIDTH - 96, SCREEN_HEIGHT // 2))
 
     async def run(self):
         while self.running:
