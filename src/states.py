@@ -5,6 +5,7 @@ from src.config import (
     ROOM_INTRAMUROS,
     ROOM_ADMIN_OFFICE,
     ROOM_ELECTRONICS_LAB,
+    ROOM_LIBRARY,
     ROOM_MAIN,
     ROOM_OUTSIDE,
     ROOM_PROGRAMMING_LAB,
@@ -14,6 +15,8 @@ from src.config import (
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
     SKILL_ACADEMICS,
+    SKILL_DISCIPLINE,
+    SKILL_MATH,
     STATE_PLAY,
     STUDY_XP,
     TILE_SIZE,
@@ -48,6 +51,12 @@ class PlayState(State):
                         self.game.practice_programming()
                     elif self.game.current_room == ROOM_ELECTRONICS_LAB and hasattr(self.game, 'electronics_station') and self.game.check_proximity(self.game.player, self.game.electronics_station, 64):
                         self.game.practice_electronics()
+                    elif self.game.current_room == ROOM_LIBRARY and hasattr(self.game, 'library_academics_station') and self.game.check_proximity(self.game.player, self.game.library_academics_station, 64):
+                        self.game.study_at_library(SKILL_ACADEMICS, "academics")
+                    elif self.game.current_room == ROOM_LIBRARY and hasattr(self.game, 'library_math_station') and self.game.check_proximity(self.game.player, self.game.library_math_station, 64):
+                        self.game.study_at_library(SKILL_MATH, "math")
+                    elif self.game.current_room == ROOM_LIBRARY and hasattr(self.game, 'library_discipline_station') and self.game.check_proximity(self.game.player, self.game.library_discipline_station, 64):
+                        self.game.study_at_library(SKILL_DISCIPLINE, "discipline")
                     elif self.game.current_room == ROOM_BEDROOM and hasattr(self.game, 'bed') and self.game.check_proximity(self.game.player, self.game.bed, 64):
                         self.game.open_sleep_confirmation()
                     else:
@@ -107,6 +116,20 @@ class PlayState(State):
             hint_surf = self.game.font.render("Press E to practice electronics", True, 'white')
             hint_rect = hint_surf.get_rect(center=(self.game.electronics_station.rect.centerx, self.game.electronics_station.rect.top - 20))
             screen.blit(hint_surf, hint_rect)
+
+        if self.game.current_room == ROOM_LIBRARY:
+            library_hints = (
+                ("library_academics_station", "Press E to study academics"),
+                ("library_math_station", "Press E to study math"),
+                ("library_discipline_station", "Press E to study discipline"),
+            )
+            for station_name, text in library_hints:
+                station = getattr(self.game, station_name, None)
+                if station and self.game.check_proximity(self.game.player, station, 64):
+                    hint_surf = self.game.font.render(text, True, 'white')
+                    hint_rect = hint_surf.get_rect(center=(station.rect.centerx, station.rect.top - 20))
+                    screen.blit(hint_surf, hint_rect)
+                    break
 
         if self.game.current_room == ROOM_BEDROOM and hasattr(self.game, 'bed') and self.game.check_proximity(self.game.player, self.game.bed, 64):
             hint_surf = self.game.font.render("Press E to sleep", True, 'white')

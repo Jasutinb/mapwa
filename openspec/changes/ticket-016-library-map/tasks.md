@@ -1,0 +1,23 @@
+# Tasks
+
+- [x] Fetch and summarize the Notion ticket.
+- [x] Confirm the implementation plan with the user.
+- [x] Create a dedicated branch/worktree.
+- [x] Implement only the approved ticket scope.
+- [x] Add `ROOM_LIBRARY`, `SKILL_MATH`, `SKILL_DISCIPLINE`, and Library XP constants.
+- [x] Link the Library to School without breaking existing School Entrance, Programming Lab, or Electronics Lab links.
+- [x] Add the Library map with clear walls, door, exit spawn, and three interaction stations.
+- [x] Add keyboard and mobile action handling for Academics, Math, and Discipline training.
+- [x] Add or update focused tests for room links, pathing, XP rewards, dialogue, mobile action parity, and location display.
+- [x] Run focused tests.
+- [x] Run `uv run ruff check .`.
+- [x] Run `uv run pytest -n auto`.
+- [x] Stage only ticket files.
+- [x] Commit and push the ticket branch.
+- [x] Create one GitHub PR.
+- [x] Add a PR verification comment with manual and command checks.
+- [ ] Wait for PR CI/CD to pass.
+- [ ] Merge the PR.
+- [ ] Confirm post-merge main CI/CD is green.
+- [ ] Update the Notion ticket status and implementation notes.
+- [ ] Archive this OpenSpec change folder.
