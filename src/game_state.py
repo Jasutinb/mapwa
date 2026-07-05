@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from src.config import MAX_ENERGY, ROOM_MAIN
+from src.config import MAX_ENERGY, ROOM_MAIN, STARTING_STRESS
 from src.quest_definitions import create_initial_quest_manager
 from src.quests import QuestManager
 from src.skill_xp import SkillXPManager
@@ -12,6 +12,7 @@ class GameState:
     current_day: int = 1
     money: int = 0
     energy: int = MAX_ENERGY
+    stress: int = STARTING_STRESS
     skill_xp_manager: SkillXPManager = field(default_factory=SkillXPManager)
     quest_manager: QuestManager = field(default_factory=create_initial_quest_manager)
     has_talked_to_mom: bool = False
