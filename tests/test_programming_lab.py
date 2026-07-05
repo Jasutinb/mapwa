@@ -50,6 +50,7 @@ def test_programming_lab_exit_returns_to_school(game):
     assert game.current_room == ROOM_SCHOOL
     assert game.player.rect.topleft == school_door.spawn_pos
     assert hasattr(game, "school_desk")
+    assert not pygame.sprite.spritecollide(game.player, game.obstacle_sprites, False)
 
 
 def test_programming_station_interaction_grants_programming_xp(game):

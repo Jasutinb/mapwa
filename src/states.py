@@ -4,6 +4,7 @@ from src.transport import BUS_TRANSPORT
 from src.config import (
     ROOM_INTRAMUROS,
     ROOM_ADMIN_OFFICE,
+    ROOM_ELECTRONICS_LAB,
     ROOM_MAIN,
     ROOM_OUTSIDE,
     ROOM_PROGRAMMING_LAB,
@@ -45,6 +46,8 @@ class PlayState(State):
                         self.game.study_at_school()
                     elif self.game.current_room == ROOM_PROGRAMMING_LAB and hasattr(self.game, 'programming_station') and self.game.check_proximity(self.game.player, self.game.programming_station, 64):
                         self.game.practice_programming()
+                    elif self.game.current_room == ROOM_ELECTRONICS_LAB and hasattr(self.game, 'electronics_station') and self.game.check_proximity(self.game.player, self.game.electronics_station, 64):
+                        self.game.practice_electronics()
                     elif self.game.current_room == ROOM_BEDROOM and hasattr(self.game, 'bed') and self.game.check_proximity(self.game.player, self.game.bed, 64):
                         self.game.open_sleep_confirmation()
                     else:
@@ -98,6 +101,11 @@ class PlayState(State):
         if self.game.current_room == ROOM_PROGRAMMING_LAB and hasattr(self.game, 'programming_station') and self.game.check_proximity(self.game.player, self.game.programming_station, 64):
             hint_surf = self.game.font.render("Press E to practice programming", True, 'white')
             hint_rect = hint_surf.get_rect(center=(self.game.programming_station.rect.centerx, self.game.programming_station.rect.top - 20))
+            screen.blit(hint_surf, hint_rect)
+
+        if self.game.current_room == ROOM_ELECTRONICS_LAB and hasattr(self.game, 'electronics_station') and self.game.check_proximity(self.game.player, self.game.electronics_station, 64):
+            hint_surf = self.game.font.render("Press E to practice electronics", True, 'white')
+            hint_rect = hint_surf.get_rect(center=(self.game.electronics_station.rect.centerx, self.game.electronics_station.rect.top - 20))
             screen.blit(hint_surf, hint_rect)
 
         if self.game.current_room == ROOM_BEDROOM and hasattr(self.game, 'bed') and self.game.check_proximity(self.game.player, self.game.bed, 64):
