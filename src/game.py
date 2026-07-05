@@ -25,6 +25,7 @@ from src.quest_definitions import (
     is_first_day_item,
 )
 from src.quests import QuestReward
+from src.schedule import classes_for_day, schedule_summary_for_day, weekday_for_day
 from src.transport import TRANSPORT_BUS, get_transport_mode
 from src.config import (
     ADMIN_OFFICE_CHECKED_IN_DIALOGUE,
@@ -116,6 +117,7 @@ class Game:
         self.location_display_text = ""
         self.location_display_timer = 0
         self.location_display_duration = 120 # 2 seconds at 60 FPS
+        self.schedule_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.energy_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.stress_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.mobile_controls = MobileControls((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -222,6 +224,23 @@ class Game:
     @current_day.setter
     def current_day(self, value):
         self.state.current_day = value
+
+    @property
+    def current_weekday(self):
+        return weekday_for_day(self.current_day)
+
+    def get_today_classes(self):
+        return classes_for_day(self.current_day)
+
+    def get_schedule_summary(self):
+        return schedule_summary_for_day(self.current_day)
+
+    def get_schedule_hud_lines(self):
+        return [
+            f"Day {self.current_day} - {self.current_weekday}",
+            self.get_schedule_summary(),
+        ]
+
 
     @property
     def last_allowance_day(self):
@@ -1189,6 +1208,22 @@ class Game:
         pygame.draw.rect(self.screen, (30, 30, 30), self.stress_hud_rect, border_radius=5)
         pygame.draw.rect(self.screen, (200, 200, 200), self.stress_hud_rect, 1, border_radius=5)
         self.screen.blit(stress_surf, stress_rect)
+
+        schedule_lines = self.get_schedule_hud_lines()
+        schedule_surfs = [self.font.render(line, True, 'white') for line in schedule_lines]
+        schedule_width = max(surf.get_width() for surf in schedule_surfs) + 20
+        schedule_height = self.font.get_linesize() * len(schedule_surfs) + 12
+        self.schedule_hud_rect = pygame.Rect(15, 20, schedule_width, schedule_height)
+        pygame.draw.rect(self.screen, (30, 30, 30), self.schedule_hud_rect, border_radius=5)
+        pygame.draw.rect(self.screen, (200, 200, 200), self.schedule_hud_rect, 1, border_radius=5)
+        for line_index, schedule_surf in enumerate(schedule_surfs):
+            self.screen.blit(
+                schedule_surf,
+                (
+                    self.schedule_hud_rect.x + 10,
+                    self.schedule_hud_rect.y + 6 + line_index * self.font.get_linesize(),
+                ),
+            )
 
         # Draw location name
         if self.location_display_timer > 0:

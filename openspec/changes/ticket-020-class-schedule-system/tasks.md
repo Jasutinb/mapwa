@@ -1,0 +1,25 @@
+# Tasks
+
+- [x] Fetch and summarize the Notion ticket.
+- [x] Confirm the implementation plan with the user.
+- [x] Create a dedicated branch/worktree.
+- [x] Implement only the approved ticket scope.
+- [x] Add a small schedule data model or structured constants for weekly class entries.
+- [x] Add weekday derivation from `current_day`.
+- [x] Add helpers to return today's classes and a concise schedule summary.
+- [x] Add a lightweight schedule readout that avoids existing HUD/mobile UI.
+- [x] Ensure sleep/day advancement updates the schedule day naturally.
+- [x] Preserve existing sleep, allowance, temporary campus pass, energy, stress, and quest behavior.
+- [x] Add focused tests for weekday math, class lookup, free days, summary text, day advancement, and readout layout.
+- [x] Run focused tests.
+- [x] Run `uv run ruff check .`.
+- [x] Run `uv run pytest -n auto`.
+- [ ] Stage only ticket files.
+- [ ] Commit and push the ticket branch.
+- [ ] Create one GitHub PR.
+- [ ] Add a PR verification comment with manual and command checks.
+- [ ] Wait for PR CI/CD to pass.
+- [ ] Merge the PR.
+- [ ] Confirm post-merge main CI/CD is green.
+- [ ] Update the Notion ticket status and implementation notes.
+- [ ] Archive this OpenSpec change folder.
