@@ -44,7 +44,8 @@ def test_location_names_mapping(game):
         'admin_office': 'Admin Office',
         'school': 'School',
         'programming_lab': 'Programming Lab',
-        'electronics_lab': 'Electronics Lab'
+        'electronics_lab': 'Electronics Lab',
+        'library': 'Library'
     }
     
     for room, display_name in rooms.items():
