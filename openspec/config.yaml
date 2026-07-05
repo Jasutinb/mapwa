@@ -1,0 +1,30 @@
+schema: spec-driven
+
+context: |
+  Project: Mapwa, a Python pygame-ce student RPG.
+  Runtime: Python 3.14+, pygame-ce, uv.
+  Tests: pytest and pytest-xdist.
+  Lint: ruff.
+  Web build/deploy: pygbag, GitHub Actions, itch.io.
+  Source of tickets: Notion Mapwa database.
+  GitHub workflow: one ticket per branch, worktree, commit, push, and PR.
+  Ticket flow: fetch ticket, summarize it, write an implementation plan for approval,
+  implement only approved scope, run focused tests/lint/full suite, add a PR
+  verification comment, merge only after CI/CD is green, then update Notion.
+  Mobile parity: every player-facing PC control must have a matching mobile path.
+  Map safety: room entrances and exits must spawn the player on clear floor, not inside
+  obstacles, NPCs, furniture, gates, benches, or walls.
+
+rules:
+  proposal:
+    - Keep proposals ticket-scoped and short enough to verify quickly.
+    - Include acceptance criteria and non-goals.
+    - Call out dependencies, pathing risks, and mobile parity needs.
+  tasks:
+    - Include implementation, focused tests, lint, full suite, PR comment, CI/CD, and Notion update.
+    - Keep tasks ordered so each can be checked off during work.
+  spec:
+    - Use MUST for required behavior and SHOULD for recommended behavior.
+    - Include PC and mobile interaction parity for player-facing actions.
+    - Include pathing/spawn acceptance criteria for map changes.
+    - Include regression criteria when a ticket fixes a reported gameplay issue.
