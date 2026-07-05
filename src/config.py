@@ -18,8 +18,12 @@ ROOM_SCHOOL = "school"
 ROOM_PROGRAMMING_LAB = "programming_lab"
 ROOM_ELECTRONICS_LAB = "electronics_lab"
 ROOM_LIBRARY = "library"
+ROOM_CAFETERIA = "cafeteria"
 
 ALLOWANCE_AMOUNT = 250
+MAX_ENERGY = 100
+MEAL_PRICE = 50
+MEAL_ENERGY = 25
 SKILL_ACADEMICS = "academics"
 SKILL_MATH = "math"
 SKILL_DISCIPLINE = "discipline"
@@ -91,6 +95,18 @@ ADMIN_OFFICE_CHECK_IN_DIALOGUE = [
 ADMIN_OFFICE_CHECKED_IN_DIALOGUE = [
     "Your enrollment record is already active.",
     "Check the school office if you need help with documents later.",
+]
+
+CAFETERIA_VENDOR_DIALOGUE = [
+    "One hot meal coming up!",
+]
+
+CAFETERIA_NOT_ENOUGH_MONEY_DIALOGUE = [
+    "You don't have enough money for a meal.",
+]
+
+CAFETERIA_FULL_ENERGY_DIALOGUE = [
+    "You're already full of energy.",
 ]
 
 ITEM_ID = "student_id"

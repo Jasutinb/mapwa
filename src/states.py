@@ -4,6 +4,7 @@ from src.transport import BUS_TRANSPORT
 from src.config import (
     ROOM_INTRAMUROS,
     ROOM_ADMIN_OFFICE,
+    ROOM_CAFETERIA,
     ROOM_ELECTRONICS_LAB,
     ROOM_LIBRARY,
     ROOM_MAIN,
@@ -57,6 +58,8 @@ class PlayState(State):
                         self.game.study_at_library(SKILL_MATH, "math")
                     elif self.game.current_room == ROOM_LIBRARY and hasattr(self.game, 'library_discipline_station') and self.game.check_proximity(self.game.player, self.game.library_discipline_station, 64):
                         self.game.study_at_library(SKILL_DISCIPLINE, "discipline")
+                    elif self.game.current_room == ROOM_CAFETERIA and hasattr(self.game, 'food_vendor') and self.game.check_proximity(self.game.player, self.game.food_vendor, 64):
+                        self.game.buy_cafeteria_meal()
                     elif self.game.current_room == ROOM_BEDROOM and hasattr(self.game, 'bed') and self.game.check_proximity(self.game.player, self.game.bed, 64):
                         self.game.open_sleep_confirmation()
                     else:
@@ -130,6 +133,11 @@ class PlayState(State):
                     hint_rect = hint_surf.get_rect(center=(station.rect.centerx, station.rect.top - 20))
                     screen.blit(hint_surf, hint_rect)
                     break
+
+        if self.game.current_room == ROOM_CAFETERIA and hasattr(self.game, 'food_vendor') and self.game.check_proximity(self.game.player, self.game.food_vendor, 64):
+            hint_surf = self.game.font.render("Press E to buy food", True, 'white')
+            hint_rect = hint_surf.get_rect(center=(self.game.food_vendor.rect.centerx, self.game.food_vendor.rect.top - 20))
+            screen.blit(hint_surf, hint_rect)
 
         if self.game.current_room == ROOM_BEDROOM and hasattr(self.game, 'bed') and self.game.check_proximity(self.game.player, self.game.bed, 64):
             hint_surf = self.game.font.render("Press E to sleep", True, 'white')
