@@ -12,6 +12,7 @@ from src.config import (
     ADMIN_OFFICE_CHECK_IN_DIALOGUE,
     ADMIN_OFFICE_CHECK_IN_XP,
     ADMIN_OFFICE_NO_ID_DIALOGUE,
+    ADMIN_OFFICE_TEMP_PASS_ACTIVE_DIALOGUE,
     ITEM_ID,
     ROOM_ADMIN_OFFICE,
     ROOM_INTRAMUROS,
@@ -19,7 +20,8 @@ from src.config import (
     ROOM_SCHOOL_ENTRANCE,
     SCHOOL_GATE_NO_ID_DIALOGUE,
     SCHOOL_GUARD_HAS_ID_DIALOGUE,
-    SCHOOL_GUARD_NO_ID_DIALOGUE,
+    SCHOOL_GUARD_NO_ID_REDIRECT_DIALOGUE,
+    SCHOOL_GUARD_TEMP_PASS_DIALOGUE,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
     SKILL_ACADEMICS,
@@ -72,6 +74,20 @@ def test_school_gate_blocks_player_without_id(game):
 def test_school_gate_allows_player_with_id(game):
     game.inventory.add_item(Item((0, 0), [], "Student ID", item_id=ITEM_ID))
     game.state.mark_item_picked(ITEM_ID)
+    game.current_room = ROOM_SCHOOL_ENTRANCE
+    game.create_map()
+    gate = next(iter(game.gate_sprites))
+    game.player.rect.center = (gate.rect.left - 20, gate.rect.centery)
+
+    event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
+    game.handle_events([event])
+
+    assert game.current_room == ROOM_SCHOOL_ENTRANCE
+    assert game.player.rect.left > gate.rect.right
+
+
+def test_school_gate_allows_player_with_temporary_campus_pass(game):
+    game.state.temporary_campus_pass_day = game.current_day
     game.current_room = ROOM_SCHOOL_ENTRANCE
     game.create_map()
     gate = next(iter(game.gate_sprites))
@@ -159,6 +175,7 @@ def test_school_entrance_has_right_school_entrance_behind_gate(game):
 
 
 def test_school_entrance_guard_is_interactable(game):
+    game.state.temporary_campus_pass_day = game.current_day
     game.current_room = ROOM_SCHOOL_ENTRANCE
     game.create_map()
     guard = next(iter(game.guard_sprites))
@@ -210,7 +227,7 @@ def test_admin_office_has_interactable_attendant(game):
     assert game.current_dialogue == attendant.dialogue
 
 
-def test_admin_office_attendant_requires_student_id(game):
+def test_admin_office_attendant_grants_temporary_campus_pass_without_id(game):
     game.current_room = ROOM_ADMIN_OFFICE
     game.create_map()
     attendant = next(iter(game.attendant_sprites))
@@ -220,6 +237,23 @@ def test_admin_office_attendant_requires_student_id(game):
     game.handle_events([event])
 
     assert game.current_dialogue == ADMIN_OFFICE_NO_ID_DIALOGUE
+    assert game.state.temporary_campus_pass_day == game.current_day
+    assert game.state.admin_office_checked_in is False
+    assert game.get_skill_xp(SKILL_ACADEMICS) == 0
+
+
+def test_admin_office_attendant_repeats_active_temporary_pass(game):
+    game.state.temporary_campus_pass_day = game.current_day
+    game.current_room = ROOM_ADMIN_OFFICE
+    game.create_map()
+    attendant = next(iter(game.attendant_sprites))
+    game.player.rect.center = attendant.rect.center
+
+    event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
+    game.handle_events([event])
+
+    assert game.current_dialogue == ADMIN_OFFICE_TEMP_PASS_ACTIVE_DIALOGUE
+    assert game.state.temporary_campus_pass_day == game.current_day
     assert game.state.admin_office_checked_in is False
     assert game.get_skill_xp(SKILL_ACADEMICS) == 0
 
@@ -257,7 +291,7 @@ def test_admin_office_check_in_reward_only_happens_once(game):
     assert game.get_skill_xp(SKILL_ACADEMICS) == ADMIN_OFFICE_CHECK_IN_XP
 
 
-def test_school_guard_requests_id_before_entry(game):
+def test_school_guard_sends_no_id_student_to_admin_office(game):
     game.current_room = ROOM_SCHOOL_ENTRANCE
     game.create_map()
     guard = next(iter(game.guard_sprites))
@@ -266,7 +300,23 @@ def test_school_guard_requests_id_before_entry(game):
     event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
     game.handle_events([event])
 
-    assert game.current_dialogue == SCHOOL_GUARD_NO_ID_DIALOGUE
+    assert game.current_room == ROOM_ADMIN_OFFICE
+    assert game.current_dialogue == SCHOOL_GUARD_NO_ID_REDIRECT_DIALOGUE
+    assert game.state.temporary_campus_pass_day is None
+
+
+def test_school_guard_recognizes_temporary_campus_pass(game):
+    game.state.temporary_campus_pass_day = game.current_day
+    game.current_room = ROOM_SCHOOL_ENTRANCE
+    game.create_map()
+    guard = next(iter(game.guard_sprites))
+    game.player.rect.center = guard.rect.center
+
+    event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)
+    game.handle_events([event])
+
+    assert game.current_room == ROOM_SCHOOL_ENTRANCE
+    assert game.current_dialogue == SCHOOL_GUARD_TEMP_PASS_DIALOGUE
 
 
 def test_school_guard_verifies_student_with_id(game):

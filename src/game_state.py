@@ -16,6 +16,7 @@ class GameState:
     has_talked_to_mom: bool = False
     last_allowance_day: int = 0
     admin_office_checked_in: bool = False
+    temporary_campus_pass_day: int | None = None
     current_dialogue: list[str] | None = None
     dialogue_index: int = 0
     picked_item_ids: set[str] = field(default_factory=set)
