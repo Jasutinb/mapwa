@@ -6,6 +6,7 @@ from src.config import (
     ROOM_ADMIN_OFFICE,
     ROOM_MAIN,
     ROOM_OUTSIDE,
+    ROOM_PROGRAMMING_LAB,
     ROOM_SCHOOL_ENTRANCE,
     ROOM_SCHOOL,
     ROOM_BEDROOM,
@@ -42,6 +43,8 @@ class PlayState(State):
                         pass
                     elif self.game.current_room == ROOM_SCHOOL and hasattr(self.game, 'school_desk') and self.game.check_proximity(self.game.player, self.game.school_desk, 64):
                         self.game.study_at_school()
+                    elif self.game.current_room == ROOM_PROGRAMMING_LAB and hasattr(self.game, 'programming_station') and self.game.check_proximity(self.game.player, self.game.programming_station, 64):
+                        self.game.practice_programming()
                     elif self.game.current_room == ROOM_BEDROOM and hasattr(self.game, 'bed') and self.game.check_proximity(self.game.player, self.game.bed, 64):
                         self.game.open_sleep_confirmation()
                     else:
@@ -90,6 +93,11 @@ class PlayState(State):
         if self.game.current_room == ROOM_SCHOOL and hasattr(self.game, 'school_desk') and self.game.check_proximity(self.game.player, self.game.school_desk, 64):
             hint_surf = self.game.font.render("Press E to study", True, 'white')
             hint_rect = hint_surf.get_rect(center=(self.game.school_desk.rect.centerx, self.game.school_desk.rect.top - 20))
+            screen.blit(hint_surf, hint_rect)
+
+        if self.game.current_room == ROOM_PROGRAMMING_LAB and hasattr(self.game, 'programming_station') and self.game.check_proximity(self.game.player, self.game.programming_station, 64):
+            hint_surf = self.game.font.render("Press E to practice programming", True, 'white')
+            hint_rect = hint_surf.get_rect(center=(self.game.programming_station.rect.centerx, self.game.programming_station.rect.top - 20))
             screen.blit(hint_surf, hint_rect)
 
         if self.game.current_room == ROOM_BEDROOM and hasattr(self.game, 'bed') and self.game.check_proximity(self.game.player, self.game.bed, 64):
