@@ -1,0 +1,27 @@
+# Tasks
+
+- [x] Fetch and summarize the Notion ticket.
+- [x] Confirm the implementation plan with the user.
+- [x] Create a dedicated branch/worktree.
+- [x] Implement only the approved ticket scope.
+- [x] Add exam constants for rewards, energy cost, stress consequence, thresholds, and dialogue text.
+- [x] Add an exam data model with stable IDs, subject/skill, scheduled day, room, recommended XP, reward, attempt count, and status.
+- [x] Add exam state and helpers for availability, summary, resolution, duplicate reward blocking, and sleep persistence.
+- [x] Add a distinct exam marker without breaking existing study, assignment, or class markers.
+- [x] Add keyboard interaction handling through `E`.
+- [x] Confirm mobile action parity through the existing mobile-to-`E` path.
+- [x] Add exam HUD/summary that avoids existing schedule, assignment, energy, stress, inventory, and mobile UI.
+- [x] Preserve existing sleep, schedule, class attendance, assignment, study, energy, stress, cafeteria, quest, and map transition behavior.
+- [x] Add focused tests for exam creation, availability, passing, failing, duplicate blocking, stress/energy effects, sleep persistence, HUD layout, and mobile parity.
+- [x] Run focused tests.
+- [x] Run `uv run ruff check .`.
+- [x] Run `uv run pytest -n auto`.
+- [ ] Stage only ticket files.
+- [ ] Commit and push the ticket branch.
+- [ ] Create one GitHub PR.
+- [ ] Add a PR verification comment with manual and command checks.
+- [ ] Wait for PR CI/CD to pass.
+- [ ] Merge the PR.
+- [ ] Confirm post-merge main CI/CD is green.
+- [ ] Update the Notion ticket status and implementation notes.
+- [ ] Archive this OpenSpec change folder.

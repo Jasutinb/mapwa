@@ -47,6 +47,9 @@ LIBRARY_STUDY_XP = 10
 CLASS_ATTENDANCE_XP = 15
 ASSIGNMENT_REWARD_XP = 20
 ASSIGNMENT_MISSED_STRESS = 10
+EXAM_REWARD_XP = 30
+EXAM_ENERGY_COST = 20
+EXAM_STRESS_PENALTY = 12
 
 FIRST_MOM_DIALOGUE = [
     "Hi sweetie!",
@@ -140,6 +143,15 @@ ASSIGNMENT_COMPLETED_DIALOGUE = (
 ASSIGNMENT_NONE_AVAILABLE_DIALOGUE = "No assignments are ready to submit right now."
 ASSIGNMENT_MISSED_DIALOGUE = (
     "You missed {count} assignment deadline(s). Stress increased by {stress}."
+)
+EXAM_COMPLETED_DIALOGUE = "You already passed {title}."
+EXAM_NONE_AVAILABLE_DIALOGUE = "No exams are available here right now."
+EXAM_PASSED_DIALOGUE = (
+    "You passed {title} and gained {xp} {skill} XP! Total: {total}."
+)
+EXAM_FAILED_DIALOGUE = (
+    "You failed {title}. Recommended {required} {skill} XP; you have {current}. "
+    "Stress increased by {stress}."
 )
 
 ITEM_ID = "student_id"
