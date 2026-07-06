@@ -63,6 +63,9 @@ from src.config import (
     CLASS_ALREADY_ATTENDED_DIALOGUE,
     CLASS_ATTENDED_DIALOGUE,
     CLASS_ATTENDANCE_XP,
+    CLASSMATE_INTRO_DIALOGUE,
+    CLASSMATE_REPEAT_DIALOGUE,
+    CLASSMATE_SOCIAL_XP,
     CLASS_NO_CLASS_HERE_DIALOGUE,
     CLASS_NO_CLASSES_TODAY_DIALOGUE,
     DAILY_ALLOWANCE_MOM_DIALOGUE,
@@ -113,6 +116,7 @@ from src.config import (
     SKILL_ACADEMICS,
     SKILL_ELECTRONICS,
     SKILL_PROGRAMMING,
+    SKILL_SOCIAL,
     STATE_DIALOGUE,
     STATE_MENU,
     STATE_PLAY,
@@ -150,6 +154,7 @@ class Game:
         self.guard_sprites = pygame.sprite.Group()
         self.chair_sprites = pygame.sprite.Group()
         self.attendant_sprites = pygame.sprite.Group()
+        self.classmate_sprites = pygame.sprite.Group()
         self.class_marker_sprites = pygame.sprite.Group()
         self.assignment_marker_sprites = pygame.sprite.Group()
         self.exam_marker_sprites = pygame.sprite.Group()
@@ -350,6 +355,16 @@ class Game:
                 marker
                 for marker in self.exam_marker_sprites
                 if self.check_proximity(self.player, marker, 64)
+            ),
+            None,
+        )
+
+    def get_classmate_near_player(self):
+        return next(
+            (
+                classmate
+                for classmate in self.classmate_sprites
+                if self.check_proximity(self.player, classmate, 64)
             ),
             None,
         )
@@ -684,6 +699,25 @@ class Game:
         self.show_dialogue(attendant.interact())
         return True
 
+    def talk_to_classmate(self):
+        classmate = self.get_classmate_near_player()
+        if classmate is None:
+            return False
+
+        if self.state.has_talked_to_classmate:
+            classmate.dialogue = list(CLASSMATE_REPEAT_DIALOGUE)
+            self.show_dialogue(classmate.interact())
+            return True
+
+        self.state.has_talked_to_classmate = True
+        skill_xp = self.grant_skill_xp(SKILL_SOCIAL, CLASSMATE_SOCIAL_XP)
+        classmate.dialogue = [
+            line.format(xp=CLASSMATE_SOCIAL_XP, total=skill_xp)
+            for line in CLASSMATE_INTRO_DIALOGUE
+        ]
+        self.show_dialogue(classmate.interact())
+        return True
+
     def get_admin_attendant_dialogue(self):
         if not self.has_inventory_item(ITEM_ID):
             if self.has_temporary_campus_pass():
@@ -947,6 +981,19 @@ class Game:
         attendant.sprite_base_assets = ('assets/images/player.png', 'assets/images/mom.png')
         return attendant
 
+    def create_classmate_npc(self, pos):
+        classmate = NPC(
+            pos,
+            [self.visible_sprites, self.obstacle_sprites, self.classmate_sprites],
+            'assets/images/classmate.png',
+            name="Classmate",
+            can_wander=False,
+        )
+        classmate.dialogue = list(CLASSMATE_REPEAT_DIALOGUE)
+        classmate.sprite_asset = 'assets/images/classmate.png'
+        classmate.sprite_base_assets = ('assets/images/player.png', 'assets/images/mom.png')
+        return classmate
+
     def create_map(self):
         # Clear existing sprites
         for sprite in self.visible_sprites:
@@ -968,6 +1015,8 @@ class Game:
         for sprite in self.chair_sprites:
             sprite.kill()
         for sprite in self.attendant_sprites:
+            sprite.kill()
+        for sprite in self.classmate_sprites:
             sprite.kill()
         for sprite in self.class_marker_sprites:
             sprite.kill()
@@ -1253,6 +1302,7 @@ class Game:
         self.school_desk = Decoration((SCREEN_WIDTH // 2, 100), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png') # Placeholder for school desk
         self.school_class_marker = ClassMarker((SCREEN_WIDTH // 2 + 144, 160), [self.visible_sprites, self.class_marker_sprites])
         self.school_exam_marker = ExamMarker((96, 160), [self.visible_sprites, self.exam_marker_sprites])
+        self.school_classmate = self.create_classmate_npc((SCREEN_WIDTH - 192, 320))
 
         # Add door to exit school
         Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))

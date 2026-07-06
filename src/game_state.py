@@ -19,6 +19,7 @@ class GameState:
     skill_xp_manager: SkillXPManager = field(default_factory=SkillXPManager)
     quest_manager: QuestManager = field(default_factory=create_initial_quest_manager)
     has_talked_to_mom: bool = False
+    has_talked_to_classmate: bool = False
     last_allowance_day: int = 0
     admin_office_checked_in: bool = False
     temporary_campus_pass_day: int | None = None
