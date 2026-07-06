@@ -58,6 +58,8 @@ class PlayState(State):
                         self.game.study_at_library(SKILL_MATH, "math")
                     elif self.game.current_room == ROOM_LIBRARY and hasattr(self.game, 'library_discipline_station') and self.game.check_proximity(self.game.player, self.game.library_discipline_station, 64):
                         self.game.study_at_library(SKILL_DISCIPLINE, "discipline")
+                    elif self.game.get_exam_marker_near_player():
+                        self.game.take_exam()
                     elif self.game.get_class_marker_near_player():
                         self.game.attend_class()
                     elif self.game.get_assignment_marker_near_player():
@@ -145,6 +147,12 @@ class PlayState(State):
         if class_marker:
             hint_surf = self.game.font.render("Press E to attend class", True, 'white')
             hint_rect = hint_surf.get_rect(center=(class_marker.rect.centerx, class_marker.rect.top - 20))
+            screen.blit(hint_surf, hint_rect)
+
+        exam_marker = self.game.get_exam_marker_near_player()
+        if exam_marker:
+            hint_surf = self.game.font.render("Press E to take exam", True, 'white')
+            hint_rect = hint_surf.get_rect(center=(exam_marker.rect.centerx, exam_marker.rect.top - 20))
             screen.blit(hint_surf, hint_rect)
 
         assignment_marker = self.game.get_assignment_marker_near_player()

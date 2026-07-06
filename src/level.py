@@ -56,6 +56,16 @@ class AssignmentMarker(pygame.sprite.Sprite):
         pygame.draw.line(self.image, (42, 112, 86), (11, 19), (19, 19), 2)
         self.rect = self.image.get_rect(topleft=pos)
 
+class ExamMarker(pygame.sprite.Sprite):
+    def __init__(self, pos, groups):
+        super().__init__(groups)
+        self.image = pygame.Surface((32, 32), pygame.SRCALPHA)
+        pygame.draw.circle(self.image, (146, 58, 42), (16, 16), 13)
+        pygame.draw.circle(self.image, (248, 224, 210), (16, 16), 9, 2)
+        pygame.draw.line(self.image, (248, 224, 210), (12, 12), (20, 20), 2)
+        pygame.draw.line(self.image, (248, 224, 210), (20, 12), (12, 20), 2)
+        self.rect = self.image.get_rect(topleft=pos)
+
 class Door(pygame.sprite.Sprite):
     def __init__(self, pos, groups, target_room, spawn_pos):
         super().__init__(groups)

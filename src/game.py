@@ -12,8 +12,10 @@ from src.assignments import (
     assignment_summary,
     available_assignments,
 )
+from src.exams import EXAM_STATUS_PASSED, available_exams, exam_summary
 from src.level import (
     AssignmentMarker,
+    ExamMarker,
     Tile,
     Chair,
     ClassMarker,
@@ -65,6 +67,10 @@ from src.config import (
     CLASS_NO_CLASSES_TODAY_DIALOGUE,
     DAILY_ALLOWANCE_MOM_DIALOGUE,
     ELECTRONICS_LAB_XP,
+    EXAM_COMPLETED_DIALOGUE,
+    EXAM_FAILED_DIALOGUE,
+    EXAM_NONE_AVAILABLE_DIALOGUE,
+    EXAM_PASSED_DIALOGUE,
     FIRST_MOM_DIALOGUE,
     FPS,
     ELECTRONICS_PRACTICE_ENERGY_COST,
@@ -141,12 +147,14 @@ class Game:
         self.attendant_sprites = pygame.sprite.Group()
         self.class_marker_sprites = pygame.sprite.Group()
         self.assignment_marker_sprites = pygame.sprite.Group()
+        self.exam_marker_sprites = pygame.sprite.Group()
 
         self.location_display_text = ""
         self.location_display_timer = 0
         self.location_display_duration = 120 # 2 seconds at 60 FPS
         self.schedule_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.assignment_hud_rect = pygame.Rect(0, 0, 0, 0)
+        self.exam_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.energy_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.stress_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.mobile_controls = MobileControls((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -306,6 +314,26 @@ class Game:
     def get_assignment_summary(self):
         return assignment_summary(self.state.assignments, self.current_day)
 
+    def get_available_exams(self, room_name=None):
+        return available_exams(
+            self.state.exams,
+            self.current_day,
+            room_name or self.current_room,
+        )
+
+    def get_exam_summary(self):
+        return exam_summary(self.state.exams)
+
+    def get_exam_marker_near_player(self):
+        return next(
+            (
+                marker
+                for marker in self.exam_marker_sprites
+                if self.check_proximity(self.player, marker, 64)
+            ),
+            None,
+        )
+
     def complete_assignment(self):
         assignments = self.get_available_assignments()
         if not assignments:
@@ -326,6 +354,60 @@ class Game:
             ]
         )
         return True
+
+    def take_exam(self):
+        exams = self.get_available_exams()
+        if not exams:
+            passed_exam = next(
+                (
+                    exam
+                    for exam in self.state.exams
+                    if exam.room_key == self.current_room and exam.is_passed
+                ),
+                None,
+            )
+            if passed_exam is not None:
+                self.show_dialogue(
+                    [EXAM_COMPLETED_DIALOGUE.format(title=passed_exam.title)]
+                )
+            else:
+                self.show_dialogue([EXAM_NONE_AVAILABLE_DIALOGUE])
+            return False
+
+        exam = exams[0]
+        if not self.spend_energy(exam.energy_cost):
+            return False
+
+        exam.attempts += 1
+        current_skill_xp = self.get_skill_xp(exam.skill)
+        if current_skill_xp >= exam.recommended_xp:
+            exam.status = EXAM_STATUS_PASSED
+            total = self.grant_skill_xp(exam.skill, exam.reward_xp)
+            self.show_dialogue(
+                [
+                    EXAM_PASSED_DIALOGUE.format(
+                        title=exam.title,
+                        xp=exam.reward_xp,
+                        skill=exam.skill,
+                        total=total,
+                    )
+                ]
+            )
+            return True
+
+        stress_increased = self.increase_stress(exam.stress_penalty)
+        self.show_dialogue(
+            [
+                EXAM_FAILED_DIALOGUE.format(
+                    title=exam.title,
+                    required=exam.recommended_xp,
+                    skill=exam.skill,
+                    current=current_skill_xp,
+                    stress=stress_increased,
+                )
+            ]
+        )
+        return False
 
     def attend_class(self):
         classes_today = self.get_today_classes()
@@ -851,6 +933,8 @@ class Game:
             sprite.kill()
         for sprite in self.assignment_marker_sprites:
             sprite.kill()
+        for sprite in self.exam_marker_sprites:
+            sprite.kill()
 
         # Set location display
         current_node = self.rooms.get(self.current_room)
@@ -1128,6 +1212,7 @@ class Game:
         # but we can add a sign or something.
         self.school_desk = Decoration((SCREEN_WIDTH // 2, 100), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png') # Placeholder for school desk
         self.school_class_marker = ClassMarker((SCREEN_WIDTH // 2 + 144, 160), [self.visible_sprites, self.class_marker_sprites])
+        self.school_exam_marker = ExamMarker((96, 160), [self.visible_sprites, self.exam_marker_sprites])
 
         # Add door to exit school
         Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
@@ -1161,6 +1246,7 @@ class Game:
 
         self.programming_station = Decoration((SCREEN_WIDTH // 2 - 64, 120), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
         self.programming_class_marker = ClassMarker((SCREEN_WIDTH // 2 + 160, 184), [self.visible_sprites, self.class_marker_sprites])
+        self.programming_exam_marker = ExamMarker((96, 184), [self.visible_sprites, self.exam_marker_sprites])
         Decoration((SCREEN_WIDTH // 2 + 64, 120), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
         Decoration((SCREEN_WIDTH // 2 - 64, 260), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
         Decoration((SCREEN_WIDTH // 2 + 64, 260), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
@@ -1405,6 +1491,26 @@ class Game:
         self.screen.blit(
             assignment_surf,
             (self.assignment_hud_rect.x + 10, self.assignment_hud_rect.y + 6),
+        )
+
+        exam_line = self.get_exam_summary()
+        exam_surf = self.font.render(exam_line, True, 'white')
+        exam_width = min(
+            exam_surf.get_width() + 20,
+            SCREEN_WIDTH - self.schedule_hud_rect.x * 2,
+        )
+        exam_height = self.font.get_linesize() + 12
+        self.exam_hud_rect = pygame.Rect(
+            15,
+            self.assignment_hud_rect.bottom + 8,
+            exam_width,
+            exam_height,
+        )
+        pygame.draw.rect(self.screen, (30, 30, 30), self.exam_hud_rect, border_radius=5)
+        pygame.draw.rect(self.screen, (200, 200, 200), self.exam_hud_rect, 1, border_radius=5)
+        self.screen.blit(
+            exam_surf,
+            (self.exam_hud_rect.x + 10, self.exam_hud_rect.y + 6),
         )
 
         # Draw location name
