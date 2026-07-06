@@ -35,6 +35,16 @@ class Chair(pygame.sprite.Sprite):
         pygame.draw.rect(self.image, (55, 48, 42), (15, 16, 3, 6))
         self.rect = self.image.get_rect(topleft=pos)
 
+class ClassMarker(pygame.sprite.Sprite):
+    def __init__(self, pos, groups):
+        super().__init__(groups)
+        self.image = pygame.Surface((32, 32), pygame.SRCALPHA)
+        pygame.draw.rect(self.image, (36, 86, 148), (4, 5, 24, 22), border_radius=4)
+        pygame.draw.rect(self.image, (235, 245, 255), (7, 8, 18, 16), 2, border_radius=2)
+        pygame.draw.line(self.image, (235, 245, 255), (10, 13), (22, 13), 2)
+        pygame.draw.line(self.image, (235, 245, 255), (10, 18), (20, 18), 2)
+        self.rect = self.image.get_rect(topleft=pos)
+
 class Door(pygame.sprite.Sprite):
     def __init__(self, pos, groups, target_room, spawn_pos):
         super().__init__(groups)

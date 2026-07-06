@@ -44,6 +44,7 @@ ADMIN_OFFICE_CHECK_IN_XP = 5
 PROGRAMMING_LAB_XP = 10
 ELECTRONICS_LAB_XP = 10
 LIBRARY_STUDY_XP = 10
+CLASS_ATTENDANCE_XP = 15
 
 FIRST_MOM_DIALOGUE = [
     "Hi sweetie!",
@@ -123,5 +124,12 @@ INSUFFICIENT_ENERGY_DIALOGUE = [
 ]
 
 LOW_ENERGY_STRESS_DIALOGUE = "Stress increased by {amount}."
+
+CLASS_ATTENDED_DIALOGUE = (
+    "You attended {course_name} and gained {xp} {skill} XP! Total: {total}."
+)
+CLASS_ALREADY_ATTENDED_DIALOGUE = "You already attended {course_name} today."
+CLASS_NO_CLASSES_TODAY_DIALOGUE = "There are no classes today."
+CLASS_NO_CLASS_HERE_DIALOGUE = "No class is scheduled here today."
 
 ITEM_ID = "student_id"

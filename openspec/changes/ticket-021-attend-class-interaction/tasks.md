@@ -1,0 +1,28 @@
+# Tasks
+
+- [x] Fetch and summarize the Notion ticket.
+- [x] Confirm the implementation plan with the user.
+- [x] Create a dedicated branch/worktree.
+- [x] Implement only the approved ticket scope.
+- [x] Add configured class attendance XP and dialogue text.
+- [x] Add stable schedule entry identifiers or helper IDs for attendance tracking.
+- [x] Add per-day attended-class tracking to game state.
+- [x] Add helper methods to find attendable classes for the current room/day.
+- [x] Add a distinct class attendance interaction spot or marker in scheduled rooms.
+- [x] Add keyboard interaction handling without breaking existing study/practice stations.
+- [x] Confirm mobile action parity through the existing mobile-to-`E` path.
+- [x] Grant class skill XP on first attendance and block duplicate rewards.
+- [x] Reset or rotate attendance tracking when sleeping into the next day.
+- [x] Add focused tests for successful attendance, duplicate blocking, wrong-room/no-class blocking, day reset, skill XP, and mobile parity.
+- [x] Run focused tests.
+- [x] Run `uv run ruff check .`.
+- [x] Run `uv run pytest -n auto`.
+- [x] Stage only ticket files.
+- [x] Commit and push the ticket branch.
+- [x] Create one GitHub PR.
+- [x] Add a PR verification comment with manual and command checks.
+- [x] Wait for PR CI/CD to pass.
+- [ ] Merge the PR.
+- [ ] Confirm post-merge main CI/CD is green.
+- [ ] Update the Notion ticket status and implementation notes.
+- [ ] Archive this OpenSpec change folder.
