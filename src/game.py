@@ -74,15 +74,20 @@ from src.config import (
     FIRST_MOM_DIALOGUE,
     FPS,
     ELECTRONICS_PRACTICE_ENERGY_COST,
+    GRADE_STANDING_ASSIGNMENT_MISSED_DECREASE,
+    GRADE_STANDING_EXAM_FAIL_DECREASE,
+    GRADE_STANDING_EXAM_PASS_INCREASE,
     ITEM_ID,
     INSUFFICIENT_ENERGY_DIALOGUE,
     LIBRARY_STUDY_ENERGY_COST,
     LOW_ENERGY_STRESS_DIALOGUE,
     LOW_ENERGY_STRESS_INCREASE,
     MAX_ENERGY,
+    MAX_GRADE_STANDING,
     MAX_STRESS,
     MEAL_ENERGY,
     MEAL_PRICE,
+    MIN_GRADE_STANDING,
     MIN_STRESS,
     REPEAT_MOM_DIALOGUE,
     ROOM_ADMIN_OFFICE,
@@ -155,6 +160,7 @@ class Game:
         self.schedule_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.assignment_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.exam_hud_rect = pygame.Rect(0, 0, 0, 0)
+        self.grade_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.energy_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.stress_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.mobile_controls = MobileControls((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -243,6 +249,17 @@ class Game:
         self.state.stress = max(MIN_STRESS, min(MAX_STRESS, value))
 
     @property
+    def grade_standing(self):
+        return self.state.grade_standing
+
+    @grade_standing.setter
+    def grade_standing(self, value):
+        self.state.grade_standing = max(
+            MIN_GRADE_STANDING,
+            min(MAX_GRADE_STANDING, value),
+        )
+
+    @property
     def experience(self):
         return self.state.experience
 
@@ -324,6 +341,9 @@ class Game:
     def get_exam_summary(self):
         return exam_summary(self.state.exams)
 
+    def get_grade_summary(self):
+        return f"Grade Standing: {self.grade_standing}/{MAX_GRADE_STANDING}"
+
     def get_exam_marker_near_player(self):
         return next(
             (
@@ -383,6 +403,9 @@ class Game:
         if current_skill_xp >= exam.recommended_xp:
             exam.status = EXAM_STATUS_PASSED
             total = self.grant_skill_xp(exam.skill, exam.reward_xp)
+            grade_increased = self.adjust_grade_standing(
+                GRADE_STANDING_EXAM_PASS_INCREASE
+            )
             self.show_dialogue(
                 [
                     EXAM_PASSED_DIALOGUE.format(
@@ -390,12 +413,16 @@ class Game:
                         xp=exam.reward_xp,
                         skill=exam.skill,
                         total=total,
+                        grade=grade_increased,
                     )
                 ]
             )
             return True
 
         stress_increased = self.increase_stress(exam.stress_penalty)
+        grade_decreased = abs(
+            self.adjust_grade_standing(-GRADE_STANDING_EXAM_FAIL_DECREASE)
+        )
         self.show_dialogue(
             [
                 EXAM_FAILED_DIALOGUE.format(
@@ -404,6 +431,7 @@ class Game:
                     skill=exam.skill,
                     current=current_skill_xp,
                     stress=stress_increased,
+                    grade=grade_decreased,
                 )
             ]
         )
@@ -560,6 +588,7 @@ class Game:
     def process_assignment_deadlines(self):
         missed_count = 0
         stress_increased = 0
+        grade_decreased = 0
         for assignment in self.state.assignments:
             if not assignment.is_overdue_on(self.current_day):
                 continue
@@ -569,6 +598,11 @@ class Game:
             assignment.missed_stress_applied = True
             missed_count += 1
             stress_increased += self.increase_stress(ASSIGNMENT_MISSED_STRESS)
+            grade_decreased += abs(
+                self.adjust_grade_standing(
+                    -GRADE_STANDING_ASSIGNMENT_MISSED_DECREASE
+                )
+            )
 
         if not missed_count:
             return []
@@ -576,6 +610,7 @@ class Game:
             ASSIGNMENT_MISSED_DIALOGUE.format(
                 count=missed_count,
                 stress=stress_increased,
+                grade=grade_decreased,
             )
         ]
 
@@ -773,6 +808,11 @@ class Game:
         before = self.stress
         self.stress = self.stress - amount
         return before - self.stress
+
+    def adjust_grade_standing(self, amount):
+        before = self.grade_standing
+        self.grade_standing = self.grade_standing + amount
+        return self.grade_standing - before
 
     def buy_cafeteria_meal(self):
         if self.energy >= MAX_ENERGY:
@@ -1511,6 +1551,26 @@ class Game:
         self.screen.blit(
             exam_surf,
             (self.exam_hud_rect.x + 10, self.exam_hud_rect.y + 6),
+        )
+
+        grade_line = self.get_grade_summary()
+        grade_surf = self.font.render(grade_line, True, 'white')
+        grade_width = min(
+            grade_surf.get_width() + 20,
+            SCREEN_WIDTH - self.schedule_hud_rect.x * 2,
+        )
+        grade_height = self.font.get_linesize() + 12
+        self.grade_hud_rect = pygame.Rect(
+            15,
+            self.exam_hud_rect.bottom + 8,
+            grade_width,
+            grade_height,
+        )
+        pygame.draw.rect(self.screen, (30, 30, 30), self.grade_hud_rect, border_radius=5)
+        pygame.draw.rect(self.screen, (200, 200, 200), self.grade_hud_rect, 1, border_radius=5)
+        self.screen.blit(
+            grade_surf,
+            (self.grade_hud_rect.x + 10, self.grade_hud_rect.y + 6),
         )
 
         # Draw location name

@@ -25,6 +25,12 @@ MAX_ENERGY = 100
 MIN_STRESS = 0
 MAX_STRESS = 100
 STARTING_STRESS = 0
+MIN_GRADE_STANDING = 0
+MAX_GRADE_STANDING = 100
+STARTING_GRADE_STANDING = 75
+GRADE_STANDING_EXAM_PASS_INCREASE = 5
+GRADE_STANDING_EXAM_FAIL_DECREASE = 8
+GRADE_STANDING_ASSIGNMENT_MISSED_DECREASE = 5
 SLEEP_STRESS_RECOVERY = 20
 LOW_ENERGY_STRESS_INCREASE = 5
 MEAL_PRICE = 50
@@ -142,16 +148,18 @@ ASSIGNMENT_COMPLETED_DIALOGUE = (
 )
 ASSIGNMENT_NONE_AVAILABLE_DIALOGUE = "No assignments are ready to submit right now."
 ASSIGNMENT_MISSED_DIALOGUE = (
-    "You missed {count} assignment deadline(s). Stress increased by {stress}."
+    "You missed {count} assignment deadline(s). Stress increased by {stress}. "
+    "Grade Standing decreased by {grade}."
 )
 EXAM_COMPLETED_DIALOGUE = "You already passed {title}."
 EXAM_NONE_AVAILABLE_DIALOGUE = "No exams are available here right now."
 EXAM_PASSED_DIALOGUE = (
-    "You passed {title} and gained {xp} {skill} XP! Total: {total}."
+    "You passed {title} and gained {xp} {skill} XP! Total: {total}. "
+    "Grade Standing increased by {grade}."
 )
 EXAM_FAILED_DIALOGUE = (
     "You failed {title}. Recommended {required} {skill} XP; you have {current}. "
-    "Stress increased by {stress}."
+    "Stress increased by {stress}. Grade Standing decreased by {grade}."
 )
 
 ITEM_ID = "student_id"

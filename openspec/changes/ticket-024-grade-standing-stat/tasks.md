@@ -1,0 +1,26 @@
+# Tasks
+
+- [x] Fetch and summarize the Notion ticket.
+- [x] Verify tickets 001 through 023 are marked Done in Notion.
+- [x] Prepare/update OpenSpec proposal, tasks, and grade-standing spec.
+- [x] Confirm the implementation plan with the user.
+- [x] Create a dedicated branch/worktree.
+- [x] Implement only the approved ticket scope.
+- [x] Add grade-standing constants for default value 75, bounds 0-100, and change amounts.
+- [x] Add grade-standing state plus clamped property/helper methods.
+- [x] Update assignment and exam outcomes to modify grade standing exactly once per relevant result.
+- [x] Add grade-standing HUD output below the exam summary without overlapping schedule, assignment, exam, energy, stress, inventory, and mobile UI.
+- [x] Preserve existing class attendance, assignment, exam, sleep, study, energy, stress, cafeteria, quest, and map transition behavior.
+- [x] Add focused tests for initialization, clamping, positive/negative changes, no double-application, persistence, and HUD layout.
+- [x] Run focused tests.
+- [x] Run `uv run ruff check .`.
+- [x] Run `uv run pytest -n auto`.
+- [ ] Stage only ticket files.
+- [ ] Commit and push the ticket branch.
+- [ ] Create one GitHub PR.
+- [ ] Add a PR verification comment with manual and command checks.
+- [ ] Wait for PR CI/CD to pass.
+- [ ] Merge the PR.
+- [ ] Confirm post-merge main CI/CD is green.
+- [ ] Update the Notion ticket status and implementation notes.
+- [ ] Archive this OpenSpec change folder.
