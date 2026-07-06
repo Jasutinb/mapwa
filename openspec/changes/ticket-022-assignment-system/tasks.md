@@ -1,0 +1,28 @@
+# Tasks
+
+- [x] Fetch and summarize the Notion ticket.
+- [x] Confirm the implementation plan with the user.
+- [x] Create a dedicated branch/worktree.
+- [x] Implement only the approved ticket scope.
+- [x] Add assignment constants for reward XP, missed-deadline stress, and dialogue text.
+- [x] Add an assignment data model with stable IDs, skill, assigned day, due day, reward XP, and status.
+- [x] Add active assignment state and helpers for summary, completion, duplicate blocking, and deadline processing.
+- [x] Add a distinct assignment completion marker, likely in the Library, without breaking existing Library study or class markers.
+- [x] Add keyboard interaction handling through `E`.
+- [x] Confirm mobile action parity through the existing mobile-to-`E` path.
+- [x] Add assignment HUD/summary that avoids existing HUD/mobile UI.
+- [x] Process missed deadlines when sleeping into the next day and apply stress once per missed assignment.
+- [x] Preserve existing sleep, schedule, class attendance, study, energy, stress, and quest behavior.
+- [x] Add focused tests for assignment creation, summary/HUD, completion reward, duplicate blocking, overdue rollover, stress consequence, and mobile parity.
+- [x] Run focused tests.
+- [x] Run `uv run ruff check .`.
+- [x] Run `uv run pytest -n auto`.
+- [ ] Stage only ticket files.
+- [ ] Commit and push the ticket branch.
+- [ ] Create one GitHub PR.
+- [ ] Add a PR verification comment with manual and command checks.
+- [ ] Wait for PR CI/CD to pass.
+- [ ] Merge the PR.
+- [ ] Confirm post-merge main CI/CD is green.
+- [ ] Update the Notion ticket status and implementation notes.
+- [ ] Archive this OpenSpec change folder.

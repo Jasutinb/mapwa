@@ -45,6 +45,8 @@ PROGRAMMING_LAB_XP = 10
 ELECTRONICS_LAB_XP = 10
 LIBRARY_STUDY_XP = 10
 CLASS_ATTENDANCE_XP = 15
+ASSIGNMENT_REWARD_XP = 20
+ASSIGNMENT_MISSED_STRESS = 10
 
 FIRST_MOM_DIALOGUE = [
     "Hi sweetie!",
@@ -131,5 +133,13 @@ CLASS_ATTENDED_DIALOGUE = (
 CLASS_ALREADY_ATTENDED_DIALOGUE = "You already attended {course_name} today."
 CLASS_NO_CLASSES_TODAY_DIALOGUE = "There are no classes today."
 CLASS_NO_CLASS_HERE_DIALOGUE = "No class is scheduled here today."
+
+ASSIGNMENT_COMPLETED_DIALOGUE = (
+    "You completed {title} and gained {xp} {skill} XP! Total: {total}."
+)
+ASSIGNMENT_NONE_AVAILABLE_DIALOGUE = "No assignments are ready to submit right now."
+ASSIGNMENT_MISSED_DIALOGUE = (
+    "You missed {count} assignment deadline(s). Stress increased by {stress}."
+)
 
 ITEM_ID = "student_id"

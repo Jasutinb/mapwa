@@ -6,7 +6,24 @@ import os
 from src.player import Player
 from src.npc import NPC
 from src.inventory import Inventory
-from src.level import Tile, Chair, ClassMarker, Decoration, Door, Bus, Item, PassGate, RoomNode
+from src.assignments import (
+    ASSIGNMENT_STATUS_COMPLETED,
+    ASSIGNMENT_STATUS_MISSED,
+    assignment_summary,
+    available_assignments,
+)
+from src.level import (
+    AssignmentMarker,
+    Tile,
+    Chair,
+    ClassMarker,
+    Decoration,
+    Door,
+    Bus,
+    Item,
+    PassGate,
+    RoomNode,
+)
 from src.mobile_controls import MobileControls
 from src.state import StateMachine
 from src.states import PlayState, DialogueState, MenuState, SleepConfirmState
@@ -33,6 +50,10 @@ from src.config import (
     ADMIN_OFFICE_CHECK_IN_XP,
     ADMIN_OFFICE_NO_ID_DIALOGUE,
     ADMIN_OFFICE_TEMP_PASS_ACTIVE_DIALOGUE,
+    ASSIGNMENT_COMPLETED_DIALOGUE,
+    ASSIGNMENT_MISSED_DIALOGUE,
+    ASSIGNMENT_MISSED_STRESS,
+    ASSIGNMENT_NONE_AVAILABLE_DIALOGUE,
     ALLOWANCE_AMOUNT,
     CAFETERIA_FULL_ENERGY_DIALOGUE,
     CAFETERIA_NOT_ENOUGH_MONEY_DIALOGUE,
@@ -119,11 +140,13 @@ class Game:
         self.chair_sprites = pygame.sprite.Group()
         self.attendant_sprites = pygame.sprite.Group()
         self.class_marker_sprites = pygame.sprite.Group()
+        self.assignment_marker_sprites = pygame.sprite.Group()
 
         self.location_display_text = ""
         self.location_display_timer = 0
         self.location_display_duration = 120 # 2 seconds at 60 FPS
         self.schedule_hud_rect = pygame.Rect(0, 0, 0, 0)
+        self.assignment_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.energy_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.stress_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.mobile_controls = MobileControls((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -266,6 +289,43 @@ class Game:
             ),
             None,
         )
+
+    def get_assignment_marker_near_player(self):
+        return next(
+            (
+                marker
+                for marker in self.assignment_marker_sprites
+                if self.check_proximity(self.player, marker, 64)
+            ),
+            None,
+        )
+
+    def get_available_assignments(self):
+        return available_assignments(self.state.assignments, self.current_day)
+
+    def get_assignment_summary(self):
+        return assignment_summary(self.state.assignments, self.current_day)
+
+    def complete_assignment(self):
+        assignments = self.get_available_assignments()
+        if not assignments:
+            self.show_dialogue([ASSIGNMENT_NONE_AVAILABLE_DIALOGUE])
+            return False
+
+        assignment = assignments[0]
+        assignment.status = ASSIGNMENT_STATUS_COMPLETED
+        skill_xp = self.grant_skill_xp(assignment.skill, assignment.reward_xp)
+        self.show_dialogue(
+            [
+                ASSIGNMENT_COMPLETED_DIALOGUE.format(
+                    title=assignment.title,
+                    xp=assignment.reward_xp,
+                    skill=assignment.skill,
+                    total=skill_xp,
+                )
+            ]
+        )
+        return True
 
     def attend_class(self):
         classes_today = self.get_today_classes()
@@ -410,7 +470,32 @@ class Game:
         self.state.attended_class_day = self.current_day
         self.state.attended_class_ids.clear()
         self.state.temporary_campus_pass_day = None
-        self.show_dialogue([f"You slept through the night. Day {self.current_day} begins."])
+        dialogue = [f"You slept through the night. Day {self.current_day} begins."]
+        missed_dialogue = self.process_assignment_deadlines()
+        dialogue.extend(missed_dialogue)
+        self.show_dialogue(dialogue)
+
+    def process_assignment_deadlines(self):
+        missed_count = 0
+        stress_increased = 0
+        for assignment in self.state.assignments:
+            if not assignment.is_overdue_on(self.current_day):
+                continue
+            assignment.status = ASSIGNMENT_STATUS_MISSED
+            if assignment.missed_stress_applied:
+                continue
+            assignment.missed_stress_applied = True
+            missed_count += 1
+            stress_increased += self.increase_stress(ASSIGNMENT_MISSED_STRESS)
+
+        if not missed_count:
+            return []
+        return [
+            ASSIGNMENT_MISSED_DIALOGUE.format(
+                count=missed_count,
+                stress=stress_increased,
+            )
+        ]
 
     def finish_dialogue(self):
         self.state.clear_dialogue()
@@ -763,6 +848,8 @@ class Game:
         for sprite in self.attendant_sprites:
             sprite.kill()
         for sprite in self.class_marker_sprites:
+            sprite.kill()
+        for sprite in self.assignment_marker_sprites:
             sprite.kill()
 
         # Set location display
@@ -1138,6 +1225,7 @@ class Game:
         self.library_math_station = Decoration((368, 220), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
         self.library_discipline_station = Decoration((592, 220), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
         self.library_class_marker = ClassMarker((SCREEN_WIDTH // 2 - 16, 360), [self.visible_sprites, self.class_marker_sprites])
+        self.assignment_marker = AssignmentMarker((96, 360), [self.visible_sprites, self.assignment_marker_sprites])
 
         for shelf_x in (128, 256, 480, 640):
             Decoration((shelf_x, 96), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
@@ -1298,6 +1386,26 @@ class Game:
                     self.schedule_hud_rect.y + 6 + line_index * self.font.get_linesize(),
                 ),
             )
+
+        assignment_line = self.get_assignment_summary()
+        assignment_surf = self.font.render(assignment_line, True, 'white')
+        assignment_width = min(
+            assignment_surf.get_width() + 20,
+            SCREEN_WIDTH - self.schedule_hud_rect.x * 2,
+        )
+        assignment_height = self.font.get_linesize() + 12
+        self.assignment_hud_rect = pygame.Rect(
+            15,
+            self.schedule_hud_rect.bottom + 8,
+            assignment_width,
+            assignment_height,
+        )
+        pygame.draw.rect(self.screen, (30, 30, 30), self.assignment_hud_rect, border_radius=5)
+        pygame.draw.rect(self.screen, (200, 200, 200), self.assignment_hud_rect, 1, border_radius=5)
+        self.screen.blit(
+            assignment_surf,
+            (self.assignment_hud_rect.x + 10, self.assignment_hud_rect.y + 6),
+        )
 
         # Draw location name
         if self.location_display_timer > 0:
