@@ -6,7 +6,7 @@ import os
 from src.player import Player
 from src.npc import NPC
 from src.inventory import Inventory
-from src.level import Tile, Chair, Decoration, Door, Bus, Item, PassGate, RoomNode
+from src.level import Tile, Chair, ClassMarker, Decoration, Door, Bus, Item, PassGate, RoomNode
 from src.mobile_controls import MobileControls
 from src.state import StateMachine
 from src.states import PlayState, DialogueState, MenuState, SleepConfirmState
@@ -37,6 +37,11 @@ from src.config import (
     CAFETERIA_FULL_ENERGY_DIALOGUE,
     CAFETERIA_NOT_ENOUGH_MONEY_DIALOGUE,
     CAFETERIA_VENDOR_DIALOGUE,
+    CLASS_ALREADY_ATTENDED_DIALOGUE,
+    CLASS_ATTENDED_DIALOGUE,
+    CLASS_ATTENDANCE_XP,
+    CLASS_NO_CLASS_HERE_DIALOGUE,
+    CLASS_NO_CLASSES_TODAY_DIALOGUE,
     DAILY_ALLOWANCE_MOM_DIALOGUE,
     ELECTRONICS_LAB_XP,
     FIRST_MOM_DIALOGUE,
@@ -113,6 +118,7 @@ class Game:
         self.guard_sprites = pygame.sprite.Group()
         self.chair_sprites = pygame.sprite.Group()
         self.attendant_sprites = pygame.sprite.Group()
+        self.class_marker_sprites = pygame.sprite.Group()
 
         self.location_display_text = ""
         self.location_display_timer = 0
@@ -241,6 +247,66 @@ class Game:
             self.get_schedule_summary(),
         ]
 
+    def get_attended_class_ids(self):
+        if self.state.attended_class_day != self.current_day:
+            self.state.attended_class_day = self.current_day
+            self.state.attended_class_ids.clear()
+        return self.state.attended_class_ids
+
+    def get_today_classes_for_room(self, room_name=None):
+        target_room = room_name or self.current_room
+        return [entry for entry in self.get_today_classes() if entry.room_key == target_room]
+
+    def get_class_marker_near_player(self):
+        return next(
+            (
+                marker
+                for marker in self.class_marker_sprites
+                if self.check_proximity(self.player, marker, 64)
+            ),
+            None,
+        )
+
+    def attend_class(self):
+        classes_today = self.get_today_classes()
+        if not classes_today:
+            self.show_dialogue([CLASS_NO_CLASSES_TODAY_DIALOGUE])
+            return False
+
+        room_classes = self.get_today_classes_for_room()
+        if not room_classes:
+            self.show_dialogue([CLASS_NO_CLASS_HERE_DIALOGUE])
+            return False
+
+        attended_ids = self.get_attended_class_ids()
+        class_entry = next(
+            (entry for entry in room_classes if entry.identifier not in attended_ids),
+            room_classes[0],
+        )
+        if class_entry.identifier in attended_ids:
+            self.show_dialogue(
+                [
+                    CLASS_ALREADY_ATTENDED_DIALOGUE.format(
+                        course_name=class_entry.course_name
+                    )
+                ]
+            )
+            return False
+
+        attended_ids.add(class_entry.identifier)
+        skill_xp = self.grant_skill_xp(class_entry.skill, CLASS_ATTENDANCE_XP)
+        self.show_dialogue(
+            [
+                CLASS_ATTENDED_DIALOGUE.format(
+                    course_name=class_entry.course_name,
+                    xp=CLASS_ATTENDANCE_XP,
+                    skill=class_entry.skill,
+                    total=skill_xp,
+                )
+            ]
+        )
+        return True
+
 
     @property
     def last_allowance_day(self):
@@ -341,6 +407,8 @@ class Game:
         self.current_day += 1
         self.energy = MAX_ENERGY
         self.reduce_stress(SLEEP_STRESS_RECOVERY)
+        self.state.attended_class_day = self.current_day
+        self.state.attended_class_ids.clear()
         self.state.temporary_campus_pass_day = None
         self.show_dialogue([f"You slept through the night. Day {self.current_day} begins."])
 
@@ -694,6 +762,8 @@ class Game:
             sprite.kill()
         for sprite in self.attendant_sprites:
             sprite.kill()
+        for sprite in self.class_marker_sprites:
+            sprite.kill()
 
         # Set location display
         current_node = self.rooms.get(self.current_room)
@@ -970,6 +1040,7 @@ class Game:
         # Note: we don't have a specific way to draw static text on map yet, 
         # but we can add a sign or something.
         self.school_desk = Decoration((SCREEN_WIDTH // 2, 100), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png') # Placeholder for school desk
+        self.school_class_marker = ClassMarker((SCREEN_WIDTH // 2 + 144, 160), [self.visible_sprites, self.class_marker_sprites])
 
         # Add door to exit school
         Door((0, SCREEN_HEIGHT // 2), [self.visible_sprites, self.door_sprites], self.rooms[ROOM_SCHOOL].left.name, (SCREEN_WIDTH - 64, SCREEN_HEIGHT // 2))
@@ -1002,6 +1073,7 @@ class Game:
             Tile((SCREEN_WIDTH - TILE_SIZE, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
 
         self.programming_station = Decoration((SCREEN_WIDTH // 2 - 64, 120), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
+        self.programming_class_marker = ClassMarker((SCREEN_WIDTH // 2 + 160, 184), [self.visible_sprites, self.class_marker_sprites])
         Decoration((SCREEN_WIDTH // 2 + 64, 120), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
         Decoration((SCREEN_WIDTH // 2 - 64, 260), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
         Decoration((SCREEN_WIDTH // 2 + 64, 260), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
@@ -1032,6 +1104,7 @@ class Game:
             Tile((SCREEN_WIDTH - TILE_SIZE, row), [self.visible_sprites, self.obstacle_sprites], wall_surf)
 
         self.electronics_station = Decoration((SCREEN_WIDTH // 2 - 64, 120), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
+        self.electronics_class_marker = ClassMarker((SCREEN_WIDTH // 2 + 160, 184), [self.visible_sprites, self.class_marker_sprites])
         Decoration((SCREEN_WIDTH // 2 + 64, 120), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
         Decoration((SCREEN_WIDTH // 2 - 64, 280), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
         Decoration((SCREEN_WIDTH // 2 + 64, 280), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
@@ -1064,6 +1137,7 @@ class Game:
         self.library_academics_station = Decoration((144, 220), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
         self.library_math_station = Decoration((368, 220), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
         self.library_discipline_station = Decoration((592, 220), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
+        self.library_class_marker = ClassMarker((SCREEN_WIDTH // 2 - 16, 360), [self.visible_sprites, self.class_marker_sprites])
 
         for shelf_x in (128, 256, 480, 640):
             Decoration((shelf_x, 96), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')

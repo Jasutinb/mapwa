@@ -58,6 +58,8 @@ class PlayState(State):
                         self.game.study_at_library(SKILL_MATH, "math")
                     elif self.game.current_room == ROOM_LIBRARY and hasattr(self.game, 'library_discipline_station') and self.game.check_proximity(self.game.player, self.game.library_discipline_station, 64):
                         self.game.study_at_library(SKILL_DISCIPLINE, "discipline")
+                    elif self.game.get_class_marker_near_player():
+                        self.game.attend_class()
                     elif self.game.current_room == ROOM_CAFETERIA and hasattr(self.game, 'food_vendor') and self.game.check_proximity(self.game.player, self.game.food_vendor, 64):
                         self.game.buy_cafeteria_meal()
                     elif self.game.current_room == ROOM_BEDROOM and hasattr(self.game, 'bed') and self.game.check_proximity(self.game.player, self.game.bed, 64):
@@ -135,6 +137,12 @@ class PlayState(State):
         if self.game.current_room == ROOM_CAFETERIA and hasattr(self.game, 'food_vendor') and self.game.check_proximity(self.game.player, self.game.food_vendor, 64):
             hint_surf = self.game.font.render("Press E to buy food", True, 'white')
             hint_rect = hint_surf.get_rect(center=(self.game.food_vendor.rect.centerx, self.game.food_vendor.rect.top - 20))
+            screen.blit(hint_surf, hint_rect)
+
+        class_marker = self.game.get_class_marker_near_player()
+        if class_marker:
+            hint_surf = self.game.font.render("Press E to attend class", True, 'white')
+            hint_rect = hint_surf.get_rect(center=(class_marker.rect.centerx, class_marker.rect.top - 20))
             screen.blit(hint_surf, hint_rect)
 
         if self.game.current_room == ROOM_BEDROOM and hasattr(self.game, 'bed') and self.game.check_proximity(self.game.player, self.game.bed, 64):

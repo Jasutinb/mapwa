@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import re
 
 from src.config import (
     ROOM_ELECTRONICS_LAB,
@@ -37,6 +38,11 @@ class ClassScheduleEntry:
     @property
     def time_label(self):
         return f"{self.start_label}-{self.end_label}"
+
+    @property
+    def identifier(self):
+        raw = f"{self.weekday}-{self.start_label}-{self.course_name}-{self.room_key}"
+        return re.sub(r"[^a-z0-9]+", "-", raw.lower()).strip("-")
 
     def summary_label(self):
         return f"{self.start_label} {self.course_name} ({self.room_label})"
