@@ -135,6 +135,19 @@ When developing features, keep these WASM-specific constraints in mind:
 ### Import Management
 Note that `src/game.py` manually adjusts `sys.path` to allow imports from its own directory. When adding new modules in `src/`, maintain consistency with this pattern or ensure absolute imports from the project root are used via `main.py`.
 
+### Ticket Workflow with OpenSpec
+For each Mapwa ticket that is in progress or not yet started, fetch the Notion ticket before coding and create or update an OpenSpec change folder under `openspec/changes/ticket-###-short-name/`.
+
+Each ticket change folder must include:
+- `proposal.md` with the approved implementation plan and acceptance criteria.
+- `tasks.md` with the ticket checklist.
+- `specs/.../spec.md` when the ticket changes gameplay behavior, maps, controls, quests, or systems.
+
+Use this delivery loop for ticket work:
+`Notion ticket -> OpenSpec proposal/tasks/spec -> approval -> branch/worktree -> implementation -> tests -> PR -> verification comment -> CI/CD -> merge -> Notion update -> OpenSpec archive`.
+
+After the ticket PR is merged and Notion is updated, archive the OpenSpec change folder under `openspec/changes/archive/`.
+
 ## 4. Feature List
 - **Basic Movement**: Player can move in four directions using arrow keys or WASD.
 - **Rooms**: Multiple rooms (Living Room, Bedroom, Outside, School).
