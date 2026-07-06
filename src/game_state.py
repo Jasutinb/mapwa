@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 
+from src.assignments import Assignment, create_initial_assignments
 from src.config import MAX_ENERGY, ROOM_MAIN, STARTING_STRESS
 from src.quest_definitions import create_initial_quest_manager
 from src.quests import QuestManager
@@ -21,6 +22,7 @@ class GameState:
     temporary_campus_pass_day: int | None = None
     attended_class_day: int = 1
     attended_class_ids: set[str] = field(default_factory=set)
+    assignments: list[Assignment] = field(default_factory=create_initial_assignments)
     current_dialogue: list[str] | None = None
     dialogue_index: int = 0
     picked_item_ids: set[str] = field(default_factory=set)
