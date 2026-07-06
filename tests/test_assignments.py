@@ -11,6 +11,7 @@ from src.config import (
     ASSIGNMENT_MISSED_STRESS,
     ASSIGNMENT_NONE_AVAILABLE_DIALOGUE,
     ASSIGNMENT_REWARD_XP,
+    GRADE_STANDING_ASSIGNMENT_MISSED_DECREASE,
     LIBRARY_STUDY_XP,
     MAX_ENERGY,
     ROOM_LIBRARY,
@@ -108,7 +109,8 @@ def test_sleep_marks_missed_assignment_and_increases_stress(game):
         "You slept through the night. Day 3 begins.",
         (
             "You missed 1 assignment deadline(s). "
-            f"Stress increased by {ASSIGNMENT_MISSED_STRESS}."
+            f"Stress increased by {ASSIGNMENT_MISSED_STRESS}. "
+            f"Grade Standing decreased by {GRADE_STANDING_ASSIGNMENT_MISSED_DECREASE}."
         ),
     ]
 

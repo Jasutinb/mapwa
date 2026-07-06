@@ -10,6 +10,8 @@ from src.config import (
     EXAM_ENERGY_COST,
     EXAM_REWARD_XP,
     EXAM_STRESS_PENALTY,
+    GRADE_STANDING_EXAM_FAIL_DECREASE,
+    GRADE_STANDING_EXAM_PASS_INCREASE,
     MAX_ENERGY,
     ROOM_PROGRAMMING_LAB,
     ROOM_SCHOOL,
@@ -104,7 +106,8 @@ def test_passing_exam_grants_reward_and_marks_passed(game):
     assert game.current_dialogue == [
         (
             "You passed Academics Midterm and gained "
-            f"{EXAM_REWARD_XP} academics XP! Total: {30 + EXAM_REWARD_XP}."
+            f"{EXAM_REWARD_XP} academics XP! Total: {30 + EXAM_REWARD_XP}. "
+            f"Grade Standing increased by {GRADE_STANDING_EXAM_PASS_INCREASE}."
         )
     ]
 
@@ -124,6 +127,7 @@ def test_failing_exam_increases_stress_and_tracks_attempt(game):
         (
             "You failed Academics Midterm. Recommended 30 academics XP; "
             f"you have 10. Stress increased by {EXAM_STRESS_PENALTY}."
+            f" Grade Standing decreased by {GRADE_STANDING_EXAM_FAIL_DECREASE}."
         )
     ]
 
@@ -186,6 +190,7 @@ def test_exam_hud_does_not_overlap_existing_ui(game):
     assert game.exam_hud_rect.width > 0
     assert not game.exam_hud_rect.colliderect(game.schedule_hud_rect)
     assert not game.exam_hud_rect.colliderect(game.assignment_hud_rect)
+    assert not game.exam_hud_rect.colliderect(game.grade_hud_rect)
     assert not game.exam_hud_rect.colliderect(game.energy_hud_rect)
     assert not game.exam_hud_rect.colliderect(game.stress_hud_rect)
     assert not game.exam_hud_rect.colliderect(game.inventory.rect)
