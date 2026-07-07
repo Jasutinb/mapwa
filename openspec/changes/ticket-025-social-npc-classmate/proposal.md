@@ -7,30 +7,30 @@ Add a classmate NPC who introduces the Social skill through a simple school inte
 ## Notion Ticket
 
 - Ticket: [Ticket 025 - Add Social NPC: Classmate](https://app.notion.com/p/36ec34b0c9018138bc5bf6b2f99b256a)
-- Status at planning time: Not started
+- Status at planning time: In progress
+- Type: Feature
+- Epic: NPCs & Social
 - Priority: P1
-- Dependencies: Ticket 005 and Ticket 008 are Done in Notion.
+- Dependencies:
+- Ticket 005
+- Ticket 008
 
 ## Acceptance Criteria
 
 - [ ] A classmate NPC appears in an existing school area without blocking core paths, doors, class markers, assignment markers, exam markers, or study/practice stations.
 - [ ] The classmate uses the existing NPC visual style, starting from the player/Mom-style sprite references with classmate-specific personalization.
 - [ ] Interacting with the classmate introduces the Social skill through clear dialogue.
-- [ ] The first classmate interaction grants one-time Social XP.
+- [ ] The first classmate interaction grants one-time Social XP when the skill system supports it.
 - [ ] Repeated classmate interactions show repeat dialogue and do not grant Social XP again.
 - [ ] PC `E` interaction and mobile action button interaction both trigger the same classmate behavior.
 - [ ] Existing Mom, guard, attendant, food vendor, bus, study, class attendance, assignment, exam, sleep, inventory, map transition, and quest behavior remains unchanged.
 - [ ] Focused tests cover classmate placement, PC interaction, mobile interaction parity, one-time Social XP, repeat dialogue, and pathing/non-blocking behavior.
+- [ ] PC controls and mobile controls have parity when player-facing input changes.
 - [ ] `uv run ruff check .` passes.
 - [ ] `uv run pytest -n auto` passes.
 - [ ] PR includes manual and command verification steps.
 - [ ] Post-merge main CI/CD is green.
 - [ ] Notion ticket is updated.
-
-## Dependencies
-
-- Ticket 005
-- Ticket 008
 
 ## Proposed Implementation
 
@@ -43,7 +43,11 @@ Add a classmate NPC who introduces the Social skill through a simple school inte
 - Place the classmate in the School room near open floor, away from doors and existing markers.
 - Add the classmate to the existing `E` interaction chain and rely on the existing mobile action-to-`E` mapping for mobile parity.
 - Draw a proximity hint when near the classmate.
-- Use the existing `assets/images/player.png` or Mom/player base asset pattern for visual consistency unless a dedicated classmate sprite is added in scope.
+- Use the existing player/Mom sprite style with classmate-specific personalization.
+
+## Approval Status
+
+Approved by the user on July 7, 2026. Implementation is scoped to the Social NPC classmate behavior described above.
 
 ## Non-Goals
 

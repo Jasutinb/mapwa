@@ -138,15 +138,10 @@ def test_mobile_action_completes_assignment(game):
     assert game.get_skill_xp(SKILL_ACADEMICS) == ASSIGNMENT_REWARD_XP
 
 
-def test_assignment_hud_does_not_overlap_existing_ui(game):
+def test_assignment_hud_is_not_persistent_in_default_view(game):
     game.draw()
 
-    assert game.assignment_hud_rect.width > 0
-    assert not game.assignment_hud_rect.colliderect(game.schedule_hud_rect)
-    assert not game.assignment_hud_rect.colliderect(game.energy_hud_rect)
-    assert not game.assignment_hud_rect.colliderect(game.stress_hud_rect)
-    assert not game.assignment_hud_rect.colliderect(game.inventory.rect)
-    assert not game.assignment_hud_rect.colliderect(game.mobile_controls.rects["action"])
+    assert game.assignment_hud_rect.size == (0, 0)
 
 
 def test_library_study_station_still_studies(game):

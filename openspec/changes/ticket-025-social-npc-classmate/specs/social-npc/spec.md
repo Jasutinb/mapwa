@@ -1,10 +1,38 @@
-# Social NPC Spec
+# Social NPC Classmate Spec
 
-## Requirements
+## ADDED Requirements
 
-### Requirement: Social Skill Introduction
+### Requirement: Classmate NPC
 
-The system MUST introduce a Social skill through a classmate NPC interaction.
+The game MUST add an interactable classmate NPC that matches the existing character style and can be found in an appropriate school area.
+
+#### Scenario: Classmate appears in school
+
+- GIVEN the player enters the relevant school area
+- WHEN sprites are created for the room
+- THEN exactly one classmate NPC is present in the visible sprite set and classmate sprite group
+
+#### Scenario: Classmate does not block core interactions
+
+- GIVEN the School room is built
+- WHEN the classmate position is inspected
+- THEN the classmate does not overlap doors, the school desk, the class marker, the exam marker, or clear transition paths
+
+#### Scenario: Classmate interaction
+
+- GIVEN the player is near the classmate
+- WHEN the player presses the PC interaction key
+- THEN classmate dialogue starts through the existing dialogue system
+
+#### Scenario: Mobile parity
+
+- GIVEN the player is near the classmate on mobile
+- WHEN the player presses the mobile action button
+- THEN the same classmate dialogue starts
+
+### Requirement: Social Introduction
+
+The classmate interaction MUST introduce the Social skill or social progression hook without depending on unfinished future quests.
 
 #### Scenario: First classmate conversation grants Social XP
 
@@ -20,38 +48,6 @@ The system MUST introduce a Social skill through a classmate NPC interaction.
 - WHEN the player interacts with the classmate again
 - THEN repeat dialogue is shown
 - AND Social XP does not increase
-
-### Requirement: Classmate NPC Placement
-
-The system MUST place a classmate NPC in an existing school area without blocking required movement or interactions.
-
-#### Scenario: Classmate appears in school
-
-- GIVEN the School room is built
-- WHEN sprites are inspected
-- THEN exactly one classmate NPC is present in the visible sprite set and classmate sprite group
-
-#### Scenario: Classmate does not block core school interactions
-
-- GIVEN the School room is built
-- WHEN the classmate position is inspected
-- THEN the classmate does not overlap doors, the school desk, the class marker, the exam marker, or clear transition paths
-
-### Requirement: PC and Mobile Interaction Parity
-
-The system MUST expose the classmate interaction through both PC and mobile action paths.
-
-#### Scenario: PC interaction talks to classmate
-
-- GIVEN the player is near the classmate NPC
-- WHEN the player presses `E`
-- THEN the classmate interaction runs
-
-#### Scenario: Mobile action talks to classmate
-
-- GIVEN the player is near the classmate NPC
-- WHEN the player taps the mobile action button
-- THEN the same classmate interaction runs
 
 ### Requirement: Existing Interactions Remain Stable
 
@@ -71,6 +67,7 @@ The system MUST preserve existing player-facing interactions after adding the cl
 
 ## Notes
 
+- Source: https://app.notion.com/p/36ec34b0c9018138bc5bf6b2f99b256a
+- Dependencies: Ticket 005, Ticket 008
 - This first version introduces the Social skill but does not add a broader social progression system.
-- The classmate should use existing NPC art conventions and avoid unrelated placeholder styling.
 - No new controls are expected; mobile parity should come through the existing action button mapping.

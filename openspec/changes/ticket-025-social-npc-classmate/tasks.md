@@ -1,8 +1,8 @@
 # Tasks
 
 - [x] Fetch and summarize the Notion ticket.
-- [x] Confirm Ticket 025 is the next chronological not-started ticket after Ticket 024.
-- [x] Create OpenSpec proposal, tasks, and gameplay spec.
+- [x] Create or update this OpenSpec change folder.
+- [x] Run `openspec validate --changes --strict --no-interactive`.
 - [x] Confirm the implementation plan with the user.
 - [x] Create a dedicated branch/worktree.
 - [x] Implement only the approved ticket scope.
@@ -15,8 +15,8 @@
 - [x] Run focused tests.
 - [x] Run `uv run ruff check .`.
 - [x] Run `uv run pytest -n auto`.
-- [x] Stage only ticket files.
-- [x] Commit and push the ticket branch.
+- [ ] Stage only ticket files.
+- [ ] Commit and push the ticket branch.
 - [ ] Create one GitHub PR.
 - [ ] Add a PR verification comment with manual and command checks.
 - [ ] Wait for PR CI/CD to pass.
