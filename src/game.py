@@ -161,6 +161,8 @@ class Game:
         self.assignment_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.exam_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.grade_hud_rect = pygame.Rect(0, 0, 0, 0)
+        self.money_hud_rect = pygame.Rect(0, 0, 0, 0)
+        self.objective_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.energy_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.stress_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.mobile_controls = MobileControls((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -343,6 +345,12 @@ class Game:
 
     def get_grade_summary(self):
         return f"Grade Standing: {self.grade_standing}/{MAX_GRADE_STANDING}"
+
+    def get_current_objective_summary(self):
+        objective = self.quest_manager.current_objective
+        if objective:
+            return f"Objective: {objective}"
+        return "Objective: Explore campus"
 
     def get_exam_marker_near_player(self):
         return next(
@@ -1441,6 +1449,31 @@ class Game:
         self.player.mobile_direction = self.mobile_controls.direction
         self.state_machine.update()
 
+    def fit_hud_text(self, text, max_width):
+        if self.font.render(text, True, "white").get_width() <= max_width:
+            return text
+
+        suffix = "..."
+        available = max(0, max_width - self.font.render(suffix, True, "white").get_width())
+        trimmed = text
+        while trimmed and self.font.render(trimmed, True, "white").get_width() > available:
+            trimmed = trimmed[:-1]
+        return f"{trimmed.rstrip()}{suffix}" if trimmed else suffix
+
+    def draw_text_hud_panel(self, text, text_rect):
+        panel_rect = text_rect.inflate(20, 10)
+        pygame.draw.rect(self.screen, (30, 30, 30), panel_rect, border_radius=5)
+        pygame.draw.rect(self.screen, (200, 200, 200), panel_rect, 1, border_radius=5)
+        text_surf = self.font.render(text, True, "white")
+        self.screen.blit(text_surf, text_rect)
+        return panel_rect
+
+    def clear_planner_owned_hud_rects(self):
+        self.schedule_hud_rect = pygame.Rect(0, 0, 0, 0)
+        self.assignment_hud_rect = pygame.Rect(0, 0, 0, 0)
+        self.exam_hud_rect = pygame.Rect(0, 0, 0, 0)
+        self.grade_hud_rect = pygame.Rect(0, 0, 0, 0)
+
     def check_transitions(self):
         hits = pygame.sprite.spritecollide(self.player, self.door_sprites, False)
         for door in hits:
@@ -1454,6 +1487,30 @@ class Game:
         
         self.state_machine.draw(self.screen)
 
+        self.clear_planner_owned_hud_rects()
+
+        # Draw energy and stress as always-visible urgent state.
+        energy_text = f"Energy: {self.energy}/{MAX_ENERGY}"
+        energy_surf = self.font.render(energy_text, True, 'white')
+        energy_rect = energy_surf.get_rect(topright=(SCREEN_WIDTH - 25, 20))
+        self.energy_hud_rect = self.draw_text_hud_panel(energy_text, energy_rect)
+
+        stress_text = f"Stress: {self.stress}/{MAX_STRESS}"
+        stress_surf = self.font.render(stress_text, True, 'white')
+        stress_rect = stress_surf.get_rect(topright=(SCREEN_WIDTH - 25, self.energy_hud_rect.bottom + 10))
+        self.stress_hud_rect = self.draw_text_hud_panel(stress_text, stress_rect)
+
+        # Draw current objective without keeping schedule/assignment/exam/grade
+        # details pinned to the play view.
+        objective_max_width = max(160, self.energy_hud_rect.left - 40)
+        objective_text = self.fit_hud_text(
+            self.get_current_objective_summary(),
+            objective_max_width,
+        )
+        objective_surf = self.font.render(objective_text, True, "white")
+        objective_rect = objective_surf.get_rect(topleft=(25, 20))
+        self.objective_hud_rect = self.draw_text_hud_panel(objective_text, objective_rect)
+
         # Draw money counter
         money_text = str(self.money)
         money_surf = self.font.render(money_text, True, 'white')
@@ -1464,114 +1521,12 @@ class Game:
         
         # Draw a small background for money for better visibility
         bg_rect = pygame.Rect(15, SCREEN_HEIGHT - 45, money_surf.get_width() + 55, 30)
+        self.money_hud_rect = bg_rect
         pygame.draw.rect(self.screen, (30, 30, 30), bg_rect, border_radius=5)
         pygame.draw.rect(self.screen, (200, 200, 200), bg_rect, 1, border_radius=5)
         
         self.screen.blit(self.money_icon, icon_rect)
         self.screen.blit(money_surf, money_rect)
-
-        # Draw XP counter
-        xp_text = f"XP: {self.experience}"
-        xp_surf = self.font.render(xp_text, True, 'white')
-        xp_rect = xp_surf.get_rect(bottomleft=(bg_rect.right + 10, SCREEN_HEIGHT - 20))
-        
-        xp_bg_rect = xp_rect.inflate(20, 10)
-        pygame.draw.rect(self.screen, (30, 30, 30), xp_bg_rect, border_radius=5)
-        pygame.draw.rect(self.screen, (200, 200, 200), xp_bg_rect, 1, border_radius=5)
-        self.screen.blit(xp_surf, xp_rect)
-
-        # Draw energy counter away from bottom inventory and mobile controls
-        energy_text = f"Energy: {self.energy}/{MAX_ENERGY}"
-        energy_surf = self.font.render(energy_text, True, 'white')
-        energy_rect = energy_surf.get_rect(topright=(SCREEN_WIDTH - 25, 20))
-        self.energy_hud_rect = energy_rect.inflate(20, 10)
-        pygame.draw.rect(self.screen, (30, 30, 30), self.energy_hud_rect, border_radius=5)
-        pygame.draw.rect(self.screen, (200, 200, 200), self.energy_hud_rect, 1, border_radius=5)
-        self.screen.blit(energy_surf, energy_rect)
-
-        stress_text = f"Stress: {self.stress}/{MAX_STRESS}"
-        stress_surf = self.font.render(stress_text, True, 'white')
-        stress_rect = stress_surf.get_rect(topright=(SCREEN_WIDTH - 25, self.energy_hud_rect.bottom + 10))
-        self.stress_hud_rect = stress_rect.inflate(20, 10)
-        pygame.draw.rect(self.screen, (30, 30, 30), self.stress_hud_rect, border_radius=5)
-        pygame.draw.rect(self.screen, (200, 200, 200), self.stress_hud_rect, 1, border_radius=5)
-        self.screen.blit(stress_surf, stress_rect)
-
-        schedule_lines = self.get_schedule_hud_lines()
-        schedule_surfs = [self.font.render(line, True, 'white') for line in schedule_lines]
-        schedule_width = max(surf.get_width() for surf in schedule_surfs) + 20
-        schedule_height = self.font.get_linesize() * len(schedule_surfs) + 12
-        self.schedule_hud_rect = pygame.Rect(15, 20, schedule_width, schedule_height)
-        pygame.draw.rect(self.screen, (30, 30, 30), self.schedule_hud_rect, border_radius=5)
-        pygame.draw.rect(self.screen, (200, 200, 200), self.schedule_hud_rect, 1, border_radius=5)
-        for line_index, schedule_surf in enumerate(schedule_surfs):
-            self.screen.blit(
-                schedule_surf,
-                (
-                    self.schedule_hud_rect.x + 10,
-                    self.schedule_hud_rect.y + 6 + line_index * self.font.get_linesize(),
-                ),
-            )
-
-        assignment_line = self.get_assignment_summary()
-        assignment_surf = self.font.render(assignment_line, True, 'white')
-        assignment_width = min(
-            assignment_surf.get_width() + 20,
-            SCREEN_WIDTH - self.schedule_hud_rect.x * 2,
-        )
-        assignment_height = self.font.get_linesize() + 12
-        self.assignment_hud_rect = pygame.Rect(
-            15,
-            self.schedule_hud_rect.bottom + 8,
-            assignment_width,
-            assignment_height,
-        )
-        pygame.draw.rect(self.screen, (30, 30, 30), self.assignment_hud_rect, border_radius=5)
-        pygame.draw.rect(self.screen, (200, 200, 200), self.assignment_hud_rect, 1, border_radius=5)
-        self.screen.blit(
-            assignment_surf,
-            (self.assignment_hud_rect.x + 10, self.assignment_hud_rect.y + 6),
-        )
-
-        exam_line = self.get_exam_summary()
-        exam_surf = self.font.render(exam_line, True, 'white')
-        exam_width = min(
-            exam_surf.get_width() + 20,
-            SCREEN_WIDTH - self.schedule_hud_rect.x * 2,
-        )
-        exam_height = self.font.get_linesize() + 12
-        self.exam_hud_rect = pygame.Rect(
-            15,
-            self.assignment_hud_rect.bottom + 8,
-            exam_width,
-            exam_height,
-        )
-        pygame.draw.rect(self.screen, (30, 30, 30), self.exam_hud_rect, border_radius=5)
-        pygame.draw.rect(self.screen, (200, 200, 200), self.exam_hud_rect, 1, border_radius=5)
-        self.screen.blit(
-            exam_surf,
-            (self.exam_hud_rect.x + 10, self.exam_hud_rect.y + 6),
-        )
-
-        grade_line = self.get_grade_summary()
-        grade_surf = self.font.render(grade_line, True, 'white')
-        grade_width = min(
-            grade_surf.get_width() + 20,
-            SCREEN_WIDTH - self.schedule_hud_rect.x * 2,
-        )
-        grade_height = self.font.get_linesize() + 12
-        self.grade_hud_rect = pygame.Rect(
-            15,
-            self.exam_hud_rect.bottom + 8,
-            grade_width,
-            grade_height,
-        )
-        pygame.draw.rect(self.screen, (30, 30, 30), self.grade_hud_rect, border_radius=5)
-        pygame.draw.rect(self.screen, (200, 200, 200), self.grade_hud_rect, 1, border_radius=5)
-        self.screen.blit(
-            grade_surf,
-            (self.grade_hud_rect.x + 10, self.grade_hud_rect.y + 6),
-        )
 
         # Draw location name
         if self.location_display_timer > 0:

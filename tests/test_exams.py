@@ -184,14 +184,7 @@ def test_sleep_preserves_passed_exam_and_unlocks_next_exam(game):
     assert game.get_exam_summary() == "Exams: Day 6 Programming Practical"
 
 
-def test_exam_hud_does_not_overlap_existing_ui(game):
+def test_exam_hud_is_not_persistent_in_default_view(game):
     game.draw()
 
-    assert game.exam_hud_rect.width > 0
-    assert not game.exam_hud_rect.colliderect(game.schedule_hud_rect)
-    assert not game.exam_hud_rect.colliderect(game.assignment_hud_rect)
-    assert not game.exam_hud_rect.colliderect(game.grade_hud_rect)
-    assert not game.exam_hud_rect.colliderect(game.energy_hud_rect)
-    assert not game.exam_hud_rect.colliderect(game.stress_hud_rect)
-    assert not game.exam_hud_rect.colliderect(game.inventory.rect)
-    assert not game.exam_hud_rect.colliderect(game.mobile_controls.rects["action"])
+    assert game.exam_hud_rect.size == (0, 0)

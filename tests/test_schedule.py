@@ -93,11 +93,7 @@ def test_sleep_advances_schedule_day(game):
     assert game.get_schedule_summary().startswith("Tuesday: Next 08:00 Math")
 
 
-def test_schedule_hud_does_not_overlap_existing_ui(game):
+def test_schedule_hud_is_not_persistent_in_default_view(game):
     game.draw()
 
-    assert game.schedule_hud_rect.width > 0
-    assert not game.schedule_hud_rect.colliderect(game.energy_hud_rect)
-    assert not game.schedule_hud_rect.colliderect(game.stress_hud_rect)
-    assert not game.schedule_hud_rect.colliderect(game.inventory.rect)
-    assert not game.schedule_hud_rect.colliderect(game.mobile_controls.rects["action"])
+    assert game.schedule_hud_rect.size == (0, 0)
