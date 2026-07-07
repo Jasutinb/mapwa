@@ -44,11 +44,13 @@ SKILL_MATH = "math"
 SKILL_DISCIPLINE = "discipline"
 SKILL_PROGRAMMING = "programming"
 SKILL_ELECTRONICS = "electronics"
+SKILL_SOCIAL = "social"
 STUDY_XP = 10
 STUDY_DURATION_FRAMES = 60
 ADMIN_OFFICE_CHECK_IN_XP = 5
 PROGRAMMING_LAB_XP = 10
 ELECTRONICS_LAB_XP = 10
+CLASSMATE_SOCIAL_XP = 10
 LIBRARY_STUDY_XP = 10
 CLASS_ATTENDANCE_XP = 15
 ASSIGNMENT_REWARD_XP = 20
@@ -128,6 +130,18 @@ CAFETERIA_NOT_ENOUGH_MONEY_DIALOGUE = [
 
 CAFETERIA_FULL_ENERGY_DIALOGUE = [
     "You're already full of energy.",
+]
+
+CLASSMATE_HINT_TEXT = "Press E to talk"
+
+CLASSMATE_INTRO_DIALOGUE = [
+    "Hey, I'm Alex from your block. Want to compare notes after class?",
+    "Social skill unlocked! You gained {xp} social XP. Total: {total}.",
+]
+
+CLASSMATE_REPEAT_DIALOGUE = [
+    "Let's compare notes again after the next class.",
+    "Good luck with your requirements today.",
 ]
 
 INSUFFICIENT_ENERGY_DIALOGUE = [

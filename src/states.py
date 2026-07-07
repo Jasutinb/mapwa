@@ -2,6 +2,7 @@ import pygame
 from src.state import State
 from src.transport import BUS_TRANSPORT
 from src.config import (
+    CLASSMATE_HINT_TEXT,
     ROOM_INTRAMUROS,
     ROOM_ADMIN_OFFICE,
     ROOM_CAFETERIA,
@@ -45,6 +46,8 @@ class PlayState(State):
                     elif self.game.current_room == ROOM_SCHOOL_ENTRANCE and self.game.talk_to_guard():
                         pass
                     elif self.game.current_room == ROOM_ADMIN_OFFICE and self.game.talk_to_attendant():
+                        pass
+                    elif self.game.current_room == ROOM_SCHOOL and self.game.talk_to_classmate():
                         pass
                     elif self.game.current_room == ROOM_SCHOOL and hasattr(self.game, 'school_desk') and self.game.check_proximity(self.game.player, self.game.school_desk, 64):
                         self.game.study_at_school()
@@ -113,6 +116,13 @@ class PlayState(State):
             hint_surf = self.game.font.render("Press E to study", True, 'white')
             hint_rect = hint_surf.get_rect(center=(self.game.school_desk.rect.centerx, self.game.school_desk.rect.top - 20))
             screen.blit(hint_surf, hint_rect)
+
+        if self.game.current_room == ROOM_SCHOOL:
+            classmate = self.game.get_classmate_near_player()
+            if classmate:
+                hint_surf = self.game.font.render(CLASSMATE_HINT_TEXT, True, 'white')
+                hint_rect = hint_surf.get_rect(center=(classmate.rect.centerx, classmate.rect.top - 20))
+                screen.blit(hint_surf, hint_rect)
 
         if self.game.current_room == ROOM_PROGRAMMING_LAB and hasattr(self.game, 'programming_station') and self.game.check_proximity(self.game.player, self.game.programming_station, 64):
             hint_surf = self.game.font.render("Press E to practice programming", True, 'white')

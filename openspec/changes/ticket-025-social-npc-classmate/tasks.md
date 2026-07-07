@@ -3,17 +3,22 @@
 - [x] Fetch and summarize the Notion ticket.
 - [x] Create or update this OpenSpec change folder.
 - [x] Run `openspec validate --changes --strict --no-interactive`.
-- [ ] Confirm the implementation plan with the user.
-- [ ] Create a dedicated branch/worktree.
-- [ ] Implement only the approved ticket scope.
-- [ ] Add or update focused tests.
-- [ ] Run focused tests.
-- [ ] Run `uv run ruff check .`.
-- [ ] Run `uv run pytest -n auto`.
-- [ ] Stage only ticket files.
-- [ ] Commit and push the ticket branch.
-- [ ] Create one GitHub PR.
-- [ ] Add a PR verification comment with manual and command checks.
+- [x] Confirm the implementation plan with the user.
+- [x] Create a dedicated branch/worktree.
+- [x] Implement only the approved ticket scope.
+- [x] Add Social skill constants, classmate dialogue, and one-time reward amount.
+- [x] Add classmate interaction state to `GameState`.
+- [x] Add classmate NPC creation, sprite group cleanup, proximity lookup, interaction handling, and hint drawing.
+- [x] Wire classmate interaction into the existing keyboard `E` and mobile action path.
+- [x] Preserve existing Mom, guard, attendant, vendor, bus, study, class, assignment, exam, sleep, inventory, quest, and map transition behavior.
+- [x] Add focused tests for placement, PC interaction, mobile parity, one-time Social XP, repeat dialogue, and pathing/non-blocking behavior.
+- [x] Run focused tests.
+- [x] Run `uv run ruff check .`.
+- [x] Run `uv run pytest -n auto`.
+- [x] Stage only ticket files.
+- [x] Commit and push the ticket branch.
+- [x] Create one GitHub PR.
+- [x] Add a PR verification comment with manual and command checks.
 - [ ] Wait for PR CI/CD to pass.
 - [ ] Merge the PR.
 - [ ] Confirm post-merge main CI/CD is green.
