@@ -39,11 +39,16 @@ from src.quest_definitions import (
     HELLO_WORLD_ENTER_LAB,
     HELLO_WORLD_PRACTICE_PROGRAMMING,
     HELLO_WORLD_QUEST_ID,
+    LOST_CALCULATOR_PICK_UP,
+    LOST_CALCULATOR_QUEST_ID,
+    LOST_CALCULATOR_RETURN,
+    LOST_CALCULATOR_REWARD_XP,
     FIRST_DAY_QUEST_ID,
     is_first_day_bus_destination,
     is_first_day_item,
+    is_lost_calculator_item,
 )
-from src.quests import QuestReward
+from src.quests import QUEST_ACTIVE, QUEST_DONE, QUEST_NOT_STARTED, QuestReward
 from src.schedule import classes_for_day, schedule_summary_for_day, weekday_for_day
 from src.transport import TRANSPORT_BUS, get_transport_mode
 from src.config import (
@@ -83,6 +88,11 @@ from src.config import (
     ITEM_ID,
     INSUFFICIENT_ENERGY_DIALOGUE,
     LIBRARY_STUDY_ENERGY_COST,
+    LOST_CALCULATOR_DONE_DIALOGUE,
+    LOST_CALCULATOR_ITEM_ID,
+    LOST_CALCULATOR_RETURN_DIALOGUE,
+    LOST_CALCULATOR_SEARCH_DIALOGUE,
+    LOST_CALCULATOR_START_DIALOGUE,
     LOW_ENERGY_STRESS_DIALOGUE,
     LOW_ENERGY_STRESS_INCREASE,
     MAX_ENERGY,
@@ -712,19 +722,45 @@ class Game:
         if classmate is None:
             return False
 
-        if self.state.has_talked_to_classmate:
-            classmate.dialogue = list(CLASSMATE_REPEAT_DIALOGUE)
+        if not self.state.has_talked_to_classmate:
+            self.state.has_talked_to_classmate = True
+            skill_xp = self.grant_skill_xp(SKILL_SOCIAL, CLASSMATE_SOCIAL_XP)
+            classmate.dialogue = [
+                line.format(xp=CLASSMATE_SOCIAL_XP, total=skill_xp)
+                for line in CLASSMATE_INTRO_DIALOGUE
+            ]
             self.show_dialogue(classmate.interact())
             return True
 
-        self.state.has_talked_to_classmate = True
-        skill_xp = self.grant_skill_xp(SKILL_SOCIAL, CLASSMATE_SOCIAL_XP)
-        classmate.dialogue = [
-            line.format(xp=CLASSMATE_SOCIAL_XP, total=skill_xp)
-            for line in CLASSMATE_INTRO_DIALOGUE
-        ]
+        classmate.dialogue = self.get_classmate_follow_up_dialogue()
         self.show_dialogue(classmate.interact())
         return True
+
+    def get_classmate_follow_up_dialogue(self):
+        quest = self.get_lost_calculator_quest()
+        if quest.status == QUEST_NOT_STARTED:
+            self.start_quest(LOST_CALCULATOR_QUEST_ID)
+            return list(LOST_CALCULATOR_START_DIALOGUE)
+        if quest.status == QUEST_DONE:
+            return list(LOST_CALCULATOR_DONE_DIALOGUE)
+
+        objective = quest.current_objective
+        if objective and objective.objective_id == LOST_CALCULATOR_RETURN:
+            if self.has_inventory_item(LOST_CALCULATOR_ITEM_ID):
+                self.remove_inventory_item(LOST_CALCULATOR_ITEM_ID)
+                self.advance_lost_calculator_objective(LOST_CALCULATOR_RETURN)
+                total = self.get_skill_xp(SKILL_SOCIAL)
+                return [
+                    LOST_CALCULATOR_RETURN_DIALOGUE.format(
+                        xp=LOST_CALCULATOR_REWARD_XP,
+                        total=total,
+                    )
+                ]
+            return ["Let me know if you find my calculator."]
+
+        if quest.status == QUEST_ACTIVE:
+            return list(LOST_CALCULATOR_SEARCH_DIALOGUE)
+        return list(CLASSMATE_REPEAT_DIALOGUE)
 
     def get_admin_attendant_dialogue(self):
         if not self.has_inventory_item(ITEM_ID):
@@ -902,6 +938,23 @@ class Game:
     def advance_hello_world_objective(self, objective_id):
         return self.advance_quest_objective(HELLO_WORLD_QUEST_ID, objective_id)
 
+    def get_lost_calculator_quest(self):
+        return self.quest_manager.get_quest(LOST_CALCULATOR_QUEST_ID)
+
+    def advance_lost_calculator_objective(self, objective_id):
+        return self.advance_quest_objective(LOST_CALCULATOR_QUEST_ID, objective_id)
+
+    def should_spawn_lost_calculator(self):
+        quest = self.get_lost_calculator_quest()
+        objective = quest.current_objective
+        return (
+            quest.status == QUEST_ACTIVE
+            and objective is not None
+            and objective.objective_id == LOST_CALCULATOR_PICK_UP
+            and LOST_CALCULATOR_ITEM_ID not in self.state.picked_item_ids
+            and not self.has_inventory_item(LOST_CALCULATOR_ITEM_ID)
+        )
+
     def apply_quest_reward(self, reward):
         if reward is None:
             return
@@ -925,6 +978,8 @@ class Game:
         self.state.mark_item_picked(item.item_id)
         if is_first_day_item(item.item_id):
             self.advance_first_day_objective(FIRST_DAY_PICK_UP_ID)
+        if is_lost_calculator_item(item.item_id):
+            self.advance_lost_calculator_objective(LOST_CALCULATOR_PICK_UP)
         item.kill()
         self.show_dialogue([f"You picked up a {item.name}!"])
         return True
@@ -1410,6 +1465,13 @@ class Game:
         self.library_discipline_station = Decoration((592, 220), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')
         self.library_class_marker = ClassMarker((SCREEN_WIDTH // 2 - 16, 360), [self.visible_sprites, self.class_marker_sprites])
         self.assignment_marker = AssignmentMarker((96, 360), [self.visible_sprites, self.assignment_marker_sprites])
+        if self.should_spawn_lost_calculator():
+            Item(
+                (704, 360),
+                [self.visible_sprites, self.item_sprites],
+                "Calculator",
+                item_id=LOST_CALCULATOR_ITEM_ID,
+            )
 
         for shelf_x in (128, 256, 480, 640):
             Decoration((shelf_x, 96), [self.visible_sprites, self.obstacle_sprites], 'assets/images/table.png')

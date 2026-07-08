@@ -9,8 +9,8 @@ import pytest
 
 from src.config import (
     CLASSMATE_INTRO_DIALOGUE,
-    CLASSMATE_REPEAT_DIALOGUE,
     CLASSMATE_SOCIAL_XP,
+    LOST_CALCULATOR_START_DIALOGUE,
     ROOM_SCHOOL,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
@@ -123,7 +123,7 @@ def test_pc_interaction_with_classmate_unlocks_social_skill_once(game):
     assert game.current_dialogue == classmate_intro_dialogue()
 
 
-def test_repeat_classmate_interaction_does_not_grant_extra_social_xp(game):
+def test_follow_up_classmate_interaction_does_not_grant_extra_social_xp(game):
     classmate = next(iter(game.classmate_sprites))
     game.player.rect.center = classmate.rect.center
 
@@ -132,7 +132,7 @@ def test_repeat_classmate_interaction_does_not_grant_extra_social_xp(game):
     assert game.talk_to_classmate() is True
 
     assert game.get_skill_xp(SKILL_SOCIAL) == CLASSMATE_SOCIAL_XP
-    assert game.current_dialogue == list(CLASSMATE_REPEAT_DIALOGUE)
+    assert game.current_dialogue == list(LOST_CALCULATOR_START_DIALOGUE)
 
 
 def test_mobile_action_button_talks_to_classmate(game):
