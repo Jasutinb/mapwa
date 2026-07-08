@@ -40,7 +40,7 @@ Create a small side quest about helping a classmate find a lost calculator.
 
 ## Approval Status
 
-This OpenSpec proposal captures the current ticket plan before coding. Confirm the implementation plan with the user before creating the ticket branch and changing game code.
+Approved by the user on July 8, 2026. Implementation is scoped to the Lost Calculator quest behavior described above.
 
 ## Non-Goals
 

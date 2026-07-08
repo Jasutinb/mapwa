@@ -1,4 +1,11 @@
-from src.config import ITEM_ID, ROOM_INTRAMUROS, SKILL_ACADEMICS, SKILL_PROGRAMMING
+from src.config import (
+    ITEM_ID,
+    LOST_CALCULATOR_ITEM_ID,
+    ROOM_INTRAMUROS,
+    SKILL_ACADEMICS,
+    SKILL_PROGRAMMING,
+    SKILL_SOCIAL,
+)
 from src.quests import Quest, QuestManager, QuestObjective, QuestReward
 
 
@@ -12,6 +19,10 @@ HELLO_WORLD_QUEST_ID = "hello_world"
 HELLO_WORLD_ENTER_LAB = "enter_programming_lab"
 HELLO_WORLD_PRACTICE_PROGRAMMING = "practice_programming"
 HELLO_WORLD_REWARD_XP = 5
+LOST_CALCULATOR_QUEST_ID = "lost_calculator"
+LOST_CALCULATOR_PICK_UP = "pick_up_calculator"
+LOST_CALCULATOR_RETURN = "return_calculator"
+LOST_CALCULATOR_REWARD_XP = 5
 
 
 def create_first_day_quest():
@@ -41,10 +52,29 @@ def create_hello_world_quest():
     )
 
 
+def create_lost_calculator_quest():
+    return Quest(
+        LOST_CALCULATOR_QUEST_ID,
+        "Lost Calculator",
+        [
+            QuestObjective(
+                "Find Alex's calculator in the Library.",
+                LOST_CALCULATOR_PICK_UP,
+            ),
+            QuestObjective(
+                "Return the calculator to Alex.",
+                LOST_CALCULATOR_RETURN,
+            ),
+        ],
+        QuestReward(skill_xp={SKILL_SOCIAL: LOST_CALCULATOR_REWARD_XP}),
+    )
+
+
 def create_initial_quest_manager():
     manager = QuestManager()
     manager.add_quest(create_first_day_quest())
     manager.add_quest(create_hello_world_quest())
+    manager.add_quest(create_lost_calculator_quest())
     manager.start_quest(FIRST_DAY_QUEST_ID)
     manager.start_quest(HELLO_WORLD_QUEST_ID)
     return manager
@@ -56,3 +86,7 @@ def is_first_day_bus_destination(destination):
 
 def is_first_day_item(item_id):
     return item_id == ITEM_ID
+
+
+def is_lost_calculator_item(item_id):
+    return item_id == LOST_CALCULATOR_ITEM_ID

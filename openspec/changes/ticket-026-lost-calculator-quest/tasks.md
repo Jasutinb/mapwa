@@ -3,13 +3,18 @@
 - [x] Fetch and summarize the Notion ticket.
 - [x] Create or update this OpenSpec change folder.
 - [x] Run `openspec validate --changes --strict --no-interactive`.
-- [ ] Confirm the implementation plan with the user.
-- [ ] Create a dedicated branch/worktree.
-- [ ] Implement only the approved ticket scope.
-- [ ] Add or update focused tests.
-- [ ] Run focused tests.
-- [ ] Run `uv run ruff check .`.
-- [ ] Run `uv run pytest -n auto`.
+- [x] Confirm the implementation plan with the user.
+- [x] Create a dedicated branch/worktree.
+- [x] Implement only the approved ticket scope.
+- [x] Add Lost Calculator quest definition, objectives, reward, and item predicate.
+- [x] Start the quest from the classmate follow-up interaction.
+- [x] Spawn the calculator in the Library only while the pickup objective is active.
+- [x] Advance the quest on pickup, complete it on classmate return, remove the calculator, and prevent duplicate rewards.
+- [x] Preserve the first classmate Social intro behavior and existing PC/mobile action path.
+- [x] Add or update focused tests.
+- [x] Run focused tests.
+- [x] Run `uv run ruff check .`.
+- [x] Run `uv run pytest -n auto`.
 - [ ] Stage only ticket files.
 - [ ] Commit and push the ticket branch.
 - [ ] Create one GitHub PR.

@@ -144,6 +144,23 @@ CLASSMATE_REPEAT_DIALOGUE = [
     "Good luck with your requirements today.",
 ]
 
+LOST_CALCULATOR_START_DIALOGUE = [
+    "Actually, can you help me? I lost my calculator before Math.",
+    "I think I left it in the Library. Could you bring it back?",
+]
+
+LOST_CALCULATOR_SEARCH_DIALOGUE = [
+    "I still can't find my calculator. I last had it in the Library.",
+]
+
+LOST_CALCULATOR_RETURN_DIALOGUE = (
+    "You returned Alex's calculator and gained {xp} social XP! Total: {total}."
+)
+
+LOST_CALCULATOR_DONE_DIALOGUE = [
+    "Thanks again for finding my calculator. I owe you one.",
+]
+
 INSUFFICIENT_ENERGY_DIALOGUE = [
     "You're too tired for that. Eat something or sleep first.",
 ]
@@ -177,3 +194,4 @@ EXAM_FAILED_DIALOGUE = (
 )
 
 ITEM_ID = "student_id"
+LOST_CALCULATOR_ITEM_ID = "calculator"
