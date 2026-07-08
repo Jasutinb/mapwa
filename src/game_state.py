@@ -2,10 +2,20 @@ from dataclasses import dataclass, field
 
 from src.assignments import Assignment, create_initial_assignments
 from src.exams import Exam, create_initial_exams
-from src.config import MAX_ENERGY, ROOM_MAIN, STARTING_GRADE_STANDING, STARTING_STRESS
+from src.config import (
+    MAX_ENERGY,
+    ROOM_MAIN,
+    STARTING_GRADE_STANDING,
+    STARTING_STRESS,
+    TRACKED_SKILLS,
+)
 from src.quest_definitions import create_initial_quest_manager
 from src.quests import QuestManager
 from src.skill_xp import SkillXPManager
+
+
+def create_initial_skill_xp_manager() -> SkillXPManager:
+    return SkillXPManager({skill: 0 for skill in TRACKED_SKILLS})
 
 
 @dataclass
@@ -16,7 +26,9 @@ class GameState:
     energy: int = MAX_ENERGY
     stress: int = STARTING_STRESS
     grade_standing: int = STARTING_GRADE_STANDING
-    skill_xp_manager: SkillXPManager = field(default_factory=SkillXPManager)
+    skill_xp_manager: SkillXPManager = field(
+        default_factory=create_initial_skill_xp_manager
+    )
     quest_manager: QuestManager = field(default_factory=create_initial_quest_manager)
     has_talked_to_mom: bool = False
     has_talked_to_classmate: bool = False

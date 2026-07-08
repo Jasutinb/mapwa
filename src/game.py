@@ -63,6 +63,7 @@ from src.config import (
     ASSIGNMENT_NONE_AVAILABLE_DIALOGUE,
     ALLOWANCE_AMOUNT,
     CAFETERIA_FULL_ENERGY_DIALOGUE,
+    CAFETERIA_FINANCE_XP,
     CAFETERIA_NOT_ENOUGH_MONEY_DIALOGUE,
     CAFETERIA_VENDOR_DIALOGUE,
     CLASS_ALREADY_ATTENDED_DIALOGUE,
@@ -125,6 +126,7 @@ from src.config import (
     SLEEP_STRESS_RECOVERY,
     SKILL_ACADEMICS,
     SKILL_ELECTRONICS,
+    SKILL_FINANCE,
     SKILL_PROGRAMMING,
     SKILL_SOCIAL,
     STATE_DIALOGUE,
@@ -902,10 +904,13 @@ class Game:
 
         self.money -= MEAL_PRICE
         restored = self.restore_energy(MEAL_ENERGY)
+        finance_xp = self.grant_skill_xp(SKILL_FINANCE, CAFETERIA_FINANCE_XP)
         self.show_dialogue(
             [
                 f"You bought a meal for {MEAL_PRICE} and restored {restored} energy. "
-                f"Energy: {self.energy}/{MAX_ENERGY}."
+                f"Energy: {self.energy}/{MAX_ENERGY}. "
+                f"Budgeting practice: +{CAFETERIA_FINANCE_XP} finance XP. "
+                f"Total: {finance_xp}."
             ]
         )
         return True
