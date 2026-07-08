@@ -8,6 +8,7 @@ os.environ["SDL_AUDIODRIVER"] = "dummy"
 
 from src.config import (
     CAFETERIA_FULL_ENERGY_DIALOGUE,
+    CAFETERIA_FINANCE_XP,
     CAFETERIA_NOT_ENOUGH_MONEY_DIALOGUE,
     MAX_ENERGY,
     MEAL_ENERGY,
@@ -87,7 +88,9 @@ def test_cafeteria_purchase_restores_energy_and_charges_money(game):
     assert game.energy == MAX_ENERGY
     assert game.current_dialogue == [
         f"You bought a meal for {MEAL_PRICE} and restored {MEAL_ENERGY} energy. "
-        f"Energy: {MAX_ENERGY}/{MAX_ENERGY}."
+        f"Energy: {MAX_ENERGY}/{MAX_ENERGY}. "
+        f"Budgeting practice: +{CAFETERIA_FINANCE_XP} finance XP. "
+        f"Total: {CAFETERIA_FINANCE_XP}."
     ]
 
 

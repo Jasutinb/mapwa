@@ -18,14 +18,15 @@ At least one money-management activity MUST grant Finance XP only after a succes
 
 #### Scenario: Successful activity grants XP
 
-- GIVEN the player completes the chosen Finance activity
-- WHEN rewards are applied
+- GIVEN the player has enough money and missing energy
+- WHEN the player successfully buys a cafeteria meal
 - THEN Finance XP increases by the configured amount
+- AND the success dialogue includes the Finance XP gain and total
 
 #### Scenario: Failed activity grants no XP
 
-- GIVEN the Finance activity cannot complete because requirements are not met
-- WHEN the player attempts it
+- GIVEN a cafeteria purchase cannot complete because requirements are not met
+- WHEN the player attempts the purchase
 - THEN Finance XP does not change
 
 ## Notes

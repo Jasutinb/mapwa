@@ -38,7 +38,7 @@ Add Finance as a later-game skill focused on budgeting and money management.
 
 ## Approval Status
 
-This OpenSpec proposal captures the current ticket plan before coding. Confirm the implementation plan with the user before creating the ticket branch and changing game code.
+Approved by the user on July 8, 2026. Implementation is scoped to adding Finance as a tracked skill and one low-risk Finance XP source without changing existing money behavior.
 
 ## Non-Goals
 
