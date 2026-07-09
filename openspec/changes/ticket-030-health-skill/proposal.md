@@ -39,7 +39,7 @@ Add Health as a skill connected to eating, sleeping, resting, and stress managem
 
 ## Approval Status
 
-This OpenSpec proposal captures the current ticket plan before coding. Confirm the implementation plan with the user before creating the ticket branch and changing game code.
+Approved by the user on July 9, 2026. Implementation is scoped to adding Health as a tracked skill and awarding deterministic Health XP on successful existing wellness actions, starting with eating and sleeping, while preserving current Energy and Stress behavior.
 
 ## Non-Goals
 
