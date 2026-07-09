@@ -33,6 +33,7 @@ class GameState:
     has_talked_to_mom: bool = False
     has_talked_to_classmate: bool = False
     last_allowance_day: int = 0
+    last_debug_code_side_hustle_day: int = 0
     admin_office_checked_in: bool = False
     temporary_campus_pass_day: int | None = None
     attended_class_day: int = 1

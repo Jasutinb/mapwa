@@ -7,7 +7,10 @@ import pygame
 import pytest
 
 from src.config import (
-    LOST_CALCULATOR_DONE_DIALOGUE,
+    DEBUG_CODE_SIDE_HUSTLE_DIALOGUE,
+    DEBUG_CODE_SIDE_HUSTLE_FINANCE_XP,
+    DEBUG_CODE_SIDE_HUSTLE_MONEY,
+    DEBUG_CODE_SIDE_HUSTLE_PROGRAMMING_XP,
     LOST_CALCULATOR_ITEM_ID,
     LOST_CALCULATOR_RETURN_DIALOGUE,
     LOST_CALCULATOR_SEARCH_DIALOGUE,
@@ -16,6 +19,8 @@ from src.config import (
     ROOM_SCHOOL,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
+    SKILL_FINANCE,
+    SKILL_PROGRAMMING,
     SKILL_SOCIAL,
 )
 from src.game import Game
@@ -151,7 +156,19 @@ def test_lost_calculator_reward_only_applies_once(game):
 
     assert quest.status == QUEST_DONE
     assert game.get_skill_xp(SKILL_SOCIAL) == LOST_CALCULATOR_REWARD_XP
-    assert game.current_dialogue == list(LOST_CALCULATOR_DONE_DIALOGUE)
+    assert game.money == DEBUG_CODE_SIDE_HUSTLE_MONEY
+    assert game.get_skill_xp(SKILL_PROGRAMMING) == DEBUG_CODE_SIDE_HUSTLE_PROGRAMMING_XP
+    assert game.get_skill_xp(SKILL_FINANCE) == DEBUG_CODE_SIDE_HUSTLE_FINANCE_XP
+    assert game.current_dialogue == [
+        line.format(
+            money=DEBUG_CODE_SIDE_HUSTLE_MONEY,
+            programming_xp=DEBUG_CODE_SIDE_HUSTLE_PROGRAMMING_XP,
+            programming_total=DEBUG_CODE_SIDE_HUSTLE_PROGRAMMING_XP,
+            finance_xp=DEBUG_CODE_SIDE_HUSTLE_FINANCE_XP,
+            finance_total=DEBUG_CODE_SIDE_HUSTLE_FINANCE_XP,
+        )
+        for line in DEBUG_CODE_SIDE_HUSTLE_DIALOGUE
+    ]
 
 
 def test_classmate_reminds_player_to_search_before_calculator_is_found(game):

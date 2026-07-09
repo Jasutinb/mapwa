@@ -8,9 +8,9 @@ The game MUST allow the classmate to offer a debug-code side hustle when prerequ
 
 #### Scenario: Offer appears
 
-- GIVEN the classmate exists and side hustle prerequisites are satisfied
+- GIVEN the classmate exists and the classmate relationship thread is established
 - WHEN the player talks to the classmate
-- THEN the player can accept or complete the debug-code activity
+- THEN the player can complete the debug-code activity through classmate dialogue
 
 ### Requirement: Rewards and Limits
 
@@ -20,13 +20,19 @@ The side hustle MUST grant intended rewards exactly once per allowed completion 
 
 - GIVEN the player completes the debug-code activity
 - WHEN rewards are applied
-- THEN money and appropriate skill XP increase with clear feedback
+- THEN money, Programming XP, and Finance XP increase with clear feedback
 
 #### Scenario: Repeat guard
 
-- GIVEN the player has already completed the activity for the current allowed window
+- GIVEN the player has already completed the activity for the current day
 - WHEN the player tries again
 - THEN duplicate rewards are not granted
+
+#### Scenario: Next day reset
+
+- GIVEN the player completed the activity yesterday
+- WHEN the player tries again on a later day
+- THEN the activity can reward the player again
 
 #### Scenario: Mobile parity
 
