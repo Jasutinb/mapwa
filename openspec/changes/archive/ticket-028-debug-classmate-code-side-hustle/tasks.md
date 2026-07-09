@@ -10,12 +10,12 @@
 - [x] Run focused tests.
 - [x] Run `uv run ruff check .`.
 - [x] Run `uv run pytest -n auto`.
-- [ ] Stage only ticket files.
-- [ ] Commit and push the ticket branch.
-- [ ] Create one GitHub PR.
-- [ ] Add a PR verification comment with manual and command checks.
-- [ ] Wait for PR CI/CD to pass.
-- [ ] Merge the PR.
-- [ ] Confirm post-merge main CI/CD is green.
-- [ ] Update the Notion ticket status and implementation notes.
-- [ ] Archive this OpenSpec change folder.
+- [x] Stage only ticket files.
+- [x] Commit and push the ticket branch.
+- [x] Create one GitHub PR.
+- [x] Add a PR verification comment with manual and command checks.
+- [x] Wait for PR CI/CD to pass.
+- [x] Merge the PR.
+- [x] Confirm post-merge main CI/CD is green.
+- [x] Update the Notion ticket status and implementation notes.
+- [x] Archive this OpenSpec change folder.
