@@ -62,6 +62,7 @@ from src.config import (
     ASSIGNMENT_MISSED_STRESS,
     ASSIGNMENT_NONE_AVAILABLE_DIALOGUE,
     ALLOWANCE_AMOUNT,
+    BUS_COMMUTING_XP,
     CAFETERIA_FULL_ENERGY_DIALOGUE,
     CAFETERIA_FINANCE_XP,
     CAFETERIA_NOT_ENOUGH_MONEY_DIALOGUE,
@@ -129,6 +130,7 @@ from src.config import (
     SCHOOL_STUDY_ENERGY_COST,
     SLEEP_STRESS_RECOVERY,
     SKILL_ACADEMICS,
+    SKILL_COMMUTING,
     SKILL_ELECTRONICS,
     SKILL_FINANCE,
     SKILL_PROGRAMMING,
@@ -860,6 +862,7 @@ class Game:
             destination = current_node.left.name if current_node and current_node.left else ROOM_INTRAMUROS
 
         self.travel_to_room(destination)
+        self.grant_skill_xp(SKILL_COMMUTING, BUS_COMMUTING_XP)
         if is_first_day_bus_destination(destination):
             self.advance_first_day_objective(FIRST_DAY_RIDE_BUS)
         return True
