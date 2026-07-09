@@ -75,6 +75,11 @@ from src.config import (
     CLASS_NO_CLASS_HERE_DIALOGUE,
     CLASS_NO_CLASSES_TODAY_DIALOGUE,
     DAILY_ALLOWANCE_MOM_DIALOGUE,
+    DEBUG_CODE_SIDE_HUSTLE_DIALOGUE,
+    DEBUG_CODE_SIDE_HUSTLE_FINANCE_XP,
+    DEBUG_CODE_SIDE_HUSTLE_MONEY,
+    DEBUG_CODE_SIDE_HUSTLE_PROGRAMMING_XP,
+    DEBUG_CODE_SIDE_HUSTLE_REPEAT_DIALOGUE,
     ELECTRONICS_LAB_XP,
     EXAM_COMPLETED_DIALOGUE,
     EXAM_FAILED_DIALOGUE,
@@ -89,7 +94,6 @@ from src.config import (
     ITEM_ID,
     INSUFFICIENT_ENERGY_DIALOGUE,
     LIBRARY_STUDY_ENERGY_COST,
-    LOST_CALCULATOR_DONE_DIALOGUE,
     LOST_CALCULATOR_ITEM_ID,
     LOST_CALCULATOR_RETURN_DIALOGUE,
     LOST_CALCULATOR_SEARCH_DIALOGUE,
@@ -744,7 +748,7 @@ class Game:
             self.start_quest(LOST_CALCULATOR_QUEST_ID)
             return list(LOST_CALCULATOR_START_DIALOGUE)
         if quest.status == QUEST_DONE:
-            return list(LOST_CALCULATOR_DONE_DIALOGUE)
+            return self.get_debug_code_side_hustle_dialogue()
 
         objective = quest.current_objective
         if objective and objective.objective_id == LOST_CALCULATOR_RETURN:
@@ -763,6 +767,34 @@ class Game:
         if quest.status == QUEST_ACTIVE:
             return list(LOST_CALCULATOR_SEARCH_DIALOGUE)
         return list(CLASSMATE_REPEAT_DIALOGUE)
+
+    def can_complete_debug_code_side_hustle(self):
+        return self.state.last_debug_code_side_hustle_day < self.current_day
+
+    def get_debug_code_side_hustle_dialogue(self):
+        if not self.can_complete_debug_code_side_hustle():
+            return list(DEBUG_CODE_SIDE_HUSTLE_REPEAT_DIALOGUE)
+
+        self.state.last_debug_code_side_hustle_day = self.current_day
+        self.money += DEBUG_CODE_SIDE_HUSTLE_MONEY
+        programming_total = self.grant_skill_xp(
+            SKILL_PROGRAMMING,
+            DEBUG_CODE_SIDE_HUSTLE_PROGRAMMING_XP,
+        )
+        finance_total = self.grant_skill_xp(
+            SKILL_FINANCE,
+            DEBUG_CODE_SIDE_HUSTLE_FINANCE_XP,
+        )
+        return [
+            line.format(
+                money=DEBUG_CODE_SIDE_HUSTLE_MONEY,
+                programming_xp=DEBUG_CODE_SIDE_HUSTLE_PROGRAMMING_XP,
+                programming_total=programming_total,
+                finance_xp=DEBUG_CODE_SIDE_HUSTLE_FINANCE_XP,
+                finance_total=finance_total,
+            )
+            for line in DEBUG_CODE_SIDE_HUSTLE_DIALOGUE
+        ]
 
     def get_admin_attendant_dialogue(self):
         if not self.has_inventory_item(ITEM_ID):

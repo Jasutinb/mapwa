@@ -39,7 +39,7 @@ Add a money-making side activity where the player helps debug a classmate's code
 
 ## Approval Status
 
-This OpenSpec proposal captures the current ticket plan before coding. Confirm the implementation plan with the user before creating the ticket branch and changing game code.
+Approved by the user on July 9, 2026. Implementation is scoped to a deterministic classmate debug-code side hustle with once-per-day rewards, no energy/stress/time cost, and existing PC/mobile interaction parity.
 
 ## Non-Goals
 

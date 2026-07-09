@@ -172,6 +172,23 @@ LOST_CALCULATOR_DONE_DIALOGUE = [
     "Thanks again for finding my calculator. I owe you one.",
 ]
 
+DEBUG_CODE_SIDE_HUSTLE_MONEY = 80
+DEBUG_CODE_SIDE_HUSTLE_PROGRAMMING_XP = 10
+DEBUG_CODE_SIDE_HUSTLE_FINANCE_XP = 5
+
+DEBUG_CODE_SIDE_HUSTLE_DIALOGUE = [
+    "Thanks again for finding my calculator. Can you debug my class project?",
+    (
+        "You fixed Alex's code and earned {money}. "
+        "+{programming_xp} programming XP (Total: {programming_total}). "
+        "+{finance_xp} finance XP (Total: {finance_total})."
+    ),
+]
+
+DEBUG_CODE_SIDE_HUSTLE_REPEAT_DIALOGUE = [
+    "That code is running clean now. Let's find another bug tomorrow.",
+]
+
 INSUFFICIENT_ENERGY_DIALOGUE = [
     "You're too tired for that. Eat something or sleep first.",
 ]
