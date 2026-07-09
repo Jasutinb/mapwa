@@ -105,6 +105,7 @@ from src.config import (
     MAX_GRADE_STANDING,
     MAX_STRESS,
     MEAL_ENERGY,
+    MEAL_HEALTH_XP,
     MEAL_PRICE,
     MIN_GRADE_STANDING,
     MIN_STRESS,
@@ -129,10 +130,12 @@ from src.config import (
     SCHOOL_GUARD_TEMP_PASS_DIALOGUE,
     SCHOOL_STUDY_ENERGY_COST,
     SLEEP_STRESS_RECOVERY,
+    SLEEP_HEALTH_XP,
     SKILL_ACADEMICS,
     SKILL_COMMUTING,
     SKILL_ELECTRONICS,
     SKILL_FINANCE,
+    SKILL_HEALTH,
     SKILL_PROGRAMMING,
     SKILL_SOCIAL,
     STATE_DIALOGUE,
@@ -618,6 +621,7 @@ class Game:
         self.current_day += 1
         self.energy = MAX_ENERGY
         self.reduce_stress(SLEEP_STRESS_RECOVERY)
+        self.grant_skill_xp(SKILL_HEALTH, SLEEP_HEALTH_XP)
         self.state.attended_class_day = self.current_day
         self.state.attended_class_ids.clear()
         self.state.temporary_campus_pass_day = None
@@ -940,6 +944,7 @@ class Game:
         self.money -= MEAL_PRICE
         restored = self.restore_energy(MEAL_ENERGY)
         finance_xp = self.grant_skill_xp(SKILL_FINANCE, CAFETERIA_FINANCE_XP)
+        self.grant_skill_xp(SKILL_HEALTH, MEAL_HEALTH_XP)
         self.show_dialogue(
             [
                 f"You bought a meal for {MEAL_PRICE} and restored {restored} energy. "
