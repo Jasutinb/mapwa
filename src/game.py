@@ -95,6 +95,9 @@ from src.config import (
     EXAM_NONE_AVAILABLE_DIALOGUE,
     EXAM_PASSED_DIALOGUE,
     FIRST_MOM_DIALOGUE,
+    FIRST_DAY_ENERGY_STRESS_TUTORIAL_DIALOGUE,
+    FIRST_DAY_GRADE_STANDING_TUTORIAL_DIALOGUE,
+    FIRST_DAY_PLANNER_TUTORIAL_DIALOGUE,
     FPS,
     ELECTRONICS_PRACTICE_ENERGY_COST,
     GRADE_STANDING_ASSIGNMENT_MISSED_DECREASE,
@@ -991,18 +994,28 @@ class Game:
         else:
             destination = current_node.left.name if current_node and current_node.left else ROOM_INTRAMUROS
 
+        show_planner_tutorial = self.is_current_first_day_objective(
+            FIRST_DAY_RIDE_BUS
+        )
         self.travel_to_room(destination)
         self.grant_skill_xp(SKILL_COMMUTING, BUS_COMMUTING_XP)
         if is_first_day_bus_destination(destination):
             self.advance_first_day_objective(FIRST_DAY_RIDE_BUS)
+            if show_planner_tutorial:
+                self.show_dialogue(list(FIRST_DAY_PLANNER_TUTORIAL_DIALOGUE))
         return True
 
     def study_at_school(self):
+        show_energy_stress_tutorial = self.is_current_first_day_objective(
+            FIRST_DAY_STUDY
+        )
         if not self.spend_energy(SCHOOL_STUDY_ENERGY_COST):
             return False
         self.grant_skill_xp(SKILL_ACADEMICS, STUDY_XP)
         self.player.start_study(STUDY_DURATION_FRAMES)
         self.advance_first_day_objective(FIRST_DAY_STUDY)
+        if show_energy_stress_tutorial:
+            self.show_dialogue(list(FIRST_DAY_ENERGY_STRESS_TUTORIAL_DIALOGUE))
         return True
 
     def practice_programming(self):
@@ -1106,6 +1119,11 @@ class Game:
     def advance_first_day_objective(self, objective_id):
         return self.advance_quest_objective(FIRST_DAY_QUEST_ID, objective_id)
 
+    def is_current_first_day_objective(self, objective_id):
+        quest = self.quest_manager.get_quest(FIRST_DAY_QUEST_ID)
+        objective = quest.current_objective
+        return objective is not None and objective.objective_id == objective_id
+
     def advance_hello_world_objective(self, objective_id):
         return self.advance_quest_objective(HELLO_WORLD_QUEST_ID, objective_id)
 
@@ -1193,12 +1211,17 @@ class Game:
             self.show_dialogue(list(SCHOOL_GATE_NO_ID_DIALOGUE))
             return True
 
+        show_grade_tutorial = self.is_current_first_day_objective(
+            FIRST_DAY_ENTER_CAMPUS
+        )
         if gate.target_room == self.current_room:
             spawn_pos = gate.right_spawn_pos if self.player.rect.centerx < gate.rect.centerx else gate.left_spawn_pos
             self.travel_to_room(gate.target_room, spawn_pos, use_topleft=True)
         else:
             self.travel_to_room(gate.target_room, gate.spawn_pos, use_topleft=True)
         self.advance_first_day_objective(FIRST_DAY_ENTER_CAMPUS)
+        if show_grade_tutorial:
+            self.show_dialogue(list(FIRST_DAY_GRADE_STANDING_TUTORIAL_DIALOGUE))
         return True
 
     def create_guard_npc(self, pos, dialogue):

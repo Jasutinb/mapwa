@@ -22,9 +22,11 @@ Teach Energy, Stress, Grade Standing, assignments, exams, and deadlines through 
 
 ## Acceptance Criteria
 
-- [ ] New players encounter brief explanations for Energy, Stress, Grade Standing, assignments, exams, and deadlines during the first-day flow.
-- [ ] Tutorial beats are contextual and do not block normal play longer than necessary.
-- [ ] The player is directed to the Student Planner when schedule or deadline information matters.
+- [ ] First bus arrival introduces the Student Planner and states that it tracks schedules, assignments, exams, and deadlines.
+- [ ] First campus entry explains that Grade Standing changes with class, assignment, and exam outcomes.
+- [ ] First school study explains Energy usage/recovery and Stress causes/recovery.
+- [ ] Each beat is at most two short dialogue lines and appears only when its matching first-day objective advances.
+- [ ] Planner guidance names both desktop `P` and the mobile Planner button.
 - [ ] Existing first-day quest flow still works.
 - [ ] Tests cover any new quest flags or state transitions.
 - [ ] Focused tests cover the ticket behavior where applicable.
@@ -37,14 +39,16 @@ Teach Energy, Stress, Grade Standing, assignments, exams, and deadlines through 
 
 ## Proposed Implementation
 
-- Add short tutorial beats to the existing first-day quest/state flow rather than building a separate tutorial mode.
-- Introduce Energy, Stress, Grade Standing, assignments, exams, and deadlines at the moment each concept first matters.
-- Reference the Student Planner once it exists so schedule/deadline guidance has a home.
-- Track tutorial flags or quest state carefully to avoid repeating beats unnecessarily.
+- Add three dialogue constants for Planner/deadlines, Grade Standing, and Energy/Stress.
+- Before advancing the bus, campus-entry, or study objective, determine whether it is the current first-day objective.
+- Show the matching tutorial only after that objective successfully advances: Planner on first bus arrival, Grade Standing on first campus entry, and Energy/Stress after the first school study begins.
+- Use existing quest objective progress as the one-time guard, avoiding new tutorial flags or save-schema changes.
+- Preserve existing objective order, rewards, action methods, and keyboard/mobile controls.
+- Add tests for exact contextual copy, one-time behavior, quest completion, planner directions, and save/load preservation through existing quest progress.
 
 ## Approval Status
 
-This OpenSpec proposal captures the current ticket plan before coding. Confirm the implementation plan with the user before creating the ticket branch and changing game code.
+Approved by the user through the instruction to proceed on 2026-07-13 after the ticket plan was reconciled with Notion and the existing first-day quest flow.
 
 ## Non-Goals
 
