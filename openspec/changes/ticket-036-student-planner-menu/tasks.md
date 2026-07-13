@@ -3,13 +3,18 @@
 - [x] Fetch and summarize the Notion ticket.
 - [x] Create or update this OpenSpec change folder.
 - [x] Run `openspec validate --changes --strict --no-interactive`.
-- [ ] Confirm the implementation plan with the user.
-- [ ] Create a dedicated branch/worktree.
-- [ ] Implement only the approved ticket scope.
-- [ ] Add or update focused tests.
-- [ ] Run focused tests.
-- [ ] Run `uv run ruff check .`.
-- [ ] Run `uv run pytest -n auto`.
+- [x] Confirm the implementation plan with the user.
+- [x] Create a dedicated branch/worktree.
+- [x] Add `STATE_PLANNER`, planner state registration, and desktop toggle routing.
+- [x] Add the mobile Planner button and matching event routing.
+- [x] Render live planner sections with clean empty states.
+- [x] Suppress play HUD/inventory while the planner is open.
+- [x] Update README controls.
+- [x] Add focused desktop, mobile, content, empty-state, and layout tests.
+- [x] Run focused tests (29 passed).
+- [x] Run headless render smoke and pygbag archive build.
+- [x] Run `uv run ruff check .`.
+- [x] Run `uv run pytest -n auto` (287 passed).
 - [ ] Stage only ticket files.
 - [ ] Commit and push the ticket branch.
 - [ ] Create one GitHub PR.

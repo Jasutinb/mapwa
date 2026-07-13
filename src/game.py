@@ -28,7 +28,7 @@ from src.level import (
 )
 from src.mobile_controls import MobileControls
 from src.state import StateMachine
-from src.states import PlayState, DialogueState, MenuState, SleepConfirmState
+from src.states import DialogueState, MenuState, PlannerState, PlayState, SleepConfirmState
 from src.game_state import GameState
 from src.save_system import SaveError, SaveNotFoundError, SaveSystem
 from src.quest_definitions import (
@@ -141,6 +141,7 @@ from src.config import (
     SKILL_SOCIAL,
     STATE_DIALOGUE,
     STATE_MENU,
+    STATE_PLANNER,
     STATE_PLAY,
     STATE_SLEEP_CONFIRM,
     LIBRARY_STUDY_XP,
@@ -227,6 +228,7 @@ class Game:
         self.state_machine.add_state(STATE_PLAY, PlayState(self))
         self.state_machine.add_state(STATE_DIALOGUE, DialogueState(self))
         self.state_machine.add_state(STATE_MENU, MenuState(self))
+        self.state_machine.add_state(STATE_PLANNER, PlannerState(self))
         self.state_machine.add_state(STATE_SLEEP_CONFIRM, SleepConfirmState(self))
         self.state_machine.change_state(STATE_PLAY)
 
@@ -612,6 +614,23 @@ class Game:
     def close_menu(self):
         target_state = self.previous_state_before_menu or STATE_PLAY
         self.state_machine.change_state(target_state)
+
+    def open_planner(self):
+        if self.state_machine.current_state_name != STATE_PLAY:
+            return False
+        self.state_machine.change_state(STATE_PLANNER)
+        return True
+
+    def close_planner(self):
+        if self.state_machine.current_state_name != STATE_PLANNER:
+            return False
+        self.state_machine.change_state(STATE_PLAY)
+        return True
+
+    def toggle_planner(self):
+        if self.state_machine.current_state_name == STATE_PLANNER:
+            return self.close_planner()
+        return self.open_planner()
 
     def save_game(self):
         try:
@@ -1618,6 +1637,9 @@ class Game:
         if self.mobile_controls.consume_menu_press():
             events = list(events)
             events.append(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE))
+        if self.mobile_controls.consume_planner_press():
+            events = list(events)
+            events.append(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_p))
         if self.mobile_controls.consume_action_press():
             events = list(events)
             events.append(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e))
@@ -1626,8 +1648,15 @@ class Game:
             events = list(events)
             events.append(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_1 + inventory_slot_index))
         for event in events:
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                if self.state_machine.current_state_name == STATE_MENU:
+            if event.type != pygame.KEYDOWN:
+                continue
+            if event.key == pygame.K_p:
+                self.toggle_planner()
+                break
+            if event.key == pygame.K_ESCAPE:
+                if self.state_machine.current_state_name == STATE_PLANNER:
+                    self.close_planner()
+                elif self.state_machine.current_state_name == STATE_MENU:
                     self.close_menu()
                 else:
                     self.open_menu()
@@ -1671,6 +1700,12 @@ class Game:
         self.exam_hud_rect = pygame.Rect(0, 0, 0, 0)
         self.grade_hud_rect = pygame.Rect(0, 0, 0, 0)
 
+    def clear_urgent_hud_rects(self):
+        self.money_hud_rect = pygame.Rect(0, 0, 0, 0)
+        self.objective_hud_rect = pygame.Rect(0, 0, 0, 0)
+        self.energy_hud_rect = pygame.Rect(0, 0, 0, 0)
+        self.stress_hud_rect = pygame.Rect(0, 0, 0, 0)
+
     def check_transitions(self):
         hits = pygame.sprite.spritecollide(self.player, self.door_sprites, False)
         for door in hits:
@@ -1685,6 +1720,12 @@ class Game:
         self.state_machine.draw(self.screen)
 
         self.clear_planner_owned_hud_rects()
+
+        if self.state_machine.current_state_name == STATE_PLANNER:
+            self.clear_urgent_hud_rects()
+            self.mobile_controls.draw(self.screen, planner_only=True)
+            pygame.display.flip()
+            return
 
         # Draw energy and stress as always-visible urgent state.
         energy_text = f"Energy: {self.energy}/{MAX_ENERGY}"

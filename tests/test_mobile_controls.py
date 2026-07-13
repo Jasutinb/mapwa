@@ -76,6 +76,21 @@ def test_mobile_menu_button_does_not_cover_dialogue_or_action():
     assert not controls.rects["menu"].colliderect(controls.rects["action"])
 
 
+def test_mobile_planner_button_avoids_other_controls_and_hud():
+    controls = MobileControls()
+    dialogue_box = pygame.Rect(50, SCREEN_HEIGHT - 150, SCREEN_WIDTH - 100, 130)
+    inventory_bar = pygame.Rect(225, SCREEN_HEIGHT - 104, 350, 84)
+    energy_hud = pygame.Rect(SCREEN_WIDTH - 220, 15, 205, 40)
+    stress_hud = pygame.Rect(SCREEN_WIDTH - 220, 65, 205, 40)
+
+    assert not controls.rects["planner"].colliderect(controls.rects["menu"])
+    assert not controls.rects["planner"].colliderect(controls.rects["action"])
+    assert not controls.rects["planner"].colliderect(dialogue_box)
+    assert not controls.rects["planner"].colliderect(inventory_bar)
+    assert not controls.rects["planner"].colliderect(energy_hud)
+    assert not controls.rects["planner"].colliderect(stress_hud)
+
+
 def test_mobile_joystick_drag_clamps_direction():
     controls = MobileControls()
     start_pos = controls.joystick_center
@@ -164,6 +179,18 @@ def test_mobile_menu_press_is_consumed_once():
 
     assert controls.consume_menu_press() is True
     assert controls.consume_menu_press() is False
+
+
+def test_mobile_planner_press_is_consumed_once():
+    controls = MobileControls()
+    planner_pos = controls.rects["planner"].center
+
+    controls.handle_events(
+        [pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"button": 1, "pos": planner_pos})]
+    )
+
+    assert controls.consume_planner_press() is True
+    assert controls.consume_planner_press() is False
 
 
 def test_mobile_inventory_slot_press_is_consumed_once():
