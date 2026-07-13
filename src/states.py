@@ -386,6 +386,136 @@ class SleepConfirmState(State):
             screen.blit(text_surf, text_rect)
 
 
+class ExamConfirmState(State):
+    def __init__(self, game):
+        super().__init__(game)
+        self.options = ["Take Exam", "Cancel"]
+        self.selected_index = 0
+        self.joystick_latched = False
+
+    def enter(self):
+        self.selected_index = 0
+        self.joystick_latched = False
+
+    def handle_events(self, events):
+        for event in events:
+            if event.type != pygame.KEYDOWN:
+                continue
+
+            if event.key in (pygame.K_LEFT, pygame.K_a, pygame.K_UP, pygame.K_w):
+                self.selected_index = 0
+            elif event.key in (
+                pygame.K_RIGHT,
+                pygame.K_d,
+                pygame.K_DOWN,
+                pygame.K_s,
+            ):
+                self.selected_index = 1
+            elif event.key in (pygame.K_e, pygame.K_RETURN, pygame.K_SPACE):
+                self.select_current_option()
+
+    def update(self):
+        direction = self.game.mobile_controls.direction
+        if direction.length_squared() < 0.16:
+            self.joystick_latched = False
+            return
+
+        if self.joystick_latched:
+            return
+
+        if abs(direction.x) >= abs(direction.y):
+            self.selected_index = 0 if direction.x < 0 else 1
+        else:
+            self.selected_index = 0 if direction.y < 0 else 1
+        self.joystick_latched = True
+
+    def select_current_option(self):
+        if self.options[self.selected_index] == "Take Exam":
+            self.game.confirm_exam_attempt()
+        else:
+            self.game.cancel_exam_confirmation()
+
+    def draw(self, screen):
+        play_state = self.game.state_machine.states.get(STATE_PLAY)
+        if play_state:
+            play_state.draw(screen)
+
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 150))
+        screen.blit(overlay, (0, 0))
+
+        prompt_rect = pygame.Rect(0, 0, 480, 270)
+        prompt_rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+        pygame.draw.rect(screen, (30, 30, 30), prompt_rect, border_radius=8)
+        pygame.draw.rect(screen, (220, 220, 220), prompt_rect, 2, border_radius=8)
+
+        exam = self.game.get_pending_exam()
+        if exam is None:
+            return
+        readiness = self.game.get_exam_readiness(exam)
+        title_surf = self.game.font.render(exam.title, True, "white")
+        title_rect = title_surf.get_rect(
+            center=(prompt_rect.centerx, prompt_rect.top + 42)
+        )
+        screen.blit(title_surf, title_rect)
+
+        recommended_surf = self.game.font.render(
+            f"Recommended: {readiness['recommended_xp']} {exam.skill} XP",
+            True,
+            (190, 210, 235),
+        )
+        recommended_rect = recommended_surf.get_rect(
+            center=(prompt_rect.centerx, prompt_rect.top + 78)
+        )
+        screen.blit(recommended_surf, recommended_rect)
+
+        current_surf = self.game.font.render(
+            f"Current: {readiness['current_xp']} {exam.skill} XP",
+            True,
+            (190, 210, 235),
+        )
+        current_rect = current_surf.get_rect(
+            center=(prompt_rect.centerx, prompt_rect.top + 108)
+        )
+        screen.blit(current_surf, current_rect)
+
+        status_text = (
+            "This attempt is risky."
+            if readiness["is_risky"]
+            else "You meet the recommendation."
+        )
+        status_color = (255, 184, 108) if readiness["is_risky"] else (142, 220, 150)
+        status_surf = self.game.font.render(status_text, True, status_color)
+        status_rect = status_surf.get_rect(
+            center=(prompt_rect.centerx, prompt_rect.top + 143)
+        )
+        screen.blit(status_surf, status_rect)
+
+        button_width = 150
+        button_height = 44
+        button_gap = 24
+        total_width = button_width * 2 + button_gap
+        start_x = prompt_rect.centerx - total_width // 2
+        y = prompt_rect.top + 185
+
+        for index, option in enumerate(self.options):
+            option_rect = pygame.Rect(
+                start_x + index * (button_width + button_gap),
+                y,
+                button_width,
+                button_height,
+            )
+            is_selected = index == self.selected_index
+            bg_color = (70, 120, 180) if is_selected else (45, 45, 45)
+            border_color = (240, 240, 240) if is_selected else (100, 100, 100)
+            pygame.draw.rect(screen, bg_color, option_rect, border_radius=6)
+            pygame.draw.rect(screen, border_color, option_rect, 2, border_radius=6)
+
+            text_surf = self.game.font.render(option, True, "white")
+            text_rect = text_surf.get_rect(center=option_rect.center)
+            screen.blit(text_surf, text_rect)
+
+
 class PlannerState(State):
     PANEL_RECT = pygame.Rect(32, 24, SCREEN_WIDTH - 64, SCREEN_HEIGHT - 48)
     SECTION_RECTS = {

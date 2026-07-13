@@ -3,14 +3,14 @@
 - [x] Fetch and summarize the Notion ticket.
 - [x] Create or update this OpenSpec change folder.
 - [x] Run `openspec validate --changes --strict --no-interactive`.
-- [ ] Confirm the implementation plan with the user.
-- [ ] Create a dedicated branch/worktree.
-- [ ] Implement only the approved ticket scope.
-- [ ] Add or update focused tests.
-- [ ] Run focused tests.
-- [ ] Run `uv run ruff check .`.
-- [ ] Run `uv run pytest -n auto`.
-- [ ] Stage only ticket files.
+- [x] Confirm the implementation plan with the user.
+- [x] Create a dedicated branch/worktree.
+- [x] Implement only the approved ticket scope.
+- [x] Add or update focused tests.
+- [x] Run focused tests (59 passed).
+- [x] Run `uv run ruff check .`.
+- [x] Run `uv run pytest -n auto` (293 passed).
+- [x] Stage only ticket files.
 - [ ] Commit and push the ticket branch.
 - [ ] Create one GitHub PR.
 - [ ] Add a PR verification comment with manual and command checks.

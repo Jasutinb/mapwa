@@ -82,6 +82,7 @@ def test_passing_exam_increases_grade_standing_once(game):
     game.grant_skill_xp(SKILL_ACADEMICS, 30)
 
     assert game.take_exam() is True
+    assert game.confirm_exam_attempt() is True
     assert game.grade_standing == (
         STARTING_GRADE_STANDING + GRADE_STANDING_EXAM_PASS_INCREASE
     )
@@ -96,7 +97,8 @@ def test_failing_exam_decreases_grade_standing(game):
     move_to_school_exam_marker(game, day=5)
     game.grant_skill_xp(SKILL_ACADEMICS, 10)
 
-    assert game.take_exam() is False
+    assert game.take_exam() is True
+    assert game.confirm_exam_attempt() is False
     assert game.grade_standing == (
         STARTING_GRADE_STANDING - GRADE_STANDING_EXAM_FAIL_DECREASE
     )

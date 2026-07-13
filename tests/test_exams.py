@@ -17,6 +17,8 @@ from src.config import (
     ROOM_SCHOOL,
     SKILL_ACADEMICS,
     SKILL_PROGRAMMING,
+    STATE_EXAM_CONFIRM,
+    STATE_PLAY,
 )
 from src.exams import EXAM_STATUS_PASSED
 from src.game import Game
@@ -98,6 +100,19 @@ def test_passing_exam_grants_reward_and_marks_passed(game):
 
     press_key(game, pygame.K_e)
 
+    readiness = game.get_exam_readiness(game.get_pending_exam())
+    assert game.state_machine.current_state_name == STATE_EXAM_CONFIRM
+    assert readiness == {
+        "current_xp": 30,
+        "recommended_xp": 30,
+        "is_risky": False,
+    }
+    assert game.state.exams[0].attempts == 0
+    assert game.energy == MAX_ENERGY
+    assert game.stress == 0
+
+    press_key(game, pygame.K_RETURN)
+
     exam = game.state.exams[0]
     assert exam.status == EXAM_STATUS_PASSED
     assert exam.attempts == 1
@@ -115,6 +130,19 @@ def test_passing_exam_grants_reward_and_marks_passed(game):
 def test_failing_exam_increases_stress_and_tracks_attempt(game):
     move_to_exam_marker(game, ROOM_SCHOOL, day=5)
     game.grant_skill_xp(SKILL_ACADEMICS, 10)
+
+    press_key(game, pygame.K_e)
+
+    readiness = game.get_exam_readiness(game.get_pending_exam())
+    assert game.state_machine.current_state_name == STATE_EXAM_CONFIRM
+    assert readiness == {
+        "current_xp": 10,
+        "recommended_xp": 30,
+        "is_risky": True,
+    }
+    assert game.state.exams[0].attempts == 0
+    assert game.energy == MAX_ENERGY
+    assert game.stress == 0
 
     press_key(game, pygame.K_e)
 
@@ -138,6 +166,11 @@ def test_low_energy_blocks_exam_without_attempt(game):
 
     press_key(game, pygame.K_e)
 
+    assert game.state_machine.current_state_name == STATE_EXAM_CONFIRM
+    assert game.state.exams[0].attempts == 0
+
+    press_key(game, pygame.K_e)
+
     assert game.state.exams[0].attempts == 0
     assert game.stress > 0
     assert game.current_dialogue[0] == "You're too tired for that. Eat something or sleep first."
@@ -148,6 +181,7 @@ def test_completed_exam_does_not_reward_twice(game):
     game.grant_skill_xp(SKILL_ACADEMICS, 30)
 
     assert game.take_exam() is True
+    assert game.confirm_exam_attempt() is True
     assert game.take_exam() is False
 
     assert game.state.exams[0].attempts == 1
@@ -164,8 +198,103 @@ def test_mobile_action_takes_exam(game):
         [pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"button": 1, "pos": action_pos})]
     )
 
+    assert game.state_machine.current_state_name == STATE_EXAM_CONFIRM
+    assert game.state.exams[1].attempts == 0
+
+    game.handle_events(
+        [pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"button": 1, "pos": action_pos})]
+    )
+
     assert game.state.exams[1].status == EXAM_STATUS_PASSED
     assert game.get_skill_xp(SKILL_PROGRAMMING) == 35 + EXAM_REWARD_XP
+
+
+def test_cancel_risky_exam_is_a_no_op(game):
+    move_to_exam_marker(game, ROOM_SCHOOL, day=5)
+    game.grant_skill_xp(SKILL_ACADEMICS, 10)
+    starting_grade = game.grade_standing
+
+    press_key(game, pygame.K_e)
+    press_key(game, pygame.K_RIGHT)
+    press_key(game, pygame.K_e)
+
+    exam = game.state.exams[0]
+    assert game.state_machine.current_state_name == STATE_PLAY
+    assert game.pending_exam_id is None
+    assert exam.is_pending
+    assert exam.attempts == 0
+    assert game.energy == MAX_ENERGY
+    assert game.stress == 0
+    assert game.grade_standing == starting_grade
+    assert game.current_dialogue is None
+
+
+def test_mobile_joystick_can_cancel_risky_exam(game):
+    move_to_exam_marker(game, ROOM_SCHOOL, day=5)
+    game.grant_skill_xp(SKILL_ACADEMICS, 10)
+    starting_grade = game.grade_standing
+    action_pos = game.mobile_controls.rects["action"].center
+    joystick_right = (
+        game.mobile_controls.joystick_center.x
+        + game.mobile_controls.joystick_radius,
+        game.mobile_controls.joystick_center.y,
+    )
+
+    game.handle_events(
+        [
+            pygame.event.Event(
+                pygame.FINGERDOWN,
+                {
+                    "finger_id": 1,
+                    "x": action_pos[0] / 800,
+                    "y": action_pos[1] / 600,
+                },
+            )
+        ]
+    )
+    game.handle_events(
+        [
+            pygame.event.Event(
+                pygame.FINGERDOWN,
+                {
+                    "finger_id": 2,
+                    "x": joystick_right[0] / 800,
+                    "y": joystick_right[1] / 600,
+                },
+            )
+        ]
+    )
+    game.update()
+    game.handle_events(
+        [
+            pygame.event.Event(
+                pygame.FINGERDOWN,
+                {
+                    "finger_id": 3,
+                    "x": action_pos[0] / 800,
+                    "y": action_pos[1] / 600,
+                },
+            )
+        ]
+    )
+
+    assert game.state_machine.current_state_name == STATE_PLAY
+    assert game.pending_exam_id is None
+    assert game.state.exams[0].attempts == 0
+    assert game.energy == MAX_ENERGY
+    assert game.stress == 0
+    assert game.grade_standing == starting_grade
+    assert game.current_dialogue is None
+
+
+def test_exam_readiness_prompt_draws(game):
+    move_to_exam_marker(game, ROOM_SCHOOL, day=5)
+    game.grant_skill_xp(SKILL_ACADEMICS, 10)
+
+    press_key(game, pygame.K_e)
+    game.draw()
+
+    assert game.state_machine.current_state_name == STATE_EXAM_CONFIRM
 
 
 def test_sleep_preserves_passed_exam_and_unlocks_next_exam(game):
@@ -176,6 +305,7 @@ def test_sleep_preserves_passed_exam_and_unlocks_next_exam(game):
     game.player.rect.center = game.school_exam_marker.rect.center
 
     assert game.take_exam() is True
+    assert game.confirm_exam_attempt() is True
 
     game.sleep_until_next_day()
 
