@@ -12,17 +12,41 @@ The codebase MUST reduce Game class responsibilities by extracting cohesive syst
 - WHEN AcademicSystem or equivalent boundaries are introduced
 - THEN those behaviors remain available through a focused API and existing gameplay still works
 
+#### Scenario: Existing Game academic API remains compatible
+
+- GIVEN states and tests call academic methods on Game
+- WHEN AcademicSystem is introduced
+- THEN Game delegates those calls without requiring player-facing behavior or caller changes
+
 #### Scenario: HUD rendering extracted
 
 - GIVEN HUD drawing currently lives in Game
 - WHEN HUDRenderer or equivalent boundaries are introduced
 - THEN HUD layout/rendering can be tested or reasoned about independently from the main loop
 
+#### Scenario: HUD layout observables remain compatible
+
+- GIVEN tests and controls inspect HUD rectangles on Game
+- WHEN HUDRenderer owns rendering
+- THEN the existing Game rectangle attributes continue to report the rendered layout
+
 #### Scenario: Interaction and room setup boundaries
 
 - GIVEN Game currently handles interactions and room creation
 - WHEN InteractionSystem and RoomFactory or data-driven room definitions are introduced
 - THEN existing room transitions, prompts, NPCs, and interactables keep working
+
+#### Scenario: Shared interaction resolution
+
+- GIVEN keyboard E and the mobile action button trigger player interactions
+- WHEN InteractionSystem is introduced
+- THEN both inputs use the same ordered interaction resolution path
+
+#### Scenario: Save boundary retained
+
+- GIVEN SaveSystem already serializes and restores GameState
+- WHEN Game responsibilities are split
+- THEN save/load remains behind SaveSystem without changing the persisted schema
 
 ### Requirement: Behavior Preservation
 
