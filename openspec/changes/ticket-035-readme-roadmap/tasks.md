@@ -3,17 +3,19 @@
 - [x] Fetch and summarize the Notion ticket.
 - [x] Create or update this OpenSpec change folder.
 - [x] Run `openspec validate --changes --strict --no-interactive`.
-- [ ] Confirm the implementation plan with the user.
-- [ ] Create a dedicated branch/worktree.
-- [ ] Implement only the approved ticket scope.
-- [ ] Add or update focused tests.
-- [ ] Run focused tests.
-- [ ] Run `uv run ruff check .`.
-- [ ] Run `uv run pytest -n auto`.
-- [ ] Stage only ticket files.
-- [ ] Commit and push the ticket branch.
-- [ ] Create one GitHub PR.
-- [ ] Add a PR verification comment with manual and command checks.
+- [x] Confirm the implementation plan with the user.
+- [x] Create a dedicated branch/worktree.
+- [x] Create `README.md` with the project overview and gameplay loop.
+- [x] Document controls and verified development/build commands.
+- [x] Distinguish implemented systems from Tickets 036–041 roadmap areas.
+- [x] Document project structure and link to authoritative `AGENTS.md` rules.
+- [x] Manually verify Markdown structure, links, and command references.
+- [x] Run `uv run ruff check .`.
+- [x] Run `uv run pytest -n auto` (279 passed).
+- [x] Stage only ticket files.
+- [x] Commit and push the ticket branch.
+- [x] Create one GitHub PR.
+- [x] Add a PR verification comment with manual and command checks.
 - [ ] Wait for PR CI/CD to pass.
 - [ ] Merge the PR.
 - [ ] Confirm post-merge main CI/CD is green.
