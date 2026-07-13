@@ -91,3 +91,39 @@ def test_game_applies_quest_rewards(game):
     assert reward is quest.reward
     assert game.money == 75
     assert game.get_skill_xp("academics") == 4
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"description": ""},
+        {"description": "Do it", "objective_id": " "},
+        {"description": "Do it", "target": 0},
+        {"description": "Do it", "progress": -1},
+    ],
+)
+def test_quest_objective_rejects_invalid_boundaries(kwargs):
+    with pytest.raises(ValueError):
+        QuestObjective(**kwargs)
+
+
+def test_quest_objective_progress_caps_at_target_and_rejects_invalid_advance():
+    objective = QuestObjective("Repeat", target=3)
+
+    assert objective.advance(10) == 3
+    assert objective.complete
+    with pytest.raises(ValueError):
+        objective.advance(0)
+
+
+@pytest.mark.parametrize(
+    "reward",
+    [
+        {"money": -1},
+        {"skill_xp": {"academics": 0}},
+        {"skill_xp": {"academics": -1}},
+    ],
+)
+def test_quest_reward_rejects_invalid_values(reward):
+    with pytest.raises(ValueError):
+        QuestReward(**reward)

@@ -20,9 +20,12 @@ def test_grants_xp_to_independent_skills():
     ("skill", "amount"),
     [
         ("", 10),
+        ("   ", 10),
+        (None, 10),
         ("academics", 0),
         ("academics", -1),
         ("academics", 1.5),
+        ("academics", True),
     ],
 )
 def test_rejects_invalid_grants(skill, amount):
@@ -30,3 +33,11 @@ def test_rejects_invalid_grants(skill, amount):
 
     with pytest.raises(ValueError):
         manager.grant_xp(skill, amount)
+
+
+@pytest.mark.parametrize("skill", ["", "   ", None])
+def test_rejects_invalid_skill_lookups(skill):
+    manager = SkillXPManager()
+
+    with pytest.raises(ValueError):
+        manager.get_xp(skill)
