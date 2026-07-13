@@ -388,7 +388,7 @@ class SleepConfirmState(State):
 class MenuState(State):
     def __init__(self, game):
         super().__init__(game)
-        self.options = ["Resume", "Quit Game"]
+        self.options = ["Resume", "Save Game", "Load Game", "Quit Game"]
         self.selected_index = 0
 
     def handle_events(self, events):
@@ -407,6 +407,10 @@ class MenuState(State):
         selected = self.options[self.selected_index]
         if selected == "Resume":
             self.game.close_menu()
+        elif selected == "Save Game":
+            self.game.save_game()
+        elif selected == "Load Game":
+            self.game.load_game()
         elif selected == "Quit Game":
             self.game.running = False
 
@@ -419,7 +423,7 @@ class MenuState(State):
         overlay.fill((0, 0, 0, 140))
         screen.blit(overlay, (0, 0))
 
-        menu_rect = pygame.Rect(0, 0, 320, 230)
+        menu_rect = pygame.Rect(0, 0, 320, 340)
         menu_rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
         pygame.draw.rect(screen, (30, 30, 30), menu_rect, border_radius=8)
         pygame.draw.rect(screen, (220, 220, 220), menu_rect, 2, border_radius=8)

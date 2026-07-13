@@ -24,6 +24,8 @@ class MobileControls:
         self.joystick_vector = pygame.math.Vector2()
         self.action_down = False
         self.action_pressed = False
+        self.menu_down = False
+        self.menu_pressed = False
         self.inventory_slot_pressed = None
         self.inventory_slot_rects = []
         self.font = None
@@ -36,6 +38,16 @@ class MobileControls:
                 self.screen_height - self.dialogue_clearance - self.action_size - self.margin,
                 self.action_size,
                 self.action_size,
+            ),
+            "menu": pygame.Rect(
+                self.screen_width - self.margin - 92,
+                self.screen_height
+                - self.dialogue_clearance
+                - self.action_size
+                - self.margin
+                - 60,
+                92,
+                44,
             ),
         }
 
@@ -76,6 +88,9 @@ class MobileControls:
         elif control == "action":
             self.action_down = True
             self.action_pressed = True
+        elif control == "menu":
+            self.menu_down = True
+            self.menu_pressed = True
         elif control.startswith("inventory_slot:"):
             self.inventory_slot_pressed = int(control.split(":", 1)[1])
 
@@ -85,6 +100,8 @@ class MobileControls:
             self.update_joystick(pos)
         elif control == "action":
             self.action_down = self.rects["action"].collidepoint(pos)
+        elif control == "menu":
+            self.menu_down = self.rects["menu"].collidepoint(pos)
 
     def release(self, pointer_id):
         control = self.pointer_controls.pop(pointer_id, None)
@@ -96,6 +113,8 @@ class MobileControls:
             self.joystick_vector.xy = (0, 0)
         elif control == "action":
             self.action_down = False
+        elif control == "menu":
+            self.menu_down = False
 
     def hit_test(self, pos):
         for index, rect in enumerate(self.inventory_slot_rects):
@@ -107,6 +126,8 @@ class MobileControls:
             return "joystick"
         if self.rects["action"].collidepoint(pos):
             return "action"
+        if self.rects["menu"].collidepoint(pos):
+            return "menu"
         return None
 
     def set_inventory_slot_rects(self, slot_rects):
@@ -132,6 +153,11 @@ class MobileControls:
         self.action_pressed = False
         return was_pressed
 
+    def consume_menu_press(self):
+        was_pressed = self.menu_pressed
+        self.menu_pressed = False
+        return was_pressed
+
     def consume_inventory_slot_press(self):
         slot_index = self.inventory_slot_pressed
         self.inventory_slot_pressed = None
@@ -146,6 +172,7 @@ class MobileControls:
 
         self.draw_joystick(screen)
         self.draw_action_button(screen)
+        self.draw_menu_button(screen)
 
     def draw_joystick(self, screen):
         base_surface = pygame.Surface(
@@ -181,4 +208,14 @@ class MobileControls:
         text_rect = text_surf.get_rect(center=surface.get_rect().center)
         surface.blit(text_surf, text_rect)
 
+        screen.blit(surface, rect)
+
+    def draw_menu_button(self, screen):
+        rect = self.rects["menu"]
+        fill = (44, 48, 56, 175) if not self.menu_down else (82, 112, 162, 215)
+        surface = pygame.Surface(rect.size, pygame.SRCALPHA)
+        pygame.draw.rect(surface, fill, surface.get_rect(), border_radius=8)
+        pygame.draw.rect(surface, (235, 235, 235, 210), surface.get_rect(), 2, border_radius=8)
+        text_surf = self.font.render("Menu", True, "white")
+        surface.blit(text_surf, text_surf.get_rect(center=surface.get_rect().center))
         screen.blit(surface, rect)

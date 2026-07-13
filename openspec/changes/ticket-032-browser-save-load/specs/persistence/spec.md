@@ -38,6 +38,22 @@ Loading MUST fail gracefully for missing, corrupt, or incompatible saves.
 - WHEN load is requested
 - THEN the game continues with a safe new or current state and provides clear feedback if needed
 
+### Requirement: Save and Load Controls
+
+The game MUST expose save and load actions through the pause menu, and mobile players MUST be able to reach the same menu and actions.
+
+#### Scenario: Desktop pause menu
+
+- GIVEN the player is using desktop controls
+- WHEN the player opens the pause menu
+- THEN Save Game and Load Game actions are available
+
+#### Scenario: Mobile pause menu
+
+- GIVEN the player is using mobile controls
+- WHEN the player taps the Menu control and navigates with the mobile controls
+- THEN the same Save Game and Load Game actions are available
+
 ## Notes
 
 - Source: https://app.notion.com/p/36ec34b0c901815799a3dc25fa008b52

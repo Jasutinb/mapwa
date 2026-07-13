@@ -42,12 +42,13 @@ Serialize and restore GameState so player progress survives browser refreshes an
 
 - Introduce a SaveSystem boundary that serializes GameState to a versioned dictionary or JSON payload.
 - Add desktop local-file persistence and browser-compatible persistence where pygbag storage APIs are available.
+- Add Save Game and Load Game to the pause menu, with keyboard and mobile Menu access to the same actions.
 - Restore the same room and important player state, including money, Energy, Stress, Grade Standing, quests, assignments, exams, and inventory.
 - Handle missing, corrupt, or older saves gracefully with tests.
 
 ## Approval Status
 
-This OpenSpec proposal captures the current ticket plan before coding. Confirm the implementation plan with the user before creating the ticket branch and changing game code.
+Approved by the user on 2026-07-13. Implementation may proceed on the dedicated Ticket 032 branch.
 
 ## Non-Goals
 
