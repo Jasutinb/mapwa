@@ -18,8 +18,6 @@ from src.config import (
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
     SKILL_ACADEMICS,
-    SKILL_DISCIPLINE,
-    SKILL_MATH,
     STATE_PLAY,
     STUDY_XP,
     TILE_SIZE,
@@ -37,47 +35,7 @@ class PlayState(State):
                     continue
 
                 if event.key == pygame.K_e:
-                    # Try to start interaction
-                    if self.game.current_room == ROOM_MAIN and hasattr(self.game, 'mom') and self.game.mom in self.game.visible_sprites and self.game.check_proximity(self.game.player, self.game.mom, 64):
-                        self.game.talk_to_mom()
-                    elif self.game.current_room in (ROOM_OUTSIDE, ROOM_INTRAMUROS) and hasattr(self.game, 'bus') and self.game.check_proximity(self.game.player, self.game.bus, 100):
-                        self.game.ride_bus()
-                    elif self.game.current_room == ROOM_SCHOOL_ENTRANCE and self.game.try_enter_school_gate():
-                        pass
-                    elif self.game.current_room == ROOM_SCHOOL_ENTRANCE and self.game.talk_to_guard():
-                        pass
-                    elif self.game.current_room == ROOM_ADMIN_OFFICE and self.game.talk_to_attendant():
-                        pass
-                    elif self.game.current_room == ROOM_SCHOOL and self.game.talk_to_classmate():
-                        pass
-                    elif self.game.current_room == ROOM_SCHOOL and hasattr(self.game, 'school_desk') and self.game.check_proximity(self.game.player, self.game.school_desk, 64):
-                        self.game.study_at_school()
-                    elif self.game.current_room == ROOM_PROGRAMMING_LAB and hasattr(self.game, 'programming_station') and self.game.check_proximity(self.game.player, self.game.programming_station, 64):
-                        self.game.practice_programming()
-                    elif self.game.current_room == ROOM_ELECTRONICS_LAB and hasattr(self.game, 'electronics_station') and self.game.check_proximity(self.game.player, self.game.electronics_station, 64):
-                        self.game.practice_electronics()
-                    elif self.game.current_room == ROOM_LIBRARY and hasattr(self.game, 'library_academics_station') and self.game.check_proximity(self.game.player, self.game.library_academics_station, 64):
-                        self.game.study_at_library(SKILL_ACADEMICS, "academics")
-                    elif self.game.current_room == ROOM_LIBRARY and hasattr(self.game, 'library_math_station') and self.game.check_proximity(self.game.player, self.game.library_math_station, 64):
-                        self.game.study_at_library(SKILL_MATH, "math")
-                    elif self.game.current_room == ROOM_LIBRARY and hasattr(self.game, 'library_discipline_station') and self.game.check_proximity(self.game.player, self.game.library_discipline_station, 64):
-                        self.game.study_at_library(SKILL_DISCIPLINE, "discipline")
-                    elif self.game.get_exam_marker_near_player():
-                        self.game.take_exam()
-                    elif self.game.get_class_marker_near_player():
-                        self.game.attend_class()
-                    elif self.game.get_assignment_marker_near_player():
-                        self.game.complete_assignment()
-                    elif self.game.current_room == ROOM_CAFETERIA and hasattr(self.game, 'food_vendor') and self.game.check_proximity(self.game.player, self.game.food_vendor, 64):
-                        self.game.buy_cafeteria_meal()
-                    elif self.game.current_room == ROOM_BEDROOM and hasattr(self.game, 'bed') and self.game.check_proximity(self.game.player, self.game.bed, 64):
-                        self.game.open_sleep_confirmation()
-                    else:
-                        # Try to pick up items
-                        hits = pygame.sprite.spritecollide(self.game.player, self.game.item_sprites, False)
-                        for item in hits:
-                            if self.game.pick_up_item(item):
-                                break
+                    self.game.interact()
 
     def update(self):
         # Store previous studying state to detect when it finishes

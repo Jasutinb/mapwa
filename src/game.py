@@ -6,13 +6,6 @@ import os
 from src.player import Player
 from src.npc import NPC
 from src.inventory import Inventory
-from src.assignments import (
-    ASSIGNMENT_STATUS_COMPLETED,
-    ASSIGNMENT_STATUS_MISSED,
-    assignment_summary,
-    available_assignments,
-)
-from src.exams import EXAM_STATUS_PASSED, available_exams, exam_summary
 from src.level import (
     AssignmentMarker,
     ExamMarker,
@@ -24,7 +17,6 @@ from src.level import (
     Bus,
     Item,
     PassGate,
-    RoomNode,
 )
 from src.mobile_controls import MobileControls
 from src.state import StateMachine
@@ -37,6 +29,10 @@ from src.states import (
     SleepConfirmState,
 )
 from src.game_state import GameState
+from src.academic_system import AcademicSystem
+from src.hud_renderer import HUDRenderer
+from src.interaction_system import InteractionSystem
+from src.room_factory import RoomFactory
 from src.save_system import SaveError, SaveNotFoundError, SaveSystem
 from src.quest_definitions import (
     FIRST_DAY_ENTER_CAMPUS,
@@ -57,7 +53,6 @@ from src.quest_definitions import (
     is_lost_calculator_item,
 )
 from src.quests import QUEST_ACTIVE, QUEST_DONE, QUEST_NOT_STARTED, QuestReward
-from src.schedule import classes_for_day, schedule_summary_for_day, weekday_for_day
 from src.transport import TRANSPORT_BUS, get_transport_mode
 from src.config import (
     ADMIN_OFFICE_CHECKED_IN_DIALOGUE,
@@ -65,24 +60,15 @@ from src.config import (
     ADMIN_OFFICE_CHECK_IN_XP,
     ADMIN_OFFICE_NO_ID_DIALOGUE,
     ADMIN_OFFICE_TEMP_PASS_ACTIVE_DIALOGUE,
-    ASSIGNMENT_COMPLETED_DIALOGUE,
-    ASSIGNMENT_MISSED_DIALOGUE,
-    ASSIGNMENT_MISSED_STRESS,
-    ASSIGNMENT_NONE_AVAILABLE_DIALOGUE,
     ALLOWANCE_AMOUNT,
     BUS_COMMUTING_XP,
     CAFETERIA_FULL_ENERGY_DIALOGUE,
     CAFETERIA_FINANCE_XP,
     CAFETERIA_NOT_ENOUGH_MONEY_DIALOGUE,
     CAFETERIA_VENDOR_DIALOGUE,
-    CLASS_ALREADY_ATTENDED_DIALOGUE,
-    CLASS_ATTENDED_DIALOGUE,
-    CLASS_ATTENDANCE_XP,
     CLASSMATE_INTRO_DIALOGUE,
     CLASSMATE_REPEAT_DIALOGUE,
     CLASSMATE_SOCIAL_XP,
-    CLASS_NO_CLASS_HERE_DIALOGUE,
-    CLASS_NO_CLASSES_TODAY_DIALOGUE,
     DAILY_ALLOWANCE_MOM_DIALOGUE,
     DEBUG_CODE_SIDE_HUSTLE_DIALOGUE,
     DEBUG_CODE_SIDE_HUSTLE_FINANCE_XP,
@@ -90,22 +76,12 @@ from src.config import (
     DEBUG_CODE_SIDE_HUSTLE_PROGRAMMING_XP,
     DEBUG_CODE_SIDE_HUSTLE_REPEAT_DIALOGUE,
     ELECTRONICS_LAB_XP,
-    EXAM_COMPLETED_DIALOGUE,
-    EXAM_FAILED_DIALOGUE,
-    EXAM_NONE_AVAILABLE_DIALOGUE,
-    EXAM_PASSED_DIALOGUE,
     FIRST_MOM_DIALOGUE,
     FIRST_DAY_ENERGY_STRESS_TUTORIAL_DIALOGUE,
     FIRST_DAY_GRADE_STANDING_TUTORIAL_DIALOGUE,
     FIRST_DAY_PLANNER_TUTORIAL_DIALOGUE,
     FPS,
     ELECTRONICS_PRACTICE_ENERGY_COST,
-    GRADE_STANDING_ASSIGNMENT_MISSED_DECREASE,
-    GRADE_STANDING_ASSIGNMENT_EARLY_BONUS,
-    GRADE_STANDING_ASSIGNMENT_SUBMISSION_INCREASE,
-    GRADE_STANDING_CLASS_ATTENDANCE_INCREASE,
-    GRADE_STANDING_EXAM_FAIL_DECREASE,
-    GRADE_STANDING_EXAM_PASS_INCREASE,
     ITEM_ID,
     INSUFFICIENT_ENERGY_DIALOGUE,
     LIBRARY_STUDY_ENERGY_COST,
@@ -180,6 +156,7 @@ class Game:
         self.running = True
         self.state = GameState()
         self.save_system = SaveSystem()
+        self.academic_system = AcademicSystem(self)
         self.pending_exam_id = None
 
         # Sprite groups
@@ -197,6 +174,23 @@ class Game:
         self.class_marker_sprites = pygame.sprite.Group()
         self.assignment_marker_sprites = pygame.sprite.Group()
         self.exam_marker_sprites = pygame.sprite.Group()
+        self.room_sprite_groups = (
+            self.visible_sprites,
+            self.obstacle_sprites,
+            self.floor_sprites,
+            self.door_sprites,
+            self.item_sprites,
+            self.bed_sprites,
+            self.gate_sprites,
+            self.guard_sprites,
+            self.chair_sprites,
+            self.attendant_sprites,
+            self.classmate_sprites,
+            self.class_marker_sprites,
+            self.assignment_marker_sprites,
+            self.exam_marker_sprites,
+        )
+        self.room_factory = RoomFactory(self)
 
         self.location_display_text = ""
         self.location_display_timer = 0
@@ -218,6 +212,7 @@ class Game:
 
         # Player setup
         self.player = Player((SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2), [self.visible_sprites], self.obstacle_sprites)
+        self.interaction_system = InteractionSystem(self)
 
         # NPC setup
         self.mom = NPC((SCREEN_WIDTH // 2, 100), [self.visible_sprites], 'assets/images/mom.png', name="Mom")
@@ -236,6 +231,7 @@ class Game:
 
         # UI Assets
         self.money_icon = self.create_money_icon()
+        self.hud_renderer = HUDRenderer(self)
 
         # State Machine setup
         self.state_machine = StateMachine()
@@ -329,29 +325,22 @@ class Game:
 
     @property
     def current_weekday(self):
-        return weekday_for_day(self.current_day)
+        return self.academic_system.current_weekday
 
     def get_today_classes(self):
-        return classes_for_day(self.current_day)
+        return self.academic_system.get_today_classes()
 
     def get_schedule_summary(self):
-        return schedule_summary_for_day(self.current_day)
+        return self.academic_system.get_schedule_summary()
 
     def get_schedule_hud_lines(self):
-        return [
-            f"Day {self.current_day} - {self.current_weekday}",
-            self.get_schedule_summary(),
-        ]
+        return self.academic_system.get_schedule_hud_lines()
 
     def get_attended_class_ids(self):
-        if self.state.attended_class_day != self.current_day:
-            self.state.attended_class_day = self.current_day
-            self.state.attended_class_ids.clear()
-        return self.state.attended_class_ids
+        return self.academic_system.get_attended_class_ids()
 
     def get_today_classes_for_room(self, room_name=None):
-        target_room = room_name or self.current_room
-        return [entry for entry in self.get_today_classes() if entry.room_key == target_room]
+        return self.academic_system.get_today_classes_for_room(room_name)
 
     def get_class_marker_near_player(self):
         return next(
@@ -374,23 +363,19 @@ class Game:
         )
 
     def get_available_assignments(self):
-        return available_assignments(self.state.assignments, self.current_day)
+        return self.academic_system.get_available_assignments()
 
     def get_assignment_summary(self):
-        return assignment_summary(self.state.assignments, self.current_day)
+        return self.academic_system.get_assignment_summary()
 
     def get_available_exams(self, room_name=None):
-        return available_exams(
-            self.state.exams,
-            self.current_day,
-            room_name or self.current_room,
-        )
+        return self.academic_system.get_available_exams(room_name)
 
     def get_exam_summary(self):
-        return exam_summary(self.state.exams)
+        return self.academic_system.get_exam_summary()
 
     def get_grade_summary(self):
-        return f"Grade Standing: {self.grade_standing}/{MAX_GRADE_STANDING}"
+        return self.academic_system.get_grade_summary()
 
     def get_current_objective_summary(self):
         objective = self.quest_manager.current_objective
@@ -419,183 +404,28 @@ class Game:
         )
 
     def complete_assignment(self):
-        assignments = self.get_available_assignments()
-        if not assignments:
-            self.show_dialogue([ASSIGNMENT_NONE_AVAILABLE_DIALOGUE])
-            return False
-
-        assignment = assignments[0]
-        assignment.status = ASSIGNMENT_STATUS_COMPLETED
-        skill_xp = self.grant_skill_xp(assignment.skill, assignment.reward_xp)
-        grade_increased = self.adjust_grade_standing(
-            GRADE_STANDING_ASSIGNMENT_SUBMISSION_INCREASE
-        )
-        early_bonus = 0
-        if self.current_day < assignment.due_day:
-            early_bonus = self.adjust_grade_standing(
-                GRADE_STANDING_ASSIGNMENT_EARLY_BONUS
-            )
-        grade_increased += early_bonus
-        early_bonus_text = (
-            f" Includes a +{early_bonus} early submission bonus."
-            if early_bonus
-            else ""
-        )
-        self.show_dialogue(
-            [
-                ASSIGNMENT_COMPLETED_DIALOGUE.format(
-                    title=assignment.title,
-                    xp=assignment.reward_xp,
-                    skill=assignment.skill,
-                    total=skill_xp,
-                    grade=grade_increased,
-                    early_bonus_text=early_bonus_text,
-                )
-            ]
-        )
-        return True
+        return self.academic_system.complete_assignment()
 
     def take_exam(self):
-        exams = self.get_available_exams()
-        if not exams:
-            passed_exam = next(
-                (
-                    exam
-                    for exam in self.state.exams
-                    if exam.room_key == self.current_room and exam.is_passed
-                ),
-                None,
-            )
-            if passed_exam is not None:
-                self.show_dialogue(
-                    [EXAM_COMPLETED_DIALOGUE.format(title=passed_exam.title)]
-                )
-            else:
-                self.show_dialogue([EXAM_NONE_AVAILABLE_DIALOGUE])
-            return False
-
-        exam = exams[0]
-        self.pending_exam_id = exam.exam_id
-        self.state_machine.change_state(STATE_EXAM_CONFIRM)
-        return True
+        return self.academic_system.take_exam()
 
     def get_pending_exam(self):
-        return next(
-            (
-                exam
-                for exam in self.state.exams
-                if exam.exam_id == self.pending_exam_id
-            ),
-            None,
-        )
+        return self.academic_system.get_pending_exam()
 
     def get_exam_readiness(self, exam):
-        current_xp = self.get_skill_xp(exam.skill)
-        return {
-            "current_xp": current_xp,
-            "recommended_xp": exam.recommended_xp,
-            "is_risky": current_xp < exam.recommended_xp,
-        }
+        return self.academic_system.get_exam_readiness(exam)
 
     def cancel_exam_confirmation(self):
-        self.pending_exam_id = None
-        self.state_machine.change_state(STATE_PLAY)
-        return True
+        return self.academic_system.cancel_exam_confirmation()
 
     def confirm_exam_attempt(self):
-        exam = self.get_pending_exam()
-        self.pending_exam_id = None
-        if exam is None or exam not in self.get_available_exams():
-            self.state_machine.change_state(STATE_PLAY)
-            return False
-        return self.resolve_exam_attempt(exam)
+        return self.academic_system.confirm_exam_attempt()
 
     def resolve_exam_attempt(self, exam):
-        if not self.spend_energy(exam.energy_cost):
-            return False
-
-        exam.attempts += 1
-        current_skill_xp = self.get_skill_xp(exam.skill)
-        if current_skill_xp >= exam.recommended_xp:
-            exam.status = EXAM_STATUS_PASSED
-            total = self.grant_skill_xp(exam.skill, exam.reward_xp)
-            grade_increased = self.adjust_grade_standing(
-                GRADE_STANDING_EXAM_PASS_INCREASE
-            )
-            self.show_dialogue(
-                [
-                    EXAM_PASSED_DIALOGUE.format(
-                        title=exam.title,
-                        xp=exam.reward_xp,
-                        skill=exam.skill,
-                        total=total,
-                        grade=grade_increased,
-                    )
-                ]
-            )
-            return True
-
-        stress_increased = self.increase_stress(exam.stress_penalty)
-        grade_decreased = abs(
-            self.adjust_grade_standing(-GRADE_STANDING_EXAM_FAIL_DECREASE)
-        )
-        self.show_dialogue(
-            [
-                EXAM_FAILED_DIALOGUE.format(
-                    title=exam.title,
-                    required=exam.recommended_xp,
-                    skill=exam.skill,
-                    current=current_skill_xp,
-                    stress=stress_increased,
-                    grade=grade_decreased,
-                )
-            ]
-        )
-        return False
+        return self.academic_system.resolve_exam_attempt(exam)
 
     def attend_class(self):
-        classes_today = self.get_today_classes()
-        if not classes_today:
-            self.show_dialogue([CLASS_NO_CLASSES_TODAY_DIALOGUE])
-            return False
-
-        room_classes = self.get_today_classes_for_room()
-        if not room_classes:
-            self.show_dialogue([CLASS_NO_CLASS_HERE_DIALOGUE])
-            return False
-
-        attended_ids = self.get_attended_class_ids()
-        class_entry = next(
-            (entry for entry in room_classes if entry.identifier not in attended_ids),
-            room_classes[0],
-        )
-        if class_entry.identifier in attended_ids:
-            self.show_dialogue(
-                [
-                    CLASS_ALREADY_ATTENDED_DIALOGUE.format(
-                        course_name=class_entry.course_name
-                    )
-                ]
-            )
-            return False
-
-        attended_ids.add(class_entry.identifier)
-        skill_xp = self.grant_skill_xp(class_entry.skill, CLASS_ATTENDANCE_XP)
-        grade_increased = self.adjust_grade_standing(
-            GRADE_STANDING_CLASS_ATTENDANCE_INCREASE
-        )
-        self.show_dialogue(
-            [
-                CLASS_ATTENDED_DIALOGUE.format(
-                    course_name=class_entry.course_name,
-                    xp=CLASS_ATTENDANCE_XP,
-                    skill=class_entry.skill,
-                    total=skill_xp,
-                    grade=grade_increased,
-                )
-            ]
-        )
-        return True
+        return self.academic_system.attend_class()
 
 
     @property
@@ -615,49 +445,7 @@ class Game:
         self.state.has_talked_to_mom = value
 
     def setup_rooms(self):
-        # Create room nodes
-        self.rooms = {
-            ROOM_MAIN: RoomNode(ROOM_MAIN, 'Living Room'),
-            ROOM_BEDROOM: RoomNode(ROOM_BEDROOM, 'Bedroom'),
-            ROOM_OUTSIDE: RoomNode(ROOM_OUTSIDE, 'Outside'),
-            ROOM_INTRAMUROS: RoomNode(ROOM_INTRAMUROS, 'Intramuros'),
-            ROOM_SCHOOL_ENTRANCE: RoomNode(ROOM_SCHOOL_ENTRANCE, 'School Entrance'),
-            ROOM_ADMIN_OFFICE: RoomNode(ROOM_ADMIN_OFFICE, 'Admin Office'),
-            ROOM_SCHOOL: RoomNode(ROOM_SCHOOL, 'School'),
-            ROOM_PROGRAMMING_LAB: RoomNode(ROOM_PROGRAMMING_LAB, 'Programming Lab'),
-            ROOM_ELECTRONICS_LAB: RoomNode(ROOM_ELECTRONICS_LAB, 'Electronics Lab'),
-            ROOM_LIBRARY: RoomNode(ROOM_LIBRARY, 'Library'),
-            ROOM_CAFETERIA: RoomNode(ROOM_CAFETERIA, 'Cafeteria')
-        }
-
-        # Link rooms
-        # Main is center-ish
-        # Bedroom is to the left of Main
-        self.rooms[ROOM_MAIN].left = self.rooms[ROOM_BEDROOM]
-        self.rooms[ROOM_BEDROOM].right = self.rooms[ROOM_MAIN]
-
-        # Outside is to the right of Main
-        self.rooms[ROOM_MAIN].right = self.rooms[ROOM_OUTSIDE]
-        self.rooms[ROOM_OUTSIDE].left = self.rooms[ROOM_MAIN]
-
-        # Intramuros is linked via Bus from Outside, but geographically let's say it's to the right of Outside
-        self.rooms[ROOM_OUTSIDE].right = self.rooms[ROOM_INTRAMUROS]
-        self.rooms[ROOM_INTRAMUROS].left = self.rooms[ROOM_OUTSIDE]
-
-        # School Entrance sits between Intramuros and School
-        self.rooms[ROOM_INTRAMUROS].right = self.rooms[ROOM_SCHOOL_ENTRANCE]
-        self.rooms[ROOM_SCHOOL_ENTRANCE].left = self.rooms[ROOM_INTRAMUROS]
-        self.rooms[ROOM_SCHOOL_ENTRANCE].right = self.rooms[ROOM_SCHOOL]
-        self.rooms[ROOM_SCHOOL_ENTRANCE].up = self.rooms[ROOM_ADMIN_OFFICE]
-        self.rooms[ROOM_ADMIN_OFFICE].down = self.rooms[ROOM_SCHOOL_ENTRANCE]
-        self.rooms[ROOM_SCHOOL].left = self.rooms[ROOM_SCHOOL_ENTRANCE]
-        self.rooms[ROOM_SCHOOL].up = self.rooms[ROOM_PROGRAMMING_LAB]
-        self.rooms[ROOM_SCHOOL].right = self.rooms[ROOM_ELECTRONICS_LAB]
-        self.rooms[ROOM_SCHOOL].down = self.rooms[ROOM_LIBRARY]
-        self.rooms[ROOM_PROGRAMMING_LAB].down = self.rooms[ROOM_SCHOOL]
-        self.rooms[ROOM_ELECTRONICS_LAB].left = self.rooms[ROOM_SCHOOL]
-        self.rooms[ROOM_LIBRARY].up = self.rooms[ROOM_SCHOOL]
-        self.rooms[ROOM_CAFETERIA].up = self.rooms[ROOM_SCHOOL]
+        self.rooms = self.room_factory.create_room_graph()
 
     def create_money_icon(self):
         icon = pygame.Surface((24, 24), pygame.SRCALPHA)
@@ -760,33 +548,7 @@ class Game:
         self.show_dialogue(dialogue)
 
     def process_assignment_deadlines(self):
-        missed_count = 0
-        stress_increased = 0
-        grade_decreased = 0
-        for assignment in self.state.assignments:
-            if not assignment.is_overdue_on(self.current_day):
-                continue
-            assignment.status = ASSIGNMENT_STATUS_MISSED
-            if assignment.missed_stress_applied:
-                continue
-            assignment.missed_stress_applied = True
-            missed_count += 1
-            stress_increased += self.increase_stress(ASSIGNMENT_MISSED_STRESS)
-            grade_decreased += abs(
-                self.adjust_grade_standing(
-                    -GRADE_STANDING_ASSIGNMENT_MISSED_DECREASE
-                )
-            )
-
-        if not missed_count:
-            return []
-        return [
-            ASSIGNMENT_MISSED_DIALOGUE.format(
-                count=missed_count,
-                stress=stress_increased,
-                grade=grade_decreased,
-            )
-        ]
+        return self.academic_system.process_assignment_deadlines()
 
     def finish_dialogue(self):
         self.state.clear_dialogue()
@@ -1068,9 +830,7 @@ class Game:
         return before - self.stress
 
     def adjust_grade_standing(self, amount):
-        before = self.grade_standing
-        self.grade_standing = self.grade_standing + amount
-        return self.grade_standing - before
+        return self.academic_system.adjust_grade_standing(amount)
 
     def buy_cafeteria_meal(self):
         if self.energy >= MAX_ENERGY:
@@ -1252,65 +1012,7 @@ class Game:
         return classmate
 
     def create_map(self):
-        # Clear existing sprites
-        for sprite in self.visible_sprites:
-            sprite.kill()
-        for sprite in self.obstacle_sprites:
-            sprite.kill()
-        for sprite in self.floor_sprites:
-            sprite.kill()
-        for sprite in self.door_sprites:
-            sprite.kill()
-        for sprite in self.item_sprites:
-            sprite.kill()
-        for sprite in self.bed_sprites:
-            sprite.kill()
-        for sprite in self.gate_sprites:
-            sprite.kill()
-        for sprite in self.guard_sprites:
-            sprite.kill()
-        for sprite in self.chair_sprites:
-            sprite.kill()
-        for sprite in self.attendant_sprites:
-            sprite.kill()
-        for sprite in self.classmate_sprites:
-            sprite.kill()
-        for sprite in self.class_marker_sprites:
-            sprite.kill()
-        for sprite in self.assignment_marker_sprites:
-            sprite.kill()
-        for sprite in self.exam_marker_sprites:
-            sprite.kill()
-
-        # Set location display
-        current_node = self.rooms.get(self.current_room)
-        if current_node:
-            self.location_display_text = current_node.display_name
-        
-        self.location_display_timer = self.location_display_duration
-
-        if self.current_room == ROOM_MAIN:
-            self.create_main_room()
-        elif self.current_room == ROOM_BEDROOM:
-            self.create_bedroom()
-        elif self.current_room == ROOM_OUTSIDE:
-            self.create_outside()
-        elif self.current_room == ROOM_INTRAMUROS:
-            self.create_intramuros()
-        elif self.current_room == ROOM_SCHOOL_ENTRANCE:
-            self.create_school_entrance()
-        elif self.current_room == ROOM_ADMIN_OFFICE:
-            self.create_admin_office()
-        elif self.current_room == ROOM_SCHOOL:
-            self.create_school()
-        elif self.current_room == ROOM_PROGRAMMING_LAB:
-            self.create_programming_lab()
-        elif self.current_room == ROOM_ELECTRONICS_LAB:
-            self.create_electronics_lab()
-        elif self.current_room == ROOM_LIBRARY:
-            self.create_library()
-        elif self.current_room == ROOM_CAFETERIA:
-            self.create_cafeteria()
+        self.room_factory.build_current_room()
 
     def create_main_room(self):
         try:
@@ -1757,9 +1459,10 @@ class Game:
         self.state_machine.handle_events(events)
 
     def check_proximity(self, sprite1, sprite2, distance):
-        p1 = pygame.math.Vector2(sprite1.rect.center)
-        p2 = pygame.math.Vector2(sprite2.rect.center)
-        return p1.distance_to(p2) < distance
+        return self.interaction_system.check_proximity(sprite1, sprite2, distance)
+
+    def interact(self):
+        return self.interaction_system.interact()
 
     def update(self):
         if self.location_display_timer > 0:
@@ -1769,35 +1472,16 @@ class Game:
         self.state_machine.update()
 
     def fit_hud_text(self, text, max_width):
-        if self.font.render(text, True, "white").get_width() <= max_width:
-            return text
-
-        suffix = "..."
-        available = max(0, max_width - self.font.render(suffix, True, "white").get_width())
-        trimmed = text
-        while trimmed and self.font.render(trimmed, True, "white").get_width() > available:
-            trimmed = trimmed[:-1]
-        return f"{trimmed.rstrip()}{suffix}" if trimmed else suffix
+        return self.hud_renderer.fit_text(text, max_width)
 
     def draw_text_hud_panel(self, text, text_rect):
-        panel_rect = text_rect.inflate(20, 10)
-        pygame.draw.rect(self.screen, (30, 30, 30), panel_rect, border_radius=5)
-        pygame.draw.rect(self.screen, (200, 200, 200), panel_rect, 1, border_radius=5)
-        text_surf = self.font.render(text, True, "white")
-        self.screen.blit(text_surf, text_rect)
-        return panel_rect
+        return self.hud_renderer.draw_text_panel(text, text_rect)
 
     def clear_planner_owned_hud_rects(self):
-        self.schedule_hud_rect = pygame.Rect(0, 0, 0, 0)
-        self.assignment_hud_rect = pygame.Rect(0, 0, 0, 0)
-        self.exam_hud_rect = pygame.Rect(0, 0, 0, 0)
-        self.grade_hud_rect = pygame.Rect(0, 0, 0, 0)
+        self.hud_renderer.clear_planner_owned_rects()
 
     def clear_urgent_hud_rects(self):
-        self.money_hud_rect = pygame.Rect(0, 0, 0, 0)
-        self.objective_hud_rect = pygame.Rect(0, 0, 0, 0)
-        self.energy_hud_rect = pygame.Rect(0, 0, 0, 0)
-        self.stress_hud_rect = pygame.Rect(0, 0, 0, 0)
+        self.hud_renderer.clear_urgent_rects()
 
     def check_transitions(self):
         hits = pygame.sprite.spritecollide(self.player, self.door_sprites, False)
@@ -1809,80 +1493,8 @@ class Game:
         self.screen.fill((50, 50, 50))  # Dark gray background
         self.floor_sprites.draw(self.screen)
         self.visible_sprites.draw(self.screen)
-        
         self.state_machine.draw(self.screen)
-
-        self.clear_planner_owned_hud_rects()
-
-        if self.state_machine.current_state_name == STATE_PLANNER:
-            self.clear_urgent_hud_rects()
-            self.mobile_controls.draw(self.screen, planner_only=True)
-            pygame.display.flip()
-            return
-
-        # Draw energy and stress as always-visible urgent state.
-        energy_text = f"Energy: {self.energy}/{MAX_ENERGY}"
-        energy_surf = self.font.render(energy_text, True, 'white')
-        energy_rect = energy_surf.get_rect(topright=(SCREEN_WIDTH - 25, 20))
-        self.energy_hud_rect = self.draw_text_hud_panel(energy_text, energy_rect)
-
-        stress_text = f"Stress: {self.stress}/{MAX_STRESS}"
-        stress_surf = self.font.render(stress_text, True, 'white')
-        stress_rect = stress_surf.get_rect(topright=(SCREEN_WIDTH - 25, self.energy_hud_rect.bottom + 10))
-        self.stress_hud_rect = self.draw_text_hud_panel(stress_text, stress_rect)
-
-        # Draw current objective without keeping schedule/assignment/exam/grade
-        # details pinned to the play view.
-        objective_max_width = max(160, self.energy_hud_rect.left - 40)
-        objective_text = self.fit_hud_text(
-            self.get_current_objective_summary(),
-            objective_max_width,
-        )
-        objective_surf = self.font.render(objective_text, True, "white")
-        objective_rect = objective_surf.get_rect(topleft=(25, 20))
-        self.objective_hud_rect = self.draw_text_hud_panel(objective_text, objective_rect)
-
-        # Draw money counter
-        money_text = str(self.money)
-        money_surf = self.font.render(money_text, True, 'white')
-        money_rect = money_surf.get_rect(bottomleft=(60, SCREEN_HEIGHT - 20))
-        
-        # Draw money icon
-        icon_rect = self.money_icon.get_rect(midleft=(25, money_rect.centery))
-        
-        # Draw a small background for money for better visibility
-        bg_rect = pygame.Rect(15, SCREEN_HEIGHT - 45, money_surf.get_width() + 55, 30)
-        self.money_hud_rect = bg_rect
-        pygame.draw.rect(self.screen, (30, 30, 30), bg_rect, border_radius=5)
-        pygame.draw.rect(self.screen, (200, 200, 200), bg_rect, 1, border_radius=5)
-        
-        self.screen.blit(self.money_icon, icon_rect)
-        self.screen.blit(money_surf, money_rect)
-
-        # Draw location name
-        if self.location_display_timer > 0:
-            # Fade out effect
-            alpha = min(255, self.location_display_timer * 5)
-            # Create a larger font for location
-            try:
-                loc_font = pygame.font.SysFont('Arial', 48, bold=True)
-            except pygame.error:
-                loc_font = pygame.font.Font(None, 48)
-            loc_surf = loc_font.render(self.location_display_text, True, 'white')
-            loc_surf.set_alpha(alpha)
-            loc_rect = loc_surf.get_rect(center=(SCREEN_WIDTH // 2, 100))
-            
-            # Draw shadow for better readability
-            shadow_surf = loc_font.render(self.location_display_text, True, 'black')
-            shadow_surf.set_alpha(alpha)
-            shadow_rect = shadow_surf.get_rect(center=(SCREEN_WIDTH // 2 + 2, 100 + 2))
-            
-            self.screen.blit(shadow_surf, shadow_rect)
-            self.screen.blit(loc_surf, loc_rect)
-
-        self.inventory.draw(self.screen)
-        self.mobile_controls.draw(self.screen)
-        pygame.display.flip()
+        self.hud_renderer.draw()
 
 if __name__ == "__main__":
     game = Game()
