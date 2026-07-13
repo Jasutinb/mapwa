@@ -18,11 +18,12 @@ Warn the player before risky exam attempts so failure feels like an informed cho
 
 ## Acceptance Criteria
 
-- [ ] Exam attempts show recommended readiness and current readiness before commitment.
-- [ ] Risky attempts require explicit confirmation.
+- [ ] Every available exam interaction shows the exam title, relevant skill, current XP, and recommended XP before commitment.
+- [ ] The prompt clearly labels an underprepared attempt as risky and requires “Take Exam” confirmation.
 - [ ] Canceling an exam attempt spends no Energy, adds no Stress, and does not change Grade Standing.
-- [ ] Confirming still uses the existing exam mechanics.
-- [ ] Tests cover confirm and cancel flows, including the mobile path.
+- [ ] Canceling records no attempt or exam result and returns to play.
+- [ ] Confirming uses the existing energy, pass/fail, Stress, Grade Standing, and reward mechanics exactly once.
+- [ ] Keyboard and mobile action/selection paths can both confirm and cancel.
 - [ ] Focused tests cover the ticket behavior where applicable.
 - [ ] PC controls and mobile controls have parity when player-facing input changes.
 - [ ] `uv run ruff check .` passes.
@@ -33,14 +34,17 @@ Warn the player before risky exam attempts so failure feels like an informed cho
 
 ## Proposed Implementation
 
-- Calculate current readiness and recommended readiness before exam commitment.
-- Show a warning/confirmation prompt for risky attempts, including clear current-versus-recommended values.
-- Make cancel a true no-op for Energy, Stress, Grade Standing, and exam result state.
-- Add matching mobile confirmation/cancel paths and tests.
+- Add a transient `STATE_EXAM_CONFIRM` and `ExamConfirmState`, following the existing sleep-confirmation interaction pattern without changing save data.
+- Change `take_exam()` to resolve availability and open a prompt containing the exam title, relevant skill, current XP, and recommended XP.
+- Label `current XP < recommended XP` as risky; ready attempts still show the same readiness information before commitment.
+- Keep the existing exam resolution mechanics behind `confirm_exam_attempt()` so Energy, attempts, rewards, Stress, and Grade Standing change only after confirmation.
+- Make cancellation clear the pending exam and return to play with no gameplay mutation.
+- Use existing keyboard arrows/WASD plus E/Enter/Space and the mapped mobile joystick/action button for selection and activation.
+- Add focused tests for ready confirmation, risky confirmation, keyboard cancel, mobile confirm/cancel, one-time resolution, and unchanged low-energy behavior after confirmation.
 
 ## Approval Status
 
-This OpenSpec proposal captures the current ticket plan before coding. Confirm the implementation plan with the user before creating the ticket branch and changing game code.
+Approved by the user through the instruction to proceed on 2026-07-13 after the ticket plan was reconciled with Notion and the existing state architecture.
 
 ## Non-Goals
 

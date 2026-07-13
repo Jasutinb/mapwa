@@ -28,7 +28,14 @@ from src.level import (
 )
 from src.mobile_controls import MobileControls
 from src.state import StateMachine
-from src.states import DialogueState, MenuState, PlannerState, PlayState, SleepConfirmState
+from src.states import (
+    DialogueState,
+    ExamConfirmState,
+    MenuState,
+    PlannerState,
+    PlayState,
+    SleepConfirmState,
+)
 from src.game_state import GameState
 from src.save_system import SaveError, SaveNotFoundError, SaveSystem
 from src.quest_definitions import (
@@ -143,6 +150,7 @@ from src.config import (
     SKILL_PROGRAMMING,
     SKILL_SOCIAL,
     STATE_DIALOGUE,
+    STATE_EXAM_CONFIRM,
     STATE_MENU,
     STATE_PLANNER,
     STATE_PLAY,
@@ -169,6 +177,7 @@ class Game:
         self.running = True
         self.state = GameState()
         self.save_system = SaveSystem()
+        self.pending_exam_id = None
 
         # Sprite groups
         self.visible_sprites = pygame.sprite.Group()
@@ -233,6 +242,7 @@ class Game:
         self.state_machine.add_state(STATE_MENU, MenuState(self))
         self.state_machine.add_state(STATE_PLANNER, PlannerState(self))
         self.state_machine.add_state(STATE_SLEEP_CONFIRM, SleepConfirmState(self))
+        self.state_machine.add_state(STATE_EXAM_CONFIRM, ExamConfirmState(self))
         self.state_machine.change_state(STATE_PLAY)
 
     @property
@@ -462,6 +472,42 @@ class Game:
             return False
 
         exam = exams[0]
+        self.pending_exam_id = exam.exam_id
+        self.state_machine.change_state(STATE_EXAM_CONFIRM)
+        return True
+
+    def get_pending_exam(self):
+        return next(
+            (
+                exam
+                for exam in self.state.exams
+                if exam.exam_id == self.pending_exam_id
+            ),
+            None,
+        )
+
+    def get_exam_readiness(self, exam):
+        current_xp = self.get_skill_xp(exam.skill)
+        return {
+            "current_xp": current_xp,
+            "recommended_xp": exam.recommended_xp,
+            "is_risky": current_xp < exam.recommended_xp,
+        }
+
+    def cancel_exam_confirmation(self):
+        self.pending_exam_id = None
+        self.state_machine.change_state(STATE_PLAY)
+        return True
+
+    def confirm_exam_attempt(self):
+        exam = self.get_pending_exam()
+        self.pending_exam_id = None
+        if exam is None or exam not in self.get_available_exams():
+            self.state_machine.change_state(STATE_PLAY)
+            return False
+        return self.resolve_exam_attempt(exam)
+
+    def resolve_exam_attempt(self, exam):
         if not self.spend_energy(exam.energy_cost):
             return False
 
@@ -677,6 +723,7 @@ class Game:
             return False
 
         self.state = loaded_state
+        self.pending_exam_id = None
         self.inventory = Inventory()
         for item_id in self.state.inventory_item_ids:
             definition = self.inventory.get_definition(item_id)

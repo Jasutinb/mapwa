@@ -8,6 +8,7 @@ STATE_DIALOGUE = "dialogue"
 STATE_MENU = "menu"
 STATE_PLANNER = "planner"
 STATE_SLEEP_CONFIRM = "sleep_confirm"
+STATE_EXAM_CONFIRM = "exam_confirm"
 
 ROOM_MAIN = "main"
 ROOM_BEDROOM = "bedroom"
