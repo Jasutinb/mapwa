@@ -91,6 +91,9 @@ from src.config import (
     FPS,
     ELECTRONICS_PRACTICE_ENERGY_COST,
     GRADE_STANDING_ASSIGNMENT_MISSED_DECREASE,
+    GRADE_STANDING_ASSIGNMENT_EARLY_BONUS,
+    GRADE_STANDING_ASSIGNMENT_SUBMISSION_INCREASE,
+    GRADE_STANDING_CLASS_ATTENDANCE_INCREASE,
     GRADE_STANDING_EXAM_FAIL_DECREASE,
     GRADE_STANDING_EXAM_PASS_INCREASE,
     ITEM_ID,
@@ -411,6 +414,20 @@ class Game:
         assignment = assignments[0]
         assignment.status = ASSIGNMENT_STATUS_COMPLETED
         skill_xp = self.grant_skill_xp(assignment.skill, assignment.reward_xp)
+        grade_increased = self.adjust_grade_standing(
+            GRADE_STANDING_ASSIGNMENT_SUBMISSION_INCREASE
+        )
+        early_bonus = 0
+        if self.current_day < assignment.due_day:
+            early_bonus = self.adjust_grade_standing(
+                GRADE_STANDING_ASSIGNMENT_EARLY_BONUS
+            )
+        grade_increased += early_bonus
+        early_bonus_text = (
+            f" Includes a +{early_bonus} early submission bonus."
+            if early_bonus
+            else ""
+        )
         self.show_dialogue(
             [
                 ASSIGNMENT_COMPLETED_DIALOGUE.format(
@@ -418,6 +435,8 @@ class Game:
                     xp=assignment.reward_xp,
                     skill=assignment.skill,
                     total=skill_xp,
+                    grade=grade_increased,
+                    early_bonus_text=early_bonus_text,
                 )
             ]
         )
@@ -513,6 +532,9 @@ class Game:
 
         attended_ids.add(class_entry.identifier)
         skill_xp = self.grant_skill_xp(class_entry.skill, CLASS_ATTENDANCE_XP)
+        grade_increased = self.adjust_grade_standing(
+            GRADE_STANDING_CLASS_ATTENDANCE_INCREASE
+        )
         self.show_dialogue(
             [
                 CLASS_ATTENDED_DIALOGUE.format(
@@ -520,6 +542,7 @@ class Game:
                     xp=CLASS_ATTENDANCE_XP,
                     skill=class_entry.skill,
                     total=skill_xp,
+                    grade=grade_increased,
                 )
             ]
         )

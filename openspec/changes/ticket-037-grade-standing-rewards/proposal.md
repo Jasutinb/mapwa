@@ -18,11 +18,11 @@ Make Grade Standing reward good student behavior instead of mostly acting as a p
 
 ## Acceptance Criteria
 
-- [ ] Attending class on time can increase Grade Standing.
-- [ ] Submitting assignments can increase Grade Standing.
-- [ ] Early assignment submission can grant a small bonus if due-date timing is available.
-- [ ] Failing exams and missing assignments still have meaningful consequences.
-- [ ] Grade Standing changes are surfaced to the player through dialogue, notification, or planner feedback.
+- [ ] A successful class attendance increases Grade Standing by 1 exactly once.
+- [ ] Assignment submission increases Grade Standing by 3 exactly once.
+- [ ] Submitting before the due day grants an additional 1-point early bonus exactly once; submitting on the due day does not.
+- [ ] Passing an exam increases Grade Standing by 5, failing decreases it by 6, and missing an assignment decreases it by 5.
+- [ ] Grade Standing remains clamped between 0 and 100, and player feedback reports the actual applied change.
 - [ ] Tests cover positive and negative Grade Standing changes.
 - [ ] Focused tests cover the ticket behavior where applicable.
 - [ ] PC controls and mobile controls have parity when player-facing input changes.
@@ -34,14 +34,16 @@ Make Grade Standing reward good student behavior instead of mostly acting as a p
 
 ## Proposed Implementation
 
-- Update Grade Standing balance constants for class attendance, assignment submission, early submission, exam pass, exam fail, and missed assignment outcomes.
-- Hook positive Grade Standing changes into existing class and assignment success paths.
-- Retain meaningful penalties for failed exams and missed assignments while avoiding double application.
-- Surface Grade Standing changes through dialogue, notification, HUD, or planner feedback and cover positive/negative tests.
+- Add explicit balance constants: class `+1`, assignment `+3`, early submission `+1`, exam pass `+5`, exam fail `-6`, and missed assignment `-5`.
+- Apply class rewards only after a new attendance ID is recorded and assignment rewards only after an active assignment becomes completed.
+- Determine an early submission with `current_day < due_day`; the existing assignment status prevents repeat rewards.
+- Extend the existing class and assignment result dialogue with the actual clamped Grade Standing increase.
+- Preserve the existing exam and missed-deadline paths, changing only the exam failure balance from 8 to 6.
+- Cover keyboard and mobile success paths, normal/early submissions, one-time guards, penalties, and bounds in focused tests.
 
 ## Approval Status
 
-This OpenSpec proposal captures the current ticket plan before coding. Confirm the implementation plan with the user before creating the ticket branch and changing game code.
+Approved by the user through the instruction to proceed on 2026-07-13 after the ticket plan was reconciled with Notion.
 
 ## Non-Goals
 

@@ -7,7 +7,10 @@ os.environ["SDL_VIDEODRIVER"] = "dummy"
 os.environ["SDL_AUDIODRIVER"] = "dummy"
 
 from src.config import (
+    GRADE_STANDING_ASSIGNMENT_EARLY_BONUS,
     GRADE_STANDING_ASSIGNMENT_MISSED_DECREASE,
+    GRADE_STANDING_ASSIGNMENT_SUBMISSION_INCREASE,
+    GRADE_STANDING_CLASS_ATTENDANCE_INCREASE,
     GRADE_STANDING_EXAM_FAIL_DECREASE,
     GRADE_STANDING_EXAM_PASS_INCREASE,
     MAX_GRADE_STANDING,
@@ -54,6 +57,24 @@ def test_grade_standing_clamps_to_bounds(game):
 
     assert game.adjust_grade_standing(-10) == -2
     assert game.grade_standing == MIN_GRADE_STANDING
+
+
+def test_class_reward_reports_actual_clamped_increase(game):
+    game.current_day = 1
+    game.current_room = ROOM_SCHOOL
+    game.create_map()
+    game.grade_standing = MAX_GRADE_STANDING
+
+    assert game.attend_class() is True
+
+    assert game.grade_standing == MAX_GRADE_STANDING
+    assert game.current_dialogue[0].endswith("Grade Standing increased by 0.")
+
+
+def test_positive_reward_values_match_approved_balance():
+    assert GRADE_STANDING_CLASS_ATTENDANCE_INCREASE == 1
+    assert GRADE_STANDING_ASSIGNMENT_SUBMISSION_INCREASE == 3
+    assert GRADE_STANDING_ASSIGNMENT_EARLY_BONUS == 1
 
 
 def test_passing_exam_increases_grade_standing_once(game):
