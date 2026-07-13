@@ -30,6 +30,7 @@ from src.mobile_controls import MobileControls
 from src.state import StateMachine
 from src.states import PlayState, DialogueState, MenuState, SleepConfirmState
 from src.game_state import GameState
+from src.save_system import SaveError, SaveNotFoundError, SaveSystem
 from src.quest_definitions import (
     FIRST_DAY_ENTER_CAMPUS,
     FIRST_DAY_PICK_UP_ID,
@@ -163,6 +164,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.running = True
         self.state = GameState()
+        self.save_system = SaveSystem()
 
         # Sprite groups
         self.visible_sprites = pygame.sprite.Group()
@@ -610,6 +612,41 @@ class Game:
     def close_menu(self):
         target_state = self.previous_state_before_menu or STATE_PLAY
         self.state_machine.change_state(target_state)
+
+    def save_game(self):
+        try:
+            self.save_system.save(self.state)
+        except SaveError as exc:
+            self.show_dialogue([f"Save failed: {exc}"])
+            return False
+        self.show_dialogue(["Game saved."])
+        return True
+
+    def load_game(self):
+        try:
+            loaded_state = self.save_system.load()
+            if loaded_state.current_room not in self.rooms:
+                raise SaveError("The saved room is not available.")
+        except SaveNotFoundError:
+            self.show_dialogue(["No save game was found."])
+            return False
+        except SaveError as exc:
+            self.show_dialogue([f"Load failed: {exc}"])
+            return False
+
+        self.state = loaded_state
+        self.inventory = Inventory()
+        for item_id in self.state.inventory_item_ids:
+            definition = self.inventory.get_definition(item_id)
+            item_name = definition.name if definition else item_id.replace("_", " ").title()
+            self.inventory.add_item(Item((0, 0), [], item_name, item_id=item_id))
+        self.mobile_controls.set_inventory_slot_rects(self.inventory.get_slot_rects())
+        self.create_map()
+        self.player.rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+        self.visible_sprites.add(self.player)
+        self.state.clear_dialogue()
+        self.show_dialogue(["Game loaded."])
+        return True
 
     def open_sleep_confirmation(self):
         self.state_machine.change_state(STATE_SLEEP_CONFIRM)
@@ -1578,6 +1615,9 @@ class Game:
         if events is None:
             events = pygame.event.get()
         self.mobile_controls.handle_events(events)
+        if self.mobile_controls.consume_menu_press():
+            events = list(events)
+            events.append(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE))
         if self.mobile_controls.consume_action_press():
             events = list(events)
             events.append(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e))

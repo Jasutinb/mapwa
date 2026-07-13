@@ -68,6 +68,14 @@ def test_mobile_action_button_does_not_cover_dialogue_box():
     assert not controls.rects["action"].colliderect(dialogue_box)
 
 
+def test_mobile_menu_button_does_not_cover_dialogue_or_action():
+    controls = MobileControls()
+    dialogue_box = pygame.Rect(50, SCREEN_HEIGHT - 150, SCREEN_WIDTH - 100, 130)
+
+    assert not controls.rects["menu"].colliderect(dialogue_box)
+    assert not controls.rects["menu"].colliderect(controls.rects["action"])
+
+
 def test_mobile_joystick_drag_clamps_direction():
     controls = MobileControls()
     start_pos = controls.joystick_center
@@ -146,6 +154,18 @@ def test_mobile_action_press_is_consumed_once():
     assert controls.consume_action_press() is False
 
 
+def test_mobile_menu_press_is_consumed_once():
+    controls = MobileControls()
+    menu_pos = controls.rects["menu"].center
+
+    controls.handle_events(
+        [pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"button": 1, "pos": menu_pos})]
+    )
+
+    assert controls.consume_menu_press() is True
+    assert controls.consume_menu_press() is False
+
+
 def test_mobile_inventory_slot_press_is_consumed_once():
     controls = MobileControls()
     slot_rect = pygame.Rect(300, 520, 64, 64)
@@ -179,6 +199,18 @@ def test_mobile_action_button_triggers_interaction():
     )
 
     assert game.current_dialogue == game.mom.dialogue
+
+
+def test_mobile_menu_button_opens_pause_menu():
+    pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    game = Game()
+    menu_pos = game.mobile_controls.rects["menu"].center
+
+    game.handle_events(
+        [pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"button": 1, "pos": menu_pos})]
+    )
+
+    assert game.state_machine.current_state_name == "menu"
 
 
 def test_mobile_action_button_does_not_trigger_bus_inside_school():
