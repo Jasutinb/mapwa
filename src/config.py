@@ -101,6 +101,21 @@ REPEAT_MOM_DIALOGUE = [
     "I'll see you later.",
 ]
 
+FIRST_DAY_PLANNER_TUTORIAL_DIALOGUE = [
+    "Assignments have deadlines, and exams test the skill XP you've built.",
+    "The Student Planner tracks them and your schedule. Press P or tap the Planner button.",
+]
+
+FIRST_DAY_GRADE_STANDING_TUTORIAL_DIALOGUE = [
+    "Grade Standing reflects your academic performance. Classes, assignments, "
+    "and exams can change it.",
+]
+
+FIRST_DAY_ENERGY_STRESS_TUTORIAL_DIALOGUE = [
+    "Studying and other activities use Energy. Eat or sleep to recover it.",
+    "Low Energy and missed deadlines can raise Stress. Sleep helps you recover.",
+]
+
 SCHOOL_GATE_NO_ID_DIALOGUE = [
     'The guard blocks the gate. "Please present your Student ID first."',
 ]
