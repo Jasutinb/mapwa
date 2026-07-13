@@ -11,6 +11,7 @@ from src.config import (
     CLASS_ATTENDANCE_XP,
     CLASS_NO_CLASS_HERE_DIALOGUE,
     CLASS_NO_CLASSES_TODAY_DIALOGUE,
+    GRADE_STANDING_CLASS_ATTENDANCE_INCREASE,
     MAX_ENERGY,
     ROOM_LIBRARY,
     ROOM_PROGRAMMING_LAB,
@@ -20,6 +21,7 @@ from src.config import (
     SKILL_MATH,
     SKILL_PROGRAMMING,
     STUDY_XP,
+    STARTING_GRADE_STANDING,
 )
 from src.game import Game
 from src.schedule import classes_for_day
@@ -55,10 +57,14 @@ def test_attend_scheduled_class_in_matching_room_with_keyboard(game):
 
     assert game.get_skill_xp(SKILL_ACADEMICS) == CLASS_ATTENDANCE_XP
     assert class_entry.identifier in game.get_attended_class_ids()
+    assert game.grade_standing == (
+        STARTING_GRADE_STANDING + GRADE_STANDING_CLASS_ATTENDANCE_INCREASE
+    )
     assert game.current_dialogue == [
         (
             "You attended Academics and gained "
-            f"{CLASS_ATTENDANCE_XP} academics XP! Total: {CLASS_ATTENDANCE_XP}."
+            f"{CLASS_ATTENDANCE_XP} academics XP! Total: {CLASS_ATTENDANCE_XP}. "
+            "Grade Standing increased by 1."
         )
     ]
 
@@ -74,6 +80,9 @@ def test_attend_scheduled_class_with_mobile_action(game):
 
     assert game.get_skill_xp(SKILL_PROGRAMMING) == CLASS_ATTENDANCE_XP
     assert programming_class.identifier in game.get_attended_class_ids()
+    assert game.grade_standing == (
+        STARTING_GRADE_STANDING + GRADE_STANDING_CLASS_ATTENDANCE_INCREASE
+    )
 
 
 def test_duplicate_class_attendance_is_blocked(game):
@@ -83,6 +92,9 @@ def test_duplicate_class_attendance_is_blocked(game):
     assert game.attend_class() is False
 
     assert game.get_skill_xp(SKILL_ACADEMICS) == CLASS_ATTENDANCE_XP
+    assert game.grade_standing == (
+        STARTING_GRADE_STANDING + GRADE_STANDING_CLASS_ATTENDANCE_INCREASE
+    )
     assert game.current_dialogue == [
         CLASS_ALREADY_ATTENDED_DIALOGUE.format(course_name="Academics")
     ]

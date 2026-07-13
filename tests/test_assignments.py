@@ -12,11 +12,14 @@ from src.config import (
     ASSIGNMENT_NONE_AVAILABLE_DIALOGUE,
     ASSIGNMENT_REWARD_XP,
     GRADE_STANDING_ASSIGNMENT_MISSED_DECREASE,
+    GRADE_STANDING_ASSIGNMENT_EARLY_BONUS,
+    GRADE_STANDING_ASSIGNMENT_SUBMISSION_INCREASE,
     LIBRARY_STUDY_XP,
     MAX_ENERGY,
     ROOM_LIBRARY,
     SKILL_ACADEMICS,
     SKILL_MATH,
+    STARTING_GRADE_STANDING,
 )
 from src.game import Game
 
@@ -77,10 +80,16 @@ def test_complete_assignment_at_marker_grants_reward(game):
     assignment = game.state.assignments[0]
     assert assignment.status == ASSIGNMENT_STATUS_COMPLETED
     assert game.get_skill_xp(SKILL_ACADEMICS) == ASSIGNMENT_REWARD_XP
+    assert game.grade_standing == (
+        STARTING_GRADE_STANDING
+        + GRADE_STANDING_ASSIGNMENT_SUBMISSION_INCREASE
+        + GRADE_STANDING_ASSIGNMENT_EARLY_BONUS
+    )
     assert game.current_dialogue == [
         (
             "You completed Academics Reflection and gained "
-            f"{ASSIGNMENT_REWARD_XP} academics XP! Total: {ASSIGNMENT_REWARD_XP}."
+            f"{ASSIGNMENT_REWARD_XP} academics XP! Total: {ASSIGNMENT_REWARD_XP}. "
+            "Grade Standing increased by 4. Includes a +1 early submission bonus."
         )
     ]
 
@@ -92,7 +101,24 @@ def test_completed_assignment_does_not_reward_twice(game):
     assert game.complete_assignment() is False
 
     assert game.get_skill_xp(SKILL_ACADEMICS) == ASSIGNMENT_REWARD_XP
+    assert game.grade_standing == (
+        STARTING_GRADE_STANDING
+        + GRADE_STANDING_ASSIGNMENT_SUBMISSION_INCREASE
+        + GRADE_STANDING_ASSIGNMENT_EARLY_BONUS
+    )
     assert game.current_dialogue == [ASSIGNMENT_NONE_AVAILABLE_DIALOGUE]
+
+
+def test_assignment_submitted_on_due_day_has_no_early_bonus(game):
+    game.current_day = game.state.assignments[0].due_day
+    move_to_assignment_marker(game)
+
+    assert game.complete_assignment() is True
+
+    assert game.grade_standing == (
+        STARTING_GRADE_STANDING + GRADE_STANDING_ASSIGNMENT_SUBMISSION_INCREASE
+    )
+    assert game.current_dialogue[0].endswith("Grade Standing increased by 3.")
 
 
 def test_sleep_marks_missed_assignment_and_increases_stress(game):
@@ -136,6 +162,11 @@ def test_mobile_action_completes_assignment(game):
 
     assert game.state.assignments[0].status == ASSIGNMENT_STATUS_COMPLETED
     assert game.get_skill_xp(SKILL_ACADEMICS) == ASSIGNMENT_REWARD_XP
+    assert game.grade_standing == (
+        STARTING_GRADE_STANDING
+        + GRADE_STANDING_ASSIGNMENT_SUBMISSION_INCREASE
+        + GRADE_STANDING_ASSIGNMENT_EARLY_BONUS
+    )
 
 
 def test_assignment_hud_is_not_persistent_in_default_view(game):

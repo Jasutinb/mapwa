@@ -29,8 +29,11 @@ STARTING_STRESS = 0
 MIN_GRADE_STANDING = 0
 MAX_GRADE_STANDING = 100
 STARTING_GRADE_STANDING = 75
+GRADE_STANDING_CLASS_ATTENDANCE_INCREASE = 1
+GRADE_STANDING_ASSIGNMENT_SUBMISSION_INCREASE = 3
+GRADE_STANDING_ASSIGNMENT_EARLY_BONUS = 1
 GRADE_STANDING_EXAM_PASS_INCREASE = 5
-GRADE_STANDING_EXAM_FAIL_DECREASE = 8
+GRADE_STANDING_EXAM_FAIL_DECREASE = 6
 GRADE_STANDING_ASSIGNMENT_MISSED_DECREASE = 5
 SLEEP_STRESS_RECOVERY = 20
 LOW_ENERGY_STRESS_INCREASE = 5
@@ -204,14 +207,16 @@ INSUFFICIENT_ENERGY_DIALOGUE = [
 LOW_ENERGY_STRESS_DIALOGUE = "Stress increased by {amount}."
 
 CLASS_ATTENDED_DIALOGUE = (
-    "You attended {course_name} and gained {xp} {skill} XP! Total: {total}."
+    "You attended {course_name} and gained {xp} {skill} XP! Total: {total}. "
+    "Grade Standing increased by {grade}."
 )
 CLASS_ALREADY_ATTENDED_DIALOGUE = "You already attended {course_name} today."
 CLASS_NO_CLASSES_TODAY_DIALOGUE = "There are no classes today."
 CLASS_NO_CLASS_HERE_DIALOGUE = "No class is scheduled here today."
 
 ASSIGNMENT_COMPLETED_DIALOGUE = (
-    "You completed {title} and gained {xp} {skill} XP! Total: {total}."
+    "You completed {title} and gained {xp} {skill} XP! Total: {total}. "
+    "Grade Standing increased by {grade}.{early_bonus_text}"
 )
 ASSIGNMENT_NONE_AVAILABLE_DIALOGUE = "No assignments are ready to submit right now."
 ASSIGNMENT_MISSED_DIALOGUE = (
