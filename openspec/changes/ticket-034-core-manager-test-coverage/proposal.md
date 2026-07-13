@@ -2,7 +2,7 @@
 
 ## Summary
 
-Add unit tests for core systems once they exist.
+Add focused, deterministic unit coverage for the core manager and state contracts that exist today, while consolidating dummy SDL configuration so pygame tests remain safe in headless CI.
 
 ## Notion Ticket
 
@@ -10,46 +10,58 @@ Add unit tests for core systems once they exist.
 - Status at planning time: Not started
 - Type: Chore
 - Epic: Developer Experience
-- Dependencies:
-- Ticket 001
-- Ticket 002
-- Ticket 005
-- Ticket 009
+- Priority: P2
+- Dependencies: Ticket 001, Ticket 002, Ticket 005, Ticket 009
+- Duplicate note: an older Draft copy exists in another database; the linked page above is the canonical ticket in the current Mapwa data source.
+
+## Current Coverage Assessment
+
+- Inventory, skill XP, quests, and state transitions have basic happy-path coverage.
+- `GameState` helper behavior is mostly exercised indirectly through `Game` integration tests.
+- State-machine lifecycle, delegation, same-state no-op, and empty-machine behavior are not directly specified.
+- Validation and boundary contracts for inventory, quests, and skill XP have gaps.
+- Dummy SDL environment setup is repeated and, in some modules, occurs after importing pygame.
+
+## Approved Implementation Plan
+
+1. Add `tests/conftest.py` to set dummy SDL video and audio drivers before test-module imports.
+2. Add focused `GameState` tests for independent defaults, dialogue progression, aggregate experience, and inventory/picked-item bookkeeping.
+3. Expand `StateMachine` tests for enter/exit lifecycle, event/update/draw delegation, same-state no-op, and safe operation before a state is selected.
+4. Expand manager edge-case coverage:
+   - Inventory slot bounds, empty removal/use behavior, definition lookup, and non-unique consumables.
+   - Quest validation, capped objective progress, ordered objective advancement, and one-time rewards.
+   - Skill XP whitespace/boolean validation and aggregate totals.
+5. Avoid production changes unless a focused test demonstrates a real defect; document and keep any approved testability seam minimal.
+6. Run focused tests, Ruff, the full parallel pytest suite, and strict OpenSpec validation before publishing the PR.
 
 ## Acceptance Criteria
 
-- [ ] Core manager behavior has focused unit tests once the managers exist.
-- [ ] Tests use dummy SDL drivers where pygame initialization is required.
-- [ ] Tests remain deterministic and avoid opening a visible game window.
-- [ ] The suite documents important state, movement, collision, and manager contracts.
-- [ ] Full pytest and ruff commands pass before PR.
-- [ ] Focused tests cover the ticket behavior where applicable.
-- [ ] PC controls and mobile controls have parity when player-facing input changes.
+- [ ] Core inventory, skill XP, quest, state-machine, and `GameState` contracts have focused tests for expected behavior and relevant edge cases.
+- [ ] Dummy SDL drivers are configured centrally before pygame test modules import pygame.
+- [ ] Tests are deterministic and do not open a visible game window.
+- [ ] State-machine lifecycle and delegation behavior are directly verified.
+- [ ] `GameState` dialogue, experience, and item bookkeeping helpers are directly verified.
+- [ ] No gameplay behavior, maps, controls, quests, or systems are changed by this coverage-only ticket.
 - [ ] `uv run ruff check .` passes.
 - [ ] `uv run pytest -n auto` passes.
-- [ ] PR includes manual and command verification steps.
-- [ ] Post-merge main CI/CD is green.
-- [ ] Notion ticket is updated.
-
-## Proposed Implementation
-
-- Inventory manager/state tests cover add/remove/use/check behavior that is not already covered by gameplay tests.
-- Skill XP, quest, room/state, and other extracted manager tests are added as those managers exist in the current codebase.
-- Tests use dummy SDL drivers before pygame initialization and remain deterministic in headless CI.
-- Keep this ticket focused on coverage; do not refactor managers unless a small testability seam is required and approved.
+- [ ] Strict OpenSpec validation passes.
+- [ ] The PR includes manual and command verification evidence.
+- [ ] PR and post-merge main CI/CD are green.
+- [ ] The canonical Notion ticket is updated and this change is archived after merge.
 
 ## Approval Status
 
-This OpenSpec proposal captures the current ticket plan before coding. Confirm the implementation plan with the user before creating the ticket branch and changing game code.
+Approved by the user on 2026-07-13 with the instruction to proceed.
 
 ## Non-Goals
 
-- Do not bundle unrelated roadmap tickets into this work.
-- Do not refactor broad Game behavior unless the ticket explicitly calls for it.
-- Do not add PC-only player-facing controls.
+- Refactoring core managers solely for style or architecture.
+- Adding new gameplay behavior, player controls, maps, quests, or systems.
+- Duplicating integration scenarios already covered by feature-specific tests.
+- Updating the older duplicate Draft ticket in the legacy Notion database.
 
-## Risks
+## Risks and Mitigations
 
-- Player-facing changes may need mobile parity updates in src/mobile_controls.py.
-- UI changes can overlap dialogue, inventory, location text, or mobile controls if layout is not measured.
-- Gameplay/system changes can regress existing room transitions, academic state, or pygbag compatibility.
+- **Existing tests initialize pygame inconsistently:** central dummy-driver setup runs before test collection without forcing a broad fixture rewrite.
+- **Coverage-only work can become a refactor:** production files remain unchanged unless a failing contract test identifies a defect and the fix is explicitly approved.
+- **Overlapping tests can slow the suite:** prefer small manager objects and lightweight fakes over additional full `Game` fixtures.

@@ -2,29 +2,59 @@
 
 ## ADDED Requirements
 
-### Requirement: Core Manager Regression Coverage
+### Requirement: Focused Core Contract Coverage
 
-The project MUST add focused automated tests for important core manager and state contracts that are not already protected by gameplay tests.
+The project MUST directly test important contracts for the core managers and state containers that exist in the current codebase.
 
-#### Scenario: Manager behavior covered
+#### Scenario: GameState helpers are isolated and predictable
 
-- GIVEN a core manager or extracted system exists in the codebase
-- WHEN behavior such as add, remove, update, transition, or reward application is important to gameplay
-- THEN focused tests cover the expected behavior and at least one relevant edge case
+- GIVEN two newly created `GameState` instances
+- WHEN dialogue, skill XP, quest, assignment, exam, or item state changes on one instance
+- THEN mutable defaults remain isolated and helper methods produce deterministic state transitions
 
-#### Scenario: Headless pygame safety
+#### Scenario: State-machine lifecycle is preserved
 
-- GIVEN a test imports or initializes pygame
-- WHEN the test runs in CI or another headless environment
-- THEN dummy SDL video and audio drivers are configured before pygame initialization
+- GIVEN registered states with observable lifecycle and delegation hooks
+- WHEN the active state changes or receives events, updates, and draws
+- THEN enter, exit, and delegated methods run exactly when expected
+- AND selecting the current state again is a no-op
+- AND an empty state machine safely ignores delegated operations
 
-#### Scenario: No broad refactor required
+#### Scenario: Manager boundaries are enforced
 
-- GIVEN the ticket is for coverage
-- WHEN tests are added
-- THEN production refactors are avoided unless a small approved testability seam is required
+- GIVEN inventory, quest, and skill XP manager inputs at valid and invalid boundaries
+- WHEN add, remove, use, advance, lookup, or reward operations run
+- THEN valid operations return deterministic results
+- AND invalid operations fail using the manager's documented exception or no-op contract
+
+### Requirement: Headless Pygame Test Safety
+
+The test suite MUST configure dummy SDL video and audio drivers before pygame-based test modules are imported.
+
+#### Scenario: Test suite runs without a visible window
+
+- GIVEN pytest runs locally or in CI without a graphical or audio device
+- WHEN pygame-based tests are collected and executed
+- THEN dummy SDL drivers are already configured
+- AND the suite does not require or open a visible game window
+
+### Requirement: Coverage-Only Scope
+
+Ticket 034 MUST preserve current gameplay behavior.
+
+#### Scenario: Tests expose no production defect
+
+- GIVEN the new focused tests pass against the current implementation
+- WHEN the ticket is completed
+- THEN no production source file is changed
+
+#### Scenario: A test exposes a production defect
+
+- GIVEN a focused contract test demonstrates an existing defect
+- WHEN a production fix is considered
+- THEN work pauses for explicit approval of the minimal fix before production code changes
 
 ## Notes
 
-- Source: https://app.notion.com/p/36ec34b0c90181c698a8d29137479940
+- Canonical source: https://app.notion.com/p/36ec34b0c90181c698a8d29137479940
 - Dependencies: Ticket 001, Ticket 002, Ticket 005, Ticket 009

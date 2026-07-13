@@ -135,3 +135,39 @@ def test_inventory_persists_between_maps(game):
 
     assert game.inventory.has_item(ITEM_ID)
     assert len(game.item_sprites) == 0
+
+
+def test_inventory_empty_operations_and_definition_lookup():
+    pygame.display.set_mode((800, 600))
+    inventory = Inventory()
+
+    assert inventory.remove_item("missing") is None
+    assert inventory.use_item("missing") is None
+    assert inventory.get_definition("student id").id == ITEM_ID
+    assert inventory.get_definition("missing") is None
+
+
+def test_inventory_slot_rects_enforce_bounds():
+    pygame.display.set_mode((800, 600))
+    inventory = Inventory(slot_count=2, slot_size=32, padding=4)
+
+    assert inventory.get_slot_rects() == [
+        inventory.get_slot_rect(0),
+        inventory.get_slot_rect(1),
+    ]
+    with pytest.raises(IndexError):
+        inventory.get_slot_rect(-1)
+    with pytest.raises(IndexError):
+        inventory.get_slot_rect(2)
+
+
+def test_non_unique_consumables_can_stack_and_are_used_one_at_a_time():
+    pygame.display.set_mode((800, 600))
+    inventory = Inventory()
+    first_food = Item((0, 0), [], "Food")
+    second_food = Item((0, 0), [], "Food")
+
+    assert inventory.add_item(first_food)
+    assert inventory.add_item(second_food)
+    assert inventory.use_item("food")
+    assert inventory.get_items() == [second_food]
