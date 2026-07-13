@@ -36,18 +36,18 @@ Reduce the 1,889-line `Game` class by extracting focused systems while preservin
 
 ## Acceptance Criteria
 
-- [ ] `Game` delegates academic behavior to a focused `AcademicSystem`.
-- [ ] `Game` delegates HUD layout and drawing details to a focused `HUDRenderer`.
-- [ ] PC `E` and mobile action-button interaction resolution share one `InteractionSystem` path with unchanged priority.
-- [ ] Room graph creation and room-builder selection are owned by `RoomFactory` without changing room contents or transitions.
-- [ ] Existing `SaveSystem` behavior and serialized schema remain unchanged.
-- [ ] Existing movement, rooms, NPC interaction, transport, academic actions, inventory, and mobile controls still work.
-- [ ] Pygbag/WASM async yielding and startup behavior remain unchanged.
-- [ ] No gameplay values, rewards, costs, schedules, map layouts, controls, or quest behavior change.
-- [ ] Focused and full regression tests pass.
-- [ ] `uv run ruff check .` passes.
-- [ ] PR includes verification evidence and post-merge CI/CD is green.
-- [ ] Notion is updated and this change is archived after merge.
+- [x] `Game` delegates academic behavior to a focused `AcademicSystem`.
+- [x] `Game` delegates HUD layout and drawing details to a focused `HUDRenderer`.
+- [x] PC `E` and mobile action-button interaction resolution share one `InteractionSystem` path with unchanged priority.
+- [x] Room graph creation and room-builder selection are owned by `RoomFactory` without changing room contents or transitions.
+- [x] Existing `SaveSystem` behavior and serialized schema remain unchanged.
+- [x] Existing movement, rooms, NPC interaction, transport, academic actions, inventory, and mobile controls still work.
+- [x] Pygbag/WASM async yielding and startup behavior remain unchanged.
+- [x] No gameplay values, rewards, costs, schedules, map layouts, controls, or quest behavior change.
+- [x] Focused and full regression tests pass.
+- [x] `uv run ruff check .` passes.
+- [x] PR includes verification evidence and post-merge CI/CD is green.
+- [x] Notion is updated and this change is archived after merge.
 
 ## Clarifications and Assumptions
 
