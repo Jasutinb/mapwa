@@ -15,9 +15,9 @@
 - [x] Run headless render smoke and pygbag archive build.
 - [x] Run `uv run ruff check .`.
 - [x] Run `uv run pytest -n auto` (287 passed).
-- [ ] Stage only ticket files.
-- [ ] Commit and push the ticket branch.
-- [ ] Create one GitHub PR.
+- [x] Stage only ticket files.
+- [x] Commit and push the ticket branch.
+- [x] Create one GitHub PR.
 - [ ] Add a PR verification comment with manual and command checks.
 - [ ] Wait for PR CI/CD to pass.
 - [ ] Merge the PR.
