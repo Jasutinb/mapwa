@@ -22,6 +22,7 @@ Current locations include the living room, bedroom, outside, Intramuros, school 
 | Interact / confirm | `E` | Action button |
 | Use inventory slots | `1`–`5` | Tap an inventory slot |
 | Open / close menu | `Esc` | Menu button |
+| Open / close Student Planner | `P` | Planner button |
 | Navigate menu choices | Arrow keys or `WASD` | Direction pad |
 
 The pause menu includes Save Game and Load Game. Desktop runs store progress in `mapwa-save.json`; browser builds use local storage when it is available.

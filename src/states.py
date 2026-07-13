@@ -14,6 +14,7 @@ from src.config import (
     ROOM_SCHOOL_ENTRANCE,
     ROOM_SCHOOL,
     ROOM_BEDROOM,
+    MAX_GRADE_STANDING,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
     SKILL_ACADEMICS,
@@ -383,6 +384,127 @@ class SleepConfirmState(State):
             text_surf = self.game.font.render(option, True, "white")
             text_rect = text_surf.get_rect(center=option_rect.center)
             screen.blit(text_surf, text_rect)
+
+
+class PlannerState(State):
+    PANEL_RECT = pygame.Rect(32, 24, SCREEN_WIDTH - 64, SCREEN_HEIGHT - 48)
+    SECTION_RECTS = {
+        "Today's Schedule": pygame.Rect(56, 170, 332, 130),
+        "Assignments": pygame.Rect(56, 312, 332, 220),
+        "Upcoming Exams": pygame.Rect(412, 170, 332, 160),
+        "Grade Standing": pygame.Rect(412, 342, 332, 85),
+        "Current Objective": pygame.Rect(412, 439, 332, 105),
+    }
+
+    def __init__(self, game):
+        super().__init__(game)
+        self.panel_rect = self.PANEL_RECT.copy()
+        self.section_rects = {
+            title: rect.copy() for title, rect in self.SECTION_RECTS.items()
+        }
+        self.title_font = self.create_font(34, bold=True)
+        self.section_font = self.create_font(20, bold=True)
+        self.body_font = self.create_font(18)
+        self.small_font = self.create_font(16)
+
+    @staticmethod
+    def create_font(size, bold=False):
+        try:
+            return pygame.font.SysFont("Arial", size, bold=bold)
+        except pygame.error:
+            return pygame.font.Font(None, size)
+
+    def get_sections(self):
+        classes = self.game.get_today_classes()
+        schedule_lines = [entry.summary_label() for entry in classes]
+        if not schedule_lines:
+            schedule_lines = ["No classes scheduled today."]
+
+        assignments = sorted(
+            (
+                assignment
+                for assignment in self.game.state.assignments
+                if assignment.is_active
+                and assignment.assigned_day <= self.game.current_day
+            ),
+            key=lambda assignment: (assignment.due_day, assignment.assigned_day),
+        )
+        assignment_lines = [assignment.summary_label() for assignment in assignments]
+        if not assignment_lines:
+            assignment_lines = ["No active assignments."]
+
+        exams = sorted(
+            (exam for exam in self.game.state.exams if exam.is_pending),
+            key=lambda exam: (exam.scheduled_day, exam.title),
+        )
+        exam_lines = [exam.summary_label() for exam in exams]
+        if not exam_lines:
+            exam_lines = ["No upcoming exams."]
+
+        objective = self.game.quest_manager.current_objective
+        objective_lines = [objective] if objective else ["No active objective."]
+
+        return {
+            "Today's Schedule": schedule_lines,
+            "Assignments": assignment_lines,
+            "Upcoming Exams": exam_lines,
+            "Grade Standing": [
+                f"{self.game.grade_standing}/{MAX_GRADE_STANDING}"
+            ],
+            "Current Objective": objective_lines,
+        }
+
+    def draw(self, screen):
+        play_state = self.game.state_machine.states.get(STATE_PLAY)
+        if play_state:
+            play_state.draw(screen)
+
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((5, 10, 22, 235))
+        screen.blit(overlay, (0, 0))
+
+        pygame.draw.rect(screen, (20, 31, 52), self.panel_rect, border_radius=18)
+        pygame.draw.rect(screen, (121, 174, 255), self.panel_rect, 2, border_radius=18)
+
+        title = self.title_font.render("Student Planner", True, "white")
+        screen.blit(title, (self.panel_rect.left + 24, self.panel_rect.top + 18))
+
+        day_text = f"Day {self.game.current_day} - {self.game.current_weekday}"
+        day_surf = self.body_font.render(day_text, True, (177, 204, 240))
+        screen.blit(day_surf, (self.panel_rect.left + 26, self.panel_rect.top + 62))
+
+        close_surf = self.small_font.render(
+            "P / Esc / Planner button to close", True, (177, 204, 240)
+        )
+        close_rect = close_surf.get_rect(
+            bottomleft=(self.panel_rect.left + 24, self.panel_rect.bottom - 10)
+        )
+        screen.blit(close_surf, close_rect)
+
+        for title_text, lines in self.get_sections().items():
+            self.draw_section(screen, title_text, lines, self.section_rects[title_text])
+
+    def draw_section(self, screen, title, lines, rect):
+        pygame.draw.rect(screen, (31, 47, 75), rect, border_radius=10)
+        pygame.draw.rect(screen, (77, 112, 158), rect, 1, border_radius=10)
+
+        title_surf = self.section_font.render(title, True, (151, 202, 255))
+        screen.blit(title_surf, (rect.left + 14, rect.top + 10))
+
+        line_y = rect.top + 42
+        max_width = rect.width - 28
+        max_bottom = rect.bottom - 10
+        for line in lines:
+            wrapped = DialogueState.wrap_text(line, self.body_font, max_width, 2)
+            for wrapped_line in wrapped:
+                if line_y + self.body_font.get_linesize() > max_bottom:
+                    ellipsis = self.body_font.render("...", True, "white")
+                    screen.blit(ellipsis, (rect.left + 14, line_y))
+                    return
+                line_surf = self.body_font.render(wrapped_line, True, "white")
+                screen.blit(line_surf, (rect.left + 14, line_y))
+                line_y += self.body_font.get_linesize()
+            line_y += 4
 
 
 class MenuState(State):

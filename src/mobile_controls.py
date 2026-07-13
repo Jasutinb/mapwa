@@ -26,6 +26,8 @@ class MobileControls:
         self.action_pressed = False
         self.menu_down = False
         self.menu_pressed = False
+        self.planner_down = False
+        self.planner_pressed = False
         self.inventory_slot_pressed = None
         self.inventory_slot_rects = []
         self.font = None
@@ -46,6 +48,12 @@ class MobileControls:
                 - self.action_size
                 - self.margin
                 - 60,
+                92,
+                44,
+            ),
+            "planner": pygame.Rect(
+                self.screen_width - self.margin - 92,
+                110,
                 92,
                 44,
             ),
@@ -91,6 +99,9 @@ class MobileControls:
         elif control == "menu":
             self.menu_down = True
             self.menu_pressed = True
+        elif control == "planner":
+            self.planner_down = True
+            self.planner_pressed = True
         elif control.startswith("inventory_slot:"):
             self.inventory_slot_pressed = int(control.split(":", 1)[1])
 
@@ -102,6 +113,8 @@ class MobileControls:
             self.action_down = self.rects["action"].collidepoint(pos)
         elif control == "menu":
             self.menu_down = self.rects["menu"].collidepoint(pos)
+        elif control == "planner":
+            self.planner_down = self.rects["planner"].collidepoint(pos)
 
     def release(self, pointer_id):
         control = self.pointer_controls.pop(pointer_id, None)
@@ -115,6 +128,8 @@ class MobileControls:
             self.action_down = False
         elif control == "menu":
             self.menu_down = False
+        elif control == "planner":
+            self.planner_down = False
 
     def hit_test(self, pos):
         for index, rect in enumerate(self.inventory_slot_rects):
@@ -128,6 +143,8 @@ class MobileControls:
             return "action"
         if self.rects["menu"].collidepoint(pos):
             return "menu"
+        if self.rects["planner"].collidepoint(pos):
+            return "planner"
         return None
 
     def set_inventory_slot_rects(self, slot_rects):
@@ -158,21 +175,28 @@ class MobileControls:
         self.menu_pressed = False
         return was_pressed
 
+    def consume_planner_press(self):
+        was_pressed = self.planner_pressed
+        self.planner_pressed = False
+        return was_pressed
+
     def consume_inventory_slot_press(self):
         slot_index = self.inventory_slot_pressed
         self.inventory_slot_pressed = None
         return slot_index
 
-    def draw(self, screen):
+    def draw(self, screen, planner_only=False):
         if self.font is None:
             try:
                 self.font = pygame.font.SysFont("Arial", 22, bold=True)
             except pygame.error:
                 self.font = pygame.font.Font(None, 22)
 
-        self.draw_joystick(screen)
-        self.draw_action_button(screen)
-        self.draw_menu_button(screen)
+        if not planner_only:
+            self.draw_joystick(screen)
+            self.draw_action_button(screen)
+            self.draw_menu_button(screen)
+        self.draw_planner_button(screen)
 
     def draw_joystick(self, screen):
         base_surface = pygame.Surface(
@@ -217,5 +241,15 @@ class MobileControls:
         pygame.draw.rect(surface, fill, surface.get_rect(), border_radius=8)
         pygame.draw.rect(surface, (235, 235, 235, 210), surface.get_rect(), 2, border_radius=8)
         text_surf = self.font.render("Menu", True, "white")
+        surface.blit(text_surf, text_surf.get_rect(center=surface.get_rect().center))
+        screen.blit(surface, rect)
+
+    def draw_planner_button(self, screen):
+        rect = self.rects["planner"]
+        fill = (44, 48, 56, 175) if not self.planner_down else (82, 112, 162, 215)
+        surface = pygame.Surface(rect.size, pygame.SRCALPHA)
+        pygame.draw.rect(surface, fill, surface.get_rect(), border_radius=8)
+        pygame.draw.rect(surface, (235, 235, 235, 210), surface.get_rect(), 2, border_radius=8)
+        text_surf = self.font.render("Planner", True, "white")
         surface.blit(text_surf, text_surf.get_rect(center=surface.get_rect().center))
         screen.blit(surface, rect)
