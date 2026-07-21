@@ -14,7 +14,6 @@ from src.config import (
     ROOM_SCHOOL_ENTRANCE,
     ROOM_SCHOOL,
     ROOM_BEDROOM,
-    MAX_GRADE_STANDING,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
     SKILL_ACADEMICS,
@@ -537,7 +536,7 @@ class PlannerState(State):
             "Assignments": assignment_lines,
             "Upcoming Exams": exam_lines,
             "Grade Standing": [
-                f"{self.game.grade_standing}/{MAX_GRADE_STANDING}"
+                self.game.get_grade_display()
             ],
             "Current Objective": objective_lines,
         }

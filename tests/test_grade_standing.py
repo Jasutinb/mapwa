@@ -43,7 +43,7 @@ def test_grade_standing_initializes_with_default(game):
     assert game.grade_standing == STARTING_GRADE_STANDING
     assert game.state.grade_standing == STARTING_GRADE_STANDING
     assert game.get_grade_summary() == (
-        f"Grade Standing: {STARTING_GRADE_STANDING}/{MAX_GRADE_STANDING}"
+        f"Grade Standing: {STARTING_GRADE_STANDING}/{MAX_GRADE_STANDING} — Stable"
     )
 
 

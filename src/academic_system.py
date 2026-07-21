@@ -21,11 +21,14 @@ from src.config import (
     EXAM_NONE_AVAILABLE_DIALOGUE,
     EXAM_PASSED_DIALOGUE,
     GRADE_STANDING_ASSIGNMENT_EARLY_BONUS,
+    GRADE_STANDING_ACADEMIC_RECOGNITION_BONUS,
     GRADE_STANDING_ASSIGNMENT_MISSED_DECREASE,
     GRADE_STANDING_ASSIGNMENT_SUBMISSION_INCREASE,
     GRADE_STANDING_CLASS_ATTENDANCE_INCREASE,
     GRADE_STANDING_EXAM_FAIL_DECREASE,
     GRADE_STANDING_EXAM_PASS_INCREASE,
+    GRADE_STANDING_EXCELLENT_MINIMUM,
+    GRADE_STANDING_FEEDBACK,
     MAX_GRADE_STANDING,
     MIN_GRADE_STANDING,
     STATE_EXAM_CONFIRM,
@@ -86,7 +89,38 @@ class AcademicSystem:
         return exam_summary(self.game.state.exams)
 
     def get_grade_summary(self):
-        return f"Grade Standing: {self.game.grade_standing}/{MAX_GRADE_STANDING}"
+        return f"Grade Standing: {self.get_grade_display()}"
+
+    def get_grade_standing_label(self, value=None):
+        score = self.game.grade_standing if value is None else value
+        if score >= GRADE_STANDING_EXCELLENT_MINIMUM:
+            return "Excellent Standing"
+        if score >= 80:
+            return "Good Standing"
+        if score >= 70:
+            return "Stable"
+        if score >= 60:
+            return "At Risk"
+        return "Probation"
+
+    def get_grade_display(self, value=None):
+        score = self.game.grade_standing if value is None else value
+        return f"{score}/{MAX_GRADE_STANDING} — {self.get_grade_standing_label(score)}"
+
+    def get_academic_recognition_bonus(self):
+        if self.get_grade_standing_label() != "Excellent Standing":
+            return 0
+        return GRADE_STANDING_ACADEMIC_RECOGNITION_BONUS
+
+    def get_grade_standing_feedback(self):
+        return GRADE_STANDING_FEEDBACK[self.get_grade_standing_label()]
+
+    def add_allowance_feedback(self, dialogue):
+        bonus = self.get_academic_recognition_bonus()
+        feedback = self.get_grade_standing_feedback()
+        if bonus:
+            feedback = f"{feedback} You earned a ₱{bonus} academic recognition bonus."
+        return [*dialogue[:-1], feedback, dialogue[-1]]
 
     def adjust_grade_standing(self, amount):
         game = self.game

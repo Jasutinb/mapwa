@@ -72,7 +72,7 @@ def test_planner_sections_use_live_academic_and_objective_state(game):
         "Day 5 Academics Midterm",
         "Day 6 Programming Practical",
     ]
-    assert sections["Grade Standing"] == ["75/100"]
+    assert sections["Grade Standing"] == ["75/100 — Stable"]
     assert sections["Current Objective"] == ["Pick up your Student ID."]
 
 

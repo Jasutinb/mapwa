@@ -377,6 +377,18 @@ class Game:
     def get_grade_summary(self):
         return self.academic_system.get_grade_summary()
 
+    def get_grade_standing_label(self, value=None):
+        return self.academic_system.get_grade_standing_label(value)
+
+    def get_grade_display(self, value=None):
+        return self.academic_system.get_grade_display(value)
+
+    def get_academic_recognition_bonus(self):
+        return self.academic_system.get_academic_recognition_bonus()
+
+    def get_grade_standing_feedback(self):
+        return self.academic_system.get_grade_standing_feedback()
+
     def get_current_objective_summary(self):
         objective = self.quest_manager.current_objective
         if objective:
@@ -563,7 +575,7 @@ class Game:
         if not self.can_receive_allowance_today():
             return False
 
-        self.money += ALLOWANCE_AMOUNT
+        self.money += ALLOWANCE_AMOUNT + self.get_academic_recognition_bonus()
         self.last_allowance_day = self.current_day
         self.has_talked_to_mom = True
         self.advance_first_day_objective(FIRST_DAY_TALK_TO_MOM)
@@ -573,8 +585,13 @@ class Game:
         if not self.can_receive_allowance_today():
             return list(REPEAT_MOM_DIALOGUE)
         if self.has_talked_to_mom:
-            return list(DAILY_ALLOWANCE_MOM_DIALOGUE)
-        return list(FIRST_MOM_DIALOGUE)
+            return self.academic_system.add_allowance_feedback(
+                list(DAILY_ALLOWANCE_MOM_DIALOGUE)
+            )
+        dialogue = list(FIRST_MOM_DIALOGUE)
+        if self.get_academic_recognition_bonus():
+            return self.academic_system.add_allowance_feedback(dialogue)
+        return dialogue
 
     def advance_dialogue(self):
         if not self.current_dialogue:
