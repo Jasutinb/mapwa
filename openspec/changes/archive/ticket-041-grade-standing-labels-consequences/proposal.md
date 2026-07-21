@@ -28,14 +28,14 @@ Make Grade Standing readable as academic reputation without expanding the persis
 
 ## Acceptance Criteria
 
-- [ ] Grade Standing resolves to the approved label at every band boundary.
-- [ ] The Planner displays both live numeric Grade Standing and its current label.
-- [ ] Excellent Standing grants exactly one ₱50 recognition bonus per eligible daily allowance and explains it in Mom’s dialogue.
-- [ ] Non-Excellent standing receives no recognition bonus, and the daily allowance cannot be collected twice.
-- [ ] The default play HUD remains free of persistent Grade Standing details.
-- [ ] Existing grade rewards, controls, rooms, quests, dialogue flow, and save schema remain compatible.
-- [ ] Focused tests, Ruff, full tests, headless startup, strict OpenSpec validation, and pygbag build pass.
-- [ ] PR includes verification evidence; post-merge CI/CD, Notion update, and OpenSpec archive are completed.
+- [x] Grade Standing resolves to the approved label at every band boundary.
+- [x] The Planner displays both live numeric Grade Standing and its current label.
+- [x] Excellent Standing grants exactly one ₱50 recognition bonus per eligible daily allowance and explains it in Mom’s dialogue.
+- [x] Non-Excellent standing receives no recognition bonus, and the daily allowance cannot be collected twice.
+- [x] The default play HUD remains free of persistent Grade Standing details.
+- [x] Existing grade rewards, controls, rooms, quests, dialogue flow, and save schema remain compatible.
+- [x] Focused tests, Ruff, full tests, headless startup, strict OpenSpec validation, and pygbag build pass.
+- [x] PR includes verification evidence; post-merge CI/CD, Notion update, and OpenSpec archive are completed.
 
 ## Clarifications and Assumptions
 
