@@ -36,6 +36,8 @@ GRADE_STANDING_ASSIGNMENT_EARLY_BONUS = 1
 GRADE_STANDING_EXAM_PASS_INCREASE = 5
 GRADE_STANDING_EXAM_FAIL_DECREASE = 6
 GRADE_STANDING_ASSIGNMENT_MISSED_DECREASE = 5
+GRADE_STANDING_EXCELLENT_MINIMUM = 90
+GRADE_STANDING_ACADEMIC_RECOGNITION_BONUS = 50
 SLEEP_STRESS_RECOVERY = 20
 LOW_ENERGY_STRESS_INCREASE = 5
 MEAL_PRICE = 50
@@ -100,6 +102,14 @@ REPEAT_MOM_DIALOGUE = [
     "Make sure to study hard!",
     "I'll see you later.",
 ]
+
+GRADE_STANDING_FEEDBACK = {
+    "Excellent Standing": "Your Excellent Standing is earning academic recognition.",
+    "Good Standing": "Your Good Standing shows that your work is paying off.",
+    "Stable": "Your Stable standing gives you a solid academic foundation.",
+    "At Risk": "Your At Risk standing needs attention. Attend class and meet deadlines.",
+    "Probation": "You're on Probation. Focus on classes and assignments to recover.",
+}
 
 FIRST_DAY_PLANNER_TUTORIAL_DIALOGUE = [
     "Assignments have deadlines, and exams test the skill XP you've built.",
